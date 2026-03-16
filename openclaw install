@@ -1,0 +1,8 @@
+# 方案一：修改 npm 全局目录到用户空间
+mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# 然后重新安装
+npm install -g openclaw@latest
