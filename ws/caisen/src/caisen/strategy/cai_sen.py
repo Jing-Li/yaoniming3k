@@ -102,6 +102,7 @@ class CaiSenStrategy(Strategy):
         self.position = 0  # 0=空仓, 1=第一买点持仓, 2=第二买点持仓
         self.entry_price = 0.0
         self.stop_loss = 0.0
+        self.target_price = 0.0  # 目标价（止盈）
         
     def on_init(self, config: BacktestConfig) -> None:
         """初始化，可从config获取参数"""
@@ -143,6 +144,7 @@ class CaiSenStrategy(Strategy):
                 self.position = 1
                 self.entry_price = signal.price
                 self.stop_loss = signal.stop_loss
+                self.target_price = signal.target
                 return Order(symbol=bar.symbol, side=Side.BUY, quantity=0)
 
             # 破底后超过N根K线未拉回，失效，重新检测平台
@@ -171,6 +173,7 @@ class CaiSenStrategy(Strategy):
                     self.signals.append(signal)
                     self._add_annotation(bar, "第二买点", "blue")
                     self.position = 2
+                    self.target_price = signal.target
                     return Order(symbol=bar.symbol, side=Side.BUY, quantity=0)
         
         # 5. 检测假突破（空头信号）
@@ -181,10 +184,16 @@ class CaiSenStrategy(Strategy):
                 self._add_annotation(bar, "假突破", "orange")
                 return Order(symbol=bar.symbol, side=Side.SELL, quantity=0)
         
-        # 持仓中：检查止损
-        if self.position > 0 and bar.low < self.stop_loss:
-            self.position = 0
-            return Order(symbol=bar.symbol, side=Side.SELL, quantity=0)
+        # 持仓中：检查止盈止损
+        if self.position > 0:
+            # 止盈：到达目标价
+            if bar.high >= self.target_price:
+                self._reset_position()
+                return Order(symbol=bar.symbol, side=Side.SELL, quantity=0)
+            # 止损：跌破止损位
+            if bar.low <= self.stop_loss:
+                self._reset_position()
+                return Order(symbol=bar.symbol, side=Side.SELL, quantity=0)
         
         return None
     
@@ -208,8 +217,8 @@ class CaiSenStrategy(Strategy):
         volumes = [b.volume for b in recent]
         
         # 计算平台边界
-        upper = min(highs)  # 上沿 = 近期高点中的最低（阻力）
-        lower = max(lows)   # 下沿 = 近期低点中的最高（支撑）
+        upper = max(highs)  # 上沿 = 近期高点中的最高（阻力）
+        lower = min(lows)   # 下沿 = 近期低点中的最低（支撑）
         
         # 检查振幅
         if lower <= 0:
@@ -373,7 +382,19 @@ class CaiSenStrategy(Strategy):
     def get_annotations(self) -> List[Annotation]:
         """获取可视化标注"""
         return self.annotations
-    
+
+    def _reset_position(self) -> None:
+        """平仓后重置持仓相关状态，但保留平台检测历史"""
+        self.position = 0
+        self.entry_price = 0.0
+        self.stop_loss = 0.0
+        self.target_price = 0.0
+        # 重置形态状态，等待新的平台形成
+        self.state = PatternType.NONE
+        self.platform = None
+        self.breakdown_bar = None
+        self.breakdown_low = 0
+
     def reset(self) -> None:
         """重置策略状态"""
         self.bars = []
@@ -387,3 +408,4 @@ class CaiSenStrategy(Strategy):
         self.position = 0
         self.entry_price = 0.0
         self.stop_loss = 0.0
+        self.target_price = 0.0

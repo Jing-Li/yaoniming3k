@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "caisen-data"
+version = "0.1.0"
+description = "数据抓取模块，为 caisen 回测系统提供数据源"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "caisen>=0.1.0",
+    "akshare>=1.12.0",
+    "pandas",
+    "pyarrow",
+    "click",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+caisen-data = "caisen_data.cli:main"
+
+[project.entry-points."caisen.datasources"]
+akshare = "caisen_data.sources:AKShareDataSource"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/caisen_data"]
