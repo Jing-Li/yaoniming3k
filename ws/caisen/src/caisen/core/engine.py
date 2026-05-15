@@ -144,13 +144,19 @@ class BacktestEngine:
                 position.quantity += quantity
                 position.avg_cost = total_cost / position.quantity
         else:  # SELL
-            if position is None or position.is_long:
-                # 新开空头
+            if position is None:
+                # 无持仓，开空头
                 self.portfolio.positions[symbol] = Position(
                     symbol=symbol,
                     quantity=-quantity,
                     avg_cost=execution_price,
                 )
+            elif position.is_long:
+                # 平多仓
+                position.quantity -= quantity
+                if abs(position.quantity) < 1e-6:
+                    del self.portfolio.positions[symbol]
+                # 平多不更新avg_cost
             else:
                 # 追加空头
                 total_cost = position.avg_cost * abs(position.quantity) + execution_price * quantity
