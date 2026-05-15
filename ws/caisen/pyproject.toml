@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "caisen"
+version = "0.1.0"
+description = "量化回测系统"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml",
+    "pandas",
+    "pyarrow",
+    "click",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/caisen"]
