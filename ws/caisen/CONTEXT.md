@@ -56,6 +56,14 @@ _Avoid_: K线数据、K棒
 回测账户的资金和持仓状态。管理初始资金、当前现金、持仓、净值计算等。
 _Avoid_: 账户、资金账户
 
+**成本价值（Cost Value）**:
+持仓的成本估算价值。计算方式：`cash + sum(quantity * avg_cost)`。反映买入时的成本，不反映当前盈亏。
+_参见_: `Portfolio.cost_value`（属性），原 `equity` 属性已改为别名
+
+**市值价值（Market Value）**:
+持仓的当前市场价值。计算方式：`cash + sum(quantity * current_price)`。反映真实的市场价值。
+_参见_: `Portfolio.get_equity_with_prices(prices)`（方法）
+
 **BacktestEngine（回测引擎）**:
 核心执行单元。加载数据、逐根 K 线遍历、调用策略、处理订单、更新持仓、计算净值。
 

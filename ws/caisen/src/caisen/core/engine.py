@@ -56,6 +56,8 @@ class BacktestEngine:
         strategy.on_session_end()
 
         # 返回结果
+        last_bar = bars[-1]
+        final_equity = self.portfolio.get_equity_with_prices({last_bar.symbol: last_bar.close})
         return BacktestResult(
             strategy_name=type(strategy).__name__,
             bars=bars,
@@ -63,7 +65,7 @@ class BacktestEngine:
             equity_curve=self.equity_curve,
             annotations=self.annotations,
             initial_capital=self.config.initial_capital,
-            final_equity=self.portfolio.equity,
+            final_equity=final_equity,
         )
 
     def _execute_order(self, order: Order, bar: Bar, next_bar: Bar) -> Optional[Trade]:

@@ -12,10 +12,15 @@ class Portfolio:
     positions: Dict[str, "Position"] = field(default_factory=dict)
 
     @property
-    def equity(self) -> float:
-        """当前总权益（用 avg_cost 估算）"""
+    def cost_value(self) -> float:
+        """持仓的成本估算价值（用 avg_cost 计算）"""
         position_value = sum(p.quantity * p.avg_cost for p in self.positions.values())
         return self.cash + position_value
+
+    @property
+    def equity(self) -> float:
+        """市值净值（保持向后兼容，建议使用 cost_value 或 get_equity_with_prices）"""
+        return self.cost_value
 
     def get_equity_with_prices(self, prices: Dict[str, float]) -> float:
         """用指定价格计算权益"""
