@@ -17,14 +17,14 @@ try:
 except ImportError:
     Bar = None
 
-# 期货主力合约代码映射
+# 期货主力合约代码映射 (新浪期货主力合约符号)
 FUTURES_MAIN_CONTRACT = {
-    "ag": "ag",      # 沪银
-    "m": "m",        # 豆粕
-    "lh": "lh",      # 生猪
+    "ag": "ag0",     # 沪银
+    "m": "m0",       # 豆粕
+    "lh": "LH0",     # 生猪
 }
 
-# ETF 代码
+# ETF 代码映射
 ETF_CODES = {
     "信创ETF华夏": "588260.SH",
     "上证50ETF华夏": "510650.SH",
@@ -35,7 +35,7 @@ class AKShareDataSource(DataSource):
     """AKShare 数据源"""
 
     name = "akshare"
-    supports_freq = ["1d", "5m", "15m", "30m", "60m"]
+    supports_freq = ["1d"]
 
     def load(
         self,
@@ -48,26 +48,22 @@ class AKShareDataSource(DataSource):
         if not HAS_AKSHARE:
             raise ImportError("akshare not installed. Run: pip install akshare")
 
-        # 转换频率格式
-        period = self._convert_freq(freq)
-
         # 判断是期货还是股票
         if symbol in FUTURES_MAIN_CONTRACT:
-            return self._load_futures(symbol, start, end, freq)
+            return self._load_futures(symbol, start, end)
         else:
-            return self._load_stock(symbol, start, end, period)
+            return self._load_stock(symbol, start, end)
 
     def _load_stock(
         self,
         symbol: str,
         start: date,
-        end: date,
-        period: str
+        end: date
     ) -> List["Bar"]:
         """加载股票数据"""
         df = ak.stock_zh_a_hist(
             symbol=symbol.replace(".SZ", "").replace(".SH", ""),
-            period=period,
+            period="daily",
             start_date=start.strftime("%Y%m%d"),
             end_date=end.strftime("%Y%m%d"),
             adjust="qfq"
@@ -78,21 +74,16 @@ class AKShareDataSource(DataSource):
         self,
         symbol: str,
         start: date,
-        end: date,
-        freq: str
+        end: date
     ) -> List["Bar"]:
         """加载期货数据（主力合约）"""
         futures_code = FUTURES_MAIN_CONTRACT.get(symbol, symbol)
 
-        # 获取期货主力连续合约数据
-        df = ak.futures_main_continuous(
+        df = ak.futures_main_sina(
             symbol=futures_code,
             start_date=start.strftime("%Y%m%d"),
             end_date=end.strftime("%Y%m%d"),
         )
-
-        # 转换列名
-        df.columns = [c.strip() for c in df.columns]
 
         return self._df_to_bars(df, symbol)
 
@@ -101,11 +92,11 @@ class AKShareDataSource(DataSource):
         bars = []
         for _, row in df.iterrows():
             # 尝试多种可能的列名
-            ts = row.get("日期") or row.get("时间") or row.get("datetime") or row.get("index")
-            open_ = row.get("开盘") or row.get("open") or row.get("开盘价")
-            high = row.get("最高") or row.get("high") or row.get("最高价")
-            low = row.get("最低") or row.get("low") or row.get("最低价")
-            close = row.get("收盘") or row.get("close") or row.get("收盘价")
+            ts = row.get("日期") or row.get("时间") or row.get("datetime")
+            open_ = row.get("开盘价") or row.get("开盘") or row.get("open")
+            high = row.get("最高价") or row.get("最高") or row.get("high")
+            low = row.get("最低价") or row.get("最低") or row.get("low")
+            close = row.get("收盘价") or row.get("收盘") or row.get("close")
             volume = row.get("成交量") or row.get("volume") or row.get("成交")
 
             if ts is None or close is None:
@@ -122,19 +113,6 @@ class AKShareDataSource(DataSource):
                 volume=float(volume) if volume else 0,
             ))
         return bars
-
-    def _convert_freq(self, freq: str) -> str:
-        """转换频率格式"""
-        freq_map = {
-            "1d": "daily",
-            "5m": "5",
-            "15m": "15",
-            "30m": "30",
-            "60m": "60",
-            "1h": "60",
-            "1w": "weekly",
-        }
-        return freq_map.get(freq, "daily")
 
     def list_symbols(self) -> List[str]:
         """获取 A 股列表"""

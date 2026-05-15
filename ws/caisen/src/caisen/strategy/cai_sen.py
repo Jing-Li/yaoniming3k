@@ -148,11 +148,12 @@ class CaiSenStrategy(Strategy):
                 return Order(symbol=bar.symbol, side=Side.BUY, quantity=0)
 
             # 破底后超过N根K线未拉回，失效，重新检测平台
-            breakdown_index = self.bars.index(self.breakdown_bar)
-            current_index = len(self.bars) - 1
-            if current_index - breakdown_index > self.pullback_max_bars:
-                self.state = PatternType.PLATFORM_FORMING
-                self.breakdown_bar = None
+            if self.breakdown_bar and self.breakdown_bar in self.bars:
+                breakdown_index = self.bars.index(self.breakdown_bar)
+                current_index = len(self.bars) - 1
+                if current_index - breakdown_index > self.pullback_max_bars:
+                    self.state = PatternType.PLATFORM_FORMING
+                    self.breakdown_bar = None
             return None
         
         # 4. 检测突破平台上沿（第二买点）
