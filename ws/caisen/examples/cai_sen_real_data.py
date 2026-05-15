@@ -8,8 +8,7 @@ from pathlib import Path
 
 from caisen.core.engine import BacktestEngine
 from caisen.core.config import BacktestConfig
-from caisen.data.local import LocalDataLoader
-from caisen.data.config import DataConfig
+from caisen.data import DataConfig, load_bars
 from caisen.strategy.cai_sen import CaiSenStrategy
 
 
@@ -19,23 +18,19 @@ def run_backtest():
     print("蔡森策略回测 - 白银(ag) 2023-2024")
     print("=" * 60)
 
-    # 使用 LocalDataLoader 加载数据
-    data_dir = Path("../caisen-data/data")
-    if not data_dir.exists():
-        data_dir = Path("./data")
-
-    loader = LocalDataLoader(data_dir=str(data_dir))
+    # 使用高层 API 加载数据
+    data_dir = "../caisen-data/data"
 
     config = DataConfig(
         symbol="ag",
         freq="1d",
         start="2023-01-01",
         end="2024-12-31",
-        data_dir=str(data_dir)
+        data_dir=data_dir
     )
 
     try:
-        bars = loader.load(config)
+        bars = load_bars(config)
     except Exception as e:
         print(f"加载数据失败: {e}")
         return

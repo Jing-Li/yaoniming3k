@@ -92,16 +92,21 @@ class AKShareDataSource(DataSource):
                 end_date=end.strftime("%Y%m%d"),
             )
         else:
-            # 分钟数据
+            # 分钟数据 (AKShare 不支持日期过滤，获取全部后过滤)
             period_map = {"5m": "5", "15m": "15", "30m": "30", "60m": "60"}
             period = period_map.get(freq, "5")
 
             df = ak.futures_zh_minute_sina(
                 symbol=futures_code,
                 period=period,
-                start_date=start.strftime("%Y%m%d"),
-                end_date=end.strftime("%Y%m%d"),
             )
+
+            # 过滤日期范围
+            df["datetime"] = pd.to_datetime(df["datetime"])
+            df = df[
+                (df["datetime"] >= pd.Timestamp(start)) &
+                (df["datetime"] <= pd.Timestamp(end) + pd.Timedelta(days=1))
+            ]
 
         return self._df_to_bars(df, symbol, freq)
 
