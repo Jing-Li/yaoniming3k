@@ -6,71 +6,42 @@
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
-
-from caisen.core.bar import Bar
 from caisen.core.engine import BacktestEngine
 from caisen.core.config import BacktestConfig
+from caisen.data.local import LocalDataLoader
+from caisen.data.config import DataConfig
 from caisen.strategy.cai_sen import CaiSenStrategy
-
-
-def load_bars_from_parquet(filepath: str, symbol: str = "ag") -> list[Bar]:
-    """从parquet文件加载K线数据（支持中英文列名）"""
-    df = pd.read_parquet(filepath)
-    bars = []
-    for _, row in df.iterrows():
-        # 尝试多种可能的列名（中英文）
-        ts = row.get("timestamp") or row.get("日期") or row.get("时间")
-        open_ = row.get("open") or row.get("开盘价") or row.get("Open")
-        high = row.get("high") or row.get("最高价") or row.get("High")
-        low = row.get("low") or row.get("最低价") or row.get("Low")
-        close = row.get("close") or row.get("收盘价") or row.get("Close")
-        volume = row.get("volume") or row.get("成交量") or row.get("Volume")
-        freq = row.get("freq", "1d")
-
-        if ts is None or close is None:
-            continue
-
-        if isinstance(ts, str):
-            ts = datetime.fromisoformat(ts)
-
-        bars.append(Bar(
-            timestamp=ts,
-            symbol=symbol,
-            freq=freq,
-            open=float(open_) if open_ else 0,
-            high=float(high) if high else 0,
-            low=float(low) if low else 0,
-            close=float(close) if close else 0,
-            volume=float(volume) if volume else 0,
-        ))
-    return bars
 
 
 def run_backtest():
     """运行真实数据回测"""
     print("=" * 60)
-    print("蔡森策略回测 - 白银(ag) 2024年1月")
+    print("蔡森策略回测 - 白银(ag) 2023-2024")
     print("=" * 60)
 
-    # 加载数据（使用2年数据）
-    data_path = Path("../caisen-data/data/ag/1d/20230101_20241231.parquet")
-    if not data_path.exists():
-        # 回退到1月数据
-        data_path = Path("../caisen-data/data/ag/1d/20240101_20240131.parquet")
+    # 使用 LocalDataLoader 加载数据
+    data_dir = Path("../caisen-data/data")
+    if not data_dir.exists():
+        data_dir = Path("./data")
 
-    if not data_path.exists():
-        print(f"数据文件不存在: {data_path}")
+    loader = LocalDataLoader(data_dir=str(data_dir))
+
+    config = DataConfig(
+        symbol="ag",
+        freq="1d",
+        start="2023-01-01",
+        end="2024-12-31",
+        data_dir=str(data_dir)
+    )
+
+    try:
+        bars = loader.load(config)
+    except Exception as e:
+        print(f"加载数据失败: {e}")
         return
 
-    bars = load_bars_from_parquet(str(data_path), symbol="ag")
     print(f"\n加载 {len(bars)} 根K线")
-    ts0 = bars[0].timestamp
-    ts1 = bars[-1].timestamp
-    if hasattr(ts0, 'date'):
-        ts0 = ts0.date()
-        ts1 = ts1.date()
-    print(f"时间范围: {ts0} ~ {ts1}")
+    print(f"时间范围: {bars[0].timestamp.date()} ~ {bars[-1].timestamp.date()}")
     print(f"价格范围: {min(b.low for b in bars):.0f} ~ {max(b.high for b in bars):.0f}")
 
     # 创建策略（放宽参数以适应真实数据）

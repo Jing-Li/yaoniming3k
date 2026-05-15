@@ -114,6 +114,8 @@ class LocalDataLoader(BaseDataLoader):
     ) -> List[Bar]:
         """Convert pandas DataFrame to Bar objects.
 
+        Supports both English and Chinese column names.
+
         Args:
             df: DataFrame with OHLCV data
             symbol: Trading symbol
@@ -125,8 +127,25 @@ class LocalDataLoader(BaseDataLoader):
         Raises:
             DataValidationError: Missing required columns
         """
-        required_cols = ["timestamp", "open", "high", "low", "close", "volume"]
-        missing = [c for c in required_cols if c not in df.columns]
+        # Column name mapping (English -> Chinese)
+        col_mapping = {
+            "timestamp": ["timestamp", "日期", "时间", "datetime"],
+            "open": ["open", "开盘价", "Open"],
+            "high": ["high", "最高价", "High"],
+            "low": ["low", "最低价", "Low"],
+            "close": ["close", "收盘价", "Close"],
+            "volume": ["volume", "成交量", "Volume"],
+        }
+
+        # Find actual columns
+        actual_cols = {}
+        for std_name, candidates in col_mapping.items():
+            for col in candidates:
+                if col in df.columns:
+                    actual_cols[std_name] = col
+                    break
+
+        missing = [k for k in col_mapping.keys() if k not in actual_cols]
         if missing:
             raise DataValidationError(
                 f"Missing required columns: {', '.join(missing)}"
@@ -134,20 +153,20 @@ class LocalDataLoader(BaseDataLoader):
 
         bars = []
         for _, row in df.iterrows():
-            ts = row["timestamp"]
+            ts = row[actual_cols["timestamp"]]
             if not isinstance(ts, datetime):
-                ts = datetime.fromisoformat(str(ts))
+                ts = pd.to_datetime(ts).to_pydatetime()
 
             bars.append(
                 Bar(
                     timestamp=ts,
                     symbol=symbol,
                     freq=row.get("freq", freq),
-                    open=float(row["open"]),
-                    high=float(row["high"]),
-                    low=float(row["low"]),
-                    close=float(row["close"]),
-                    volume=float(row["volume"]),
+                    open=float(row[actual_cols["open"]]),
+                    high=float(row[actual_cols["high"]]),
+                    low=float(row[actual_cols["low"]]),
+                    close=float(row[actual_cols["close"]]),
+                    volume=float(row[actual_cols["volume"]]),
                 )
             )
         return bars
