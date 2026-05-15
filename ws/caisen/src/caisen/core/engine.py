@@ -110,15 +110,28 @@ class BacktestEngine:
         if order.quantity > 0:
             return order.quantity
 
-        # 全仓
         prices = {order.symbol: execution_price}
         available = self.portfolio.get_available_cash(prices)
 
         if order.side == Side.BUY:
-            return available / (execution_price * (1 + self.config.commission_rate))
+            # 计算可买入的最大数量
+            max_quantity = available / (execution_price * (1 + self.config.commission_rate))
+
+            # 按仓位比例下单
+            if order.position_pct > 0:
+                return max_quantity * order.position_pct
+            else:
+                # 全仓
+                return max_quantity
         else:
+            # 卖出：按仓位比例或全仓
             pos = self.portfolio.positions.get(order.symbol)
-            return pos.abs_quantity if pos else 0
+            if pos:
+                if order.position_pct > 0:
+                    return pos.abs_quantity * order.position_pct
+                else:
+                    return pos.abs_quantity
+            return 0
 
     def _update_position(self, symbol: str, side: Side, quantity: float, execution_price: float):
         """更新持仓"""

@@ -63,28 +63,37 @@ class PatternSignal:
 
 class CaiSenStrategy(Strategy):
     """
-    蔡森十二形态策略
-    
+    蔡森十二形态策略（Code Strategy）
+
+    基于蔡森《多空转折一手抓》理论实现的硬编码策略，通过整理平台检测、
+    破底翻/假突破识别等形态学方法生成交易信号。
+
     参数:
         platform_min_bars: 整理平台最少K线数（默认10）
         platform_max_amplitude: 整理平台最大振幅（默认5%）
         breakdown_max_pct: 破底最大幅度（默认2%）
         pullback_max_bars: 破底后最大拉回K线数（默认3）
         volume_confirm: 是否启用成交量确认（默认True）
+        first_position_pct: 第一买点仓位比例（默认0.3，即30%）
+        second_position_pct: 第二买点仓位比例（默认0.7，即70%）
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                  platform_min_bars: int = 10,
                  platform_max_amplitude: float = 0.05,
                  breakdown_max_pct: float = 0.02,
                  pullback_max_bars: int = 3,
-                 volume_confirm: bool = True):
-        
+                 volume_confirm: bool = True,
+                 first_position_pct: float = 0.3,
+                 second_position_pct: float = 0.7):
+
         self.platform_min_bars = platform_min_bars
         self.platform_max_amplitude = platform_max_amplitude
         self.breakdown_max_pct = breakdown_max_pct
         self.pullback_max_bars = pullback_max_bars
         self.volume_confirm = volume_confirm
+        self.first_position_pct = first_position_pct
+        self.second_position_pct = second_position_pct
         
         # 状态
         self.bars: List[Bar] = []
@@ -145,7 +154,7 @@ class CaiSenStrategy(Strategy):
                 self.entry_price = signal.price
                 self.stop_loss = signal.stop_loss
                 self.target_price = signal.target
-                return Order(symbol=bar.symbol, side=Side.BUY, quantity=0)
+                return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
 
             # 破底后超过N根K线未拉回，失效，重新检测平台
             if self.breakdown_bar and self.breakdown_bar in self.bars:
@@ -175,7 +184,7 @@ class CaiSenStrategy(Strategy):
                     self._add_annotation(bar, "第二买点", "blue")
                     self.position = 2
                     self.target_price = signal.target
-                    return Order(symbol=bar.symbol, side=Side.BUY, quantity=0)
+                    return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.second_position_pct)
         
         # 5. 检测假突破（空头信号）
         if self.state == PatternType.PLATFORM_FORMING:

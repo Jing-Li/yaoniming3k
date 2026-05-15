@@ -84,6 +84,10 @@ class LocalDataLoader(BaseDataLoader):
     ) -> List[Path]:
         """Get parquet files within date range.
 
+        Supports two file naming patterns:
+        - {date}.parquet (e.g., 20240101.parquet)
+        - {start}_{end}.parquet (e.g., 20240101_20240131.parquet)
+
         Args:
             data_path: Path to data directory
             start: Start date (YYYY-MM-DD)
@@ -97,13 +101,31 @@ class LocalDataLoader(BaseDataLoader):
         if not start and not end:
             return all_files
 
+        # Normalize dates to YYYYMMDD for comparison
+        start_cmp = start.replace("-", "") if start else None
+        end_cmp = end.replace("-", "") if end else None
+
         filtered = []
         for pf in all_files:
-            # File naming convention: {date}.parquet
-            date_str = pf.stem
-            if start and date_str < start:
+            stem = pf.stem
+
+            # Check if it's a single date file (8 digits)
+            if len(stem) == 8 and stem.isdigit():
+                date_str = stem
+            # Check if it's a range file (YYYYMMDD_YYYYMMDD)
+            elif "_" in stem:
+                parts = stem.split("_")
+                if len(parts) == 2:
+                    # Use start date of the range
+                    date_str = parts[0]
+                else:
+                    continue
+            else:
                 continue
-            if end and date_str > end:
+
+            if start_cmp and date_str < start_cmp:
+                continue
+            if end_cmp and date_str > end_cmp:
                 continue
             filtered.append(pf)
 
