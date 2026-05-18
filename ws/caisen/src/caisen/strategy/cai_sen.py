@@ -30,6 +30,7 @@ class PatternType(Enum):
     HEAD_AND_SHOULDERS_BOTTOM = auto()  # 头肩底
     HEAD_AND_SHOULDERS_TOP = auto()     # 头肩顶
     TRIANGLE = auto()           # 三角整理
+    FLAG = auto()               # 旗形整理
 
 
 @dataclass
@@ -102,7 +103,8 @@ class CaiSenStrategy(Strategy):
                  head_and_shoulders_top_enabled: bool = True,
                  platform_volume_decline: bool = True,  # 量能退潮确认
                  breakdown_max_bars: int = 2,  # 瞬间破底最大K线数
-                 triangle_enabled: bool = True):  # 三角整理启用
+                 triangle_enabled: bool = True,  # 三角整理启用
+                 flag_enabled: bool = True):  # 旗形整理启用
 
         # 参数验证（蔡森理论标准）
         self._validate_params(
@@ -125,6 +127,7 @@ class CaiSenStrategy(Strategy):
         self.platform_volume_decline = platform_volume_decline
         self.breakdown_max_bars = breakdown_max_bars
         self.triangle_enabled = triangle_enabled
+        self.flag_enabled = flag_enabled
 
     def _validate_params(self,
                          platform_min_bars: int,
@@ -321,6 +324,26 @@ class CaiSenStrategy(Strategy):
                     self.entry_price = triangle_signal.price
                     self.stop_loss = triangle_signal.stop_loss
                     self.target_price = triangle_signal.target
+                    return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
+
+        # 0.9 检测旗形整理（无持仓时）
+        if self.position == 0 and self.flag_enabled and self.state == PatternType.NONE:
+            flag_signal = self._detect_flag(bar)
+            if flag_signal:
+                self.signals.append(flag_signal)
+                if flag_signal.action == "BUY":
+                    self._add_annotation(bar, "旗形突破", "green")
+                    self.position = 1
+                    self.entry_price = flag_signal.price
+                    self.stop_loss = flag_signal.stop_loss
+                    self.target_price = flag_signal.target
+                    return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+                else:
+                    self._add_annotation(bar, "旗形跌破", "red")
+                    self.position = -1
+                    self.entry_price = flag_signal.price
+                    self.stop_loss = flag_signal.stop_loss
+                    self.target_price = flag_signal.target
                     return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
 
         # 1. 检测整理平台
@@ -932,6 +955,112 @@ class CaiSenStrategy(Strategy):
                 stop_loss=stop_loss,
                 target=target,
                 reason="对称三角形向下跌破"
+            )
+
+        return None
+
+    def _detect_flag(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测旗形整理形态
+
+        简化实现：检测上升旗形（高点下降、低点下降，平行或略收敛）
+        突破上沿趋势线 → 买入（趋势继续）
+        跌破下沿趋势线 → 卖出（趋势继续下跌）
+        """
+        if len(self.bars) < 11:
+            return None
+
+        # 获取最近10根历史K线（不包括当前K线）
+        recent = self.bars[-11:-1]
+
+        # 找3个高点（下降）
+        highs = [(i, b.high) for i, b in enumerate(recent)]
+        highs_sorted = sorted(highs, key=lambda x: x[1], reverse=True)[:3]
+        highs_sorted = sorted(highs_sorted, key=lambda x: x[0])  # 按时间排序
+
+        # 找3个低点（下降）
+        lows = [(i, b.low) for i, b in enumerate(recent)]
+        lows_sorted = sorted(lows, key=lambda x: x[1], reverse=True)[:3]
+        lows_sorted = sorted(lows_sorted, key=lambda x: x[0])  # 按时间排序
+
+        if len(highs_sorted) < 3 or len(lows_sorted) < 3:
+            return None
+
+        # 检查高点是否递减
+        if not (highs_sorted[0][1] > highs_sorted[1][1] > highs_sorted[2][1]):
+            return None
+
+        # 检查低点是否递减（与三角形的关键区别）
+        if not (lows_sorted[0][1] > lows_sorted[1][1] > lows_sorted[2][1]):
+            return None
+
+        # 计算趋势线
+        # 下降趋势线（高点连线）：y = m1 * x + b1
+        x1_high = highs_sorted[0][0]
+        y1_high = highs_sorted[0][1]
+        x2_high = highs_sorted[2][0]
+        y2_high = highs_sorted[2][1]
+
+        if x2_high == x1_high:
+            return None
+
+        m1 = (y2_high - y1_high) / (x2_high - x1_high)
+        b1 = y1_high - m1 * x1_high
+
+        # 下降趋势线（低点连线）：y = m2 * x + b2
+        x1_low = lows_sorted[0][0]
+        y1_low = lows_sorted[0][1]
+        x2_low = lows_sorted[2][0]
+        y2_low = lows_sorted[2][1]
+
+        if x2_low == x1_low:
+            return None
+
+        m2 = (y2_low - y1_low) / (x2_low - x1_low)
+        b2 = y1_low - m2 * x1_low
+
+        # 检查是否同向下降（旗形特征）
+        if m1 >= 0 or m2 >= 0:
+            return None
+
+        # 当前K线索引（相对于recent）
+        current_idx = len(recent) - 1
+
+        # 计算当前位置的趋势线值
+        upper_trend = m1 * current_idx + b1
+        lower_trend = m2 * current_idx + b2
+
+        # 检查突破
+        if bar.close > upper_trend:
+            # 向上突破（上升旗形突破，趋势继续）
+            amplitude = upper_trend - lower_trend
+            target = bar.close + amplitude
+            stop_loss = lower_trend * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.FLAG,
+                action="BUY",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="上升旗形突破，趋势继续"
+            )
+
+        if bar.close < lower_trend:
+            # 向下跌破（下降旗形跌破，趋势继续下跌）
+            amplitude = upper_trend - lower_trend
+            target = bar.close - amplitude
+            stop_loss = upper_trend * 1.01
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.FLAG,
+                action="SELL",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="下降旗形跌破，趋势继续"
             )
 
         return None

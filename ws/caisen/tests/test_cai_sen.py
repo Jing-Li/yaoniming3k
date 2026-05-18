@@ -465,6 +465,50 @@ def test_caisen_instant_breakdown():
     assert strategy2.breakdown_bar is None, "平台形成后3根K线才破底不应被识别为瞬间破底"
 
 
+def test_flag_continuation_breakout():
+    """测试上升旗形突破产生买入信号（趋势继续）"""
+    from datetime import timedelta
+
+    # 禁用其他形态，只测试旗形整理
+    strategy = CaiSenStrategy(platform_min_bars=20,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=False,
+                              triangle_enabled=False,
+                              flag_enabled=True)
+
+    base_time = datetime(2024, 1, 1)
+
+    # 构建上升旗形：上涨趋势后的回调，高点和低点都下降
+    # 严格递减高点和低点形成旗形
+    flag_data = [
+        (0, 118, 122, 114, 120),   # 高点122
+        (1, 102, 106, 98, 104),    # 低点98
+        (2, 116, 120, 112, 118),   # 高点120（下降）
+        (3, 104, 108, 100, 106),   # 低点100（下降）
+        (4, 114, 118, 110, 116),   # 高点118（下降）
+        (5, 106, 110, 102, 108),   # 低点102（下降）
+        (6, 112, 116, 108, 114),   # 高点116（下降）
+        (7, 108, 112, 104, 110),   # 低点104（下降）
+        (8, 110, 114, 106, 112),   # 高点114（下降）
+        (9, 110, 114, 106, 112),   # 低点106（下降）
+    ]
+
+    for idx, open_p, high, low, close in flag_data:
+        bar = make_bar(idx, open_p, high, low, close, volume=1000)
+        bar.timestamp = base_time + timedelta(days=idx)
+        strategy.on_bar(bar)
+
+    # 向上突破旗形上沿（下降趋势线约112）
+    bar_breakout = make_bar(10, 112, 122, 112, 121, volume=1500)
+    bar_breakout.timestamp = base_time + timedelta(days=10)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应产生买入信号
+    assert order is not None, "向上突破旗形应产生买入信号"
+    assert order.side == Side.BUY, "旗形突破应为买入信号"
+
+
 def test_symmetric_triangle_breakout():
     """测试对称三角形向上突破产生买入信号"""
     from datetime import timedelta
