@@ -338,6 +338,63 @@ def test_head_and_shoulders_top_pattern():
     assert len(hs_signals) >= 1
 
 
+def test_caisen_param_validation():
+    """测试蔡森策略参数验证"""
+    import pytest
+
+    # 测试平台K线数过小
+    with pytest.raises(ValueError, match="整理平台K线数"):
+        CaiSenStrategy(platform_min_bars=3)
+
+    # 测试平台K线数过大
+    with pytest.raises(ValueError, match="整理平台K线数"):
+        CaiSenStrategy(platform_min_bars=60)
+
+    # 测试平台振幅过小
+    with pytest.raises(ValueError, match="整理平台振幅"):
+        CaiSenStrategy(platform_max_amplitude=0.01)
+
+    # 测试平台振幅过大
+    with pytest.raises(ValueError, match="整理平台振幅"):
+        CaiSenStrategy(platform_max_amplitude=0.20)
+
+    # 测试破底幅度过小
+    with pytest.raises(ValueError, match="破底幅度"):
+        CaiSenStrategy(breakdown_max_pct=0.003)
+
+    # 测试破底幅度过大
+    with pytest.raises(ValueError, match="破底幅度"):
+        CaiSenStrategy(breakdown_max_pct=0.08)
+
+    # 测试拉回K线数过小
+    with pytest.raises(ValueError, match="拉回K线数"):
+        CaiSenStrategy(pullback_max_bars=1)
+
+    # 测试拉回K线数过大
+    with pytest.raises(ValueError, match="拉回K线数"):
+        CaiSenStrategy(pullback_max_bars=6)
+
+    # 测试仓位比例错误（第一买点 > 第二买点，违反蔡森原则）
+    with pytest.raises(ValueError, match="第一买点仓位应小于第二买点"):
+        CaiSenStrategy(first_position_pct=0.5, second_position_pct=0.3)
+
+    # 测试仓位总和超过100%
+    with pytest.raises(ValueError, match="仓位总和"):
+        CaiSenStrategy(first_position_pct=0.6, second_position_pct=0.5)
+
+    # 测试有效参数
+    strategy = CaiSenStrategy(
+        platform_min_bars=15,
+        platform_max_amplitude=0.08,
+        breakdown_max_pct=0.03,
+        pullback_max_bars=4,
+        first_position_pct=0.2,
+        second_position_pct=0.5
+    )
+    assert strategy.platform_min_bars == 15
+    assert strategy.first_position_pct == 0.2
+
+
 def test_caisen_volume_decline():
     """测试蔡森量能退潮标准 - 平台后半段成交量应小于前半段"""
     # 启用严格的量能退潮检查

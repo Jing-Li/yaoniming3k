@@ -94,7 +94,16 @@ Apply Anthropic's "Effective Context Engineering for AI Agents" principles:
 - [ ] 是否会访问敏感数据？
 - [ ] 是否有完整的审计日志？
 
-## Output Format
+## Issue Location
+
+Write platform-related issues to: `docs/issues/platform/`
+
+**File naming:** `{priority}-{short-description}.md`
+- `001-cli-mock-flag.md`
+- `002-entry-points.md`
+- etc.
+
+**This agent ONLY reviews platform architecture. Strategy issues go to `docs/issues/strategies/` (see `strategy-architect` subagent).**
 
 Your review must follow this structure:
 

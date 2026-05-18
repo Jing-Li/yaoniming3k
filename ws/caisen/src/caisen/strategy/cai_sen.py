@@ -81,6 +81,13 @@ class CaiSenStrategy(Strategy):
         second_position_pct: 第二买点仓位比例（默认0.7，即70%）
     """
 
+    # 蔡森理论参数范围（类常量）
+    PLATFORM_MIN_BARS_RANGE = (5, 50)      # 平台最少K线数范围
+    PLATFORM_MAX_AMPLITUDE_RANGE = (0.02, 0.15)  # 平台最大振幅范围（2%-15%）
+    BREAKDOWN_MAX_PCT_RANGE = (0.005, 0.05)      # 破底幅度范围（0.5%-5%）
+    PULLBACK_MAX_BARS_RANGE = (2, 5)       # 拉回最大K线数范围
+    POSITION_PCT_RANGE = (0.1, 1.0)        # 仓位比例范围
+
     def __init__(self,
                  platform_min_bars: int = 10,
                  platform_max_amplitude: float = 0.05,
@@ -97,6 +104,13 @@ class CaiSenStrategy(Strategy):
                  breakdown_max_bars: int = 2,  # 瞬间破底最大K线数
                  triangle_enabled: bool = True):  # 三角整理启用
 
+        # 参数验证（蔡森理论标准）
+        self._validate_params(
+            platform_min_bars, platform_max_amplitude,
+            breakdown_max_pct, pullback_max_bars,
+            first_position_pct, second_position_pct
+        )
+
         self.platform_min_bars = platform_min_bars
         self.platform_max_amplitude = platform_max_amplitude
         self.breakdown_max_pct = breakdown_max_pct
@@ -111,6 +125,77 @@ class CaiSenStrategy(Strategy):
         self.platform_volume_decline = platform_volume_decline
         self.breakdown_max_bars = breakdown_max_bars
         self.triangle_enabled = triangle_enabled
+
+    def _validate_params(self,
+                         platform_min_bars: int,
+                         platform_max_amplitude: float,
+                         breakdown_max_pct: float,
+                         pullback_max_bars: int,
+                         first_position_pct: float,
+                         second_position_pct: float) -> None:
+        """
+        验证蔡森策略参数是否符合理论标准
+
+        蔡森理论要求：
+        - 整理平台至少5根K线（太短无法形成有效平台）
+        - 整理平台不超过50根K线（太长失去时效性）
+        - 平台振幅2%-15%（太小无利润，太大是趋势）
+        - 破底幅度0.5%-5%（太小无法洗盘，太大是真突破）
+        """
+        min_bars, max_bars = self.PLATFORM_MIN_BARS_RANGE
+        if not (min_bars <= platform_min_bars <= max_bars):
+            raise ValueError(
+                f"蔡森理论：整理平台K线数应在{min_bars}-{max_bars}之间，"
+                f"当前{platform_min_bars}"
+            )
+
+        min_amp, max_amp = self.PLATFORM_MAX_AMPLITUDE_RANGE
+        if not (min_amp <= platform_max_amplitude <= max_amp):
+            raise ValueError(
+                f"蔡森理论：整理平台振幅应在{min_amp*100:.0f}%-{max_amp*100:.0f}%之间，"
+                f"当前{platform_max_amplitude*100:.0f}%"
+            )
+
+        min_break, max_break = self.BREAKDOWN_MAX_PCT_RANGE
+        if not (min_break <= breakdown_max_pct <= max_break):
+            raise ValueError(
+                f"蔡森理论：破底幅度应在{min_break*100:.1f}%-{max_break*100:.0f}%之间，"
+                f"当前{breakdown_max_pct*100:.1f}%"
+            )
+
+        min_pull, max_pull = self.PULLBACK_MAX_BARS_RANGE
+        if not (min_pull <= pullback_max_bars <= max_pull):
+            raise ValueError(
+                f"蔡森理论：拉回K线数应在{min_pull}-{max_pull}之间，"
+                f"当前{pullback_max_bars}"
+            )
+
+        min_pos, max_pos = self.POSITION_PCT_RANGE
+        if not (min_pos <= first_position_pct <= max_pos):
+            raise ValueError(
+                f"第一买点仓位比例应在{min_pos*100:.0f}%-{max_pos*100:.0f}%之间，"
+                f"当前{first_position_pct*100:.0f}%"
+            )
+
+        if not (min_pos <= second_position_pct <= max_pos):
+            raise ValueError(
+                f"第二买点仓位比例应在{min_pos*100:.0f}%-{max_pos*100:.0f}%之间，"
+                f"当前{second_position_pct*100:.0f}%"
+            )
+
+        if first_position_pct + second_position_pct > max_pos:
+            raise ValueError(
+                f"两买点仓位总和不应超过{max_pos*100:.0f}%，"
+                f"当前{(first_position_pct + second_position_pct)*100:.0f}%"
+            )
+
+        # 蔡森理论：第一买点仓位应小于第二买点
+        if first_position_pct >= second_position_pct:
+            raise ValueError(
+                "蔡森理论：第一买点仓位应小于第二买点，"
+                "遵循'试单轻仓、确认重仓'原则"
+            )
+
         
         # 状态
         self.bars: List[Bar] = []

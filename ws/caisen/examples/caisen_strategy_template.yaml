@@ -1,0 +1,53 @@
+# 蔡森十二形态策略配置模板
+# 基于蔡森《多空转折一手抓》理论
+
+strategy:
+  name: "CaiSenPattern"
+  type: "code"
+  class: "caisen.strategy.cai_sen.CaiSenStrategy"
+
+  # 整理平台参数
+  platform_min_bars: 10              # 整理平台最少K线数（5-50）
+  platform_max_amplitude: 0.05       # 整理平台最大振幅 5%（2%-15%）
+  platform_volume_decline: true      # 启用量能退潮确认
+
+  # 破底翻参数
+  breakdown_max_pct: 0.02            # 破底最大幅度 2%（0.5%-5%）
+  breakdown_max_bars: 2              # 瞬间破底最大K线数
+  pullback_max_bars: 3               # 破底后最大拉回K线数（2-5）
+
+  # 成交量确认
+  volume_confirm: true               # 启用成交量确认
+
+  # 仓位管理（蔡森：两加码点）
+  first_position_pct: 0.3            # 第一买点仓位 30%
+  second_position_pct: 0.7           # 第二买点仓位 70%
+
+  # 形态启用开关
+  w_bottom_enabled: true             # W底
+  m_top_enabled: true                # M头
+  head_and_shoulders_bottom_enabled: true   # 头肩底
+  head_and_shoulders_top_enabled: true      # 头肩顶
+  triangle_enabled: true             # 三角整理
+
+# 回测配置
+backtest:
+  initial_capital: 100000            # 初始资金
+  commission_rate: 0.0003            # 手续费率 0.03%
+  slippage: 0.001                    # 滑点 0.1%
+
+# 数据源配置
+data:
+  symbol: "AG"                       # 交易标的（如白银期货）
+  timeframe: "1d"                    # 时间周期
+  start_date: "2023-01-01"
+  end_date: "2024-01-01"
+
+# 绩效指标
+metrics:
+  - "total_return"
+  - "annualized_return"
+  - "max_drawdown"
+  - "sharpe_ratio"
+  - "win_rate"
+  - "profit_factor"
