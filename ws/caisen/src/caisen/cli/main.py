@@ -181,6 +181,33 @@ def list_runs(output_dir: str):
         click.echo(f"{run['run_id']:<40} {run['strategy_name']:<20} {run['created_at']:<20}")
 
 
+@cli.command()
+@click.option("--run-id", "-r", help="直接打开指定回测结果")
+@click.option("--port", "-p", default=8000, help="服务端口")
+@click.option("--host", default="0.0.0.0", help="服务地址")
+@click.option("--output-dir", default="./runs", help="回测结果目录")
+def serve(run_id: str, port: int, host: str, output_dir: str):
+    """启动可视化报告服务"""
+    import uvicorn
+    from ..server.main import create_app, set_output_dir
+
+    # 设置 output_dir
+    set_output_dir(output_dir)
+
+    click.echo(f"Starting server at http://{host}:{port}")
+    click.echo(f"Output directory: {output_dir}")
+
+    if run_id:
+        click.echo(f"Direct open run: {run_id}")
+        click.echo(f"URL: http://{host}:{port}/?run_id={run_id}")
+
+    click.echo("\nPress Ctrl+C to stop")
+
+    # 创建 app 并启动
+    app = create_app()
+    uvicorn.run(app, host=host, port=port, log_level="info")
+
+
 def main():
     cli(prog_name="caisen")
 

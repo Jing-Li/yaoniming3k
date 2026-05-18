@@ -490,18 +490,47 @@
         // Get data URL from query params
         function getDataUrl() {
             const params = new URLSearchParams(window.location.search);
+            // 优先从 API 获取，其次从参数指定，最后 fallback 到本地文件
             return params.get('data') || './data.json';
         }
 
-        // Load data
+        // Get API base URL
+        function getApiBase() {
+            // 判断是否为 API 模式：同源（通过 /api/ 检测）
+            const isApiMode = window.location.pathname === '/' || window.location.pathname.startsWith('/?');
+            if (isApiMode) {
+                // 从 URL 提取 base path
+                const runId = new URLSearchParams(window.location.search).get('run_id');
+                if (runId) {
+                    return `/api/runs/${runId}/visualization`;
+                }
+                return '/api/runs';
+            }
+            return null;
+        }
+
+        // Load data from API or local file
         async function loadData() {
             try {
-                const url = getDataUrl();
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const apiBase = getApiBase();
+
+                if (apiBase && window.location.host) {
+                    // API 模式
+                    const response = await fetch(apiBase);
+                    if (!response.ok) {
+                        throw new Error(`API ${response.status}: ${response.statusText}`);
+                    }
+                    rawData = await response.json();
+                } else {
+                    // 文件模式 (fallback)
+                    const url = getDataUrl();
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    rawData = await response.json();
                 }
-                rawData = await response.json();
+
                 filteredData = JSON.parse(JSON.stringify(rawData));
                 renderAll();
             } catch (error) {
@@ -577,7 +606,8 @@
 
             // Estimate days based on data frequency
             const days = equity.length;
-            const years = days / (meta.freq === '1h' ? 250 * 24 : meta.freq === '5m' ? 250 * 48 : 250);
+            const freq = rawData.meta?.freq || '1d';
+            const years = days / (freq === '1h' ? 250 * 24 : freq === '5m' ? 250 * 48 : 250);
 
             return Math.pow(final / initial, 1 / years) - 1;
         }

@@ -95,11 +95,39 @@ runs/{run_id}/
 # 生成可视化报告
 caisen report <run_id> --output-dir ./runs
 
-# 查看报告
-open runs/{run_id}/index.html
+# 启动可视化服务（浏览器访问）
+caisen serve --port 8000 --output-dir ./runs
+
+# 直接打开指定回测结果
+caisen serve --run-id MACrossStrategy_20260518_1 --port 8000
 ```
 
-### 3. Annotation 接口约定
+### 3. Web 服务架构
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Browser   │────▶│   FastAPI   │────▶│  ./runs/    │
+│   (HTML)    │◀────│   Server   │◀────│  data.json  │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+#### API 端点
+
+| 端点 | 说明 |
+|------|------|
+| `GET /` | 前端入口页面 |
+| `GET /api/runs` | 列出所有回测结果 |
+| `GET /api/runs/{run_id}` | 获取回测详情 |
+| `GET /api/runs/{run_id}/visualization` | 获取可视化数据 |
+| `GET /api/runs/{run_id}/data.json` | 直接获取 data.json |
+| `GET /health` | 健康检查 |
+
+#### 前端访问模式
+
+1. **API 模式**：`http://host:port/?run_id={run_id}` → 前端从 `/api/runs/{run_id}/visualization` 获取数据
+2. **文件模式**：直接打开 `index.html?data=./data.json`（离线使用）
+
+### 4. Annotation 接口约定
 
 #### 通用字段
 - `type`: AnnotationType 枚举值
