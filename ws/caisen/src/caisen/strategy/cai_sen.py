@@ -32,6 +32,7 @@ class PatternType(Enum):
     TRIANGLE = auto()           # 三角整理
     FLAG = auto()               # 旗形整理
     RECTANGLE = auto()          # 矩形整理
+    ROUNDING_BOTTOM = auto()    # 圆弧底
 
 
 @dataclass
@@ -106,7 +107,8 @@ class CaiSenStrategy(Strategy):
                  breakdown_max_bars: int = 2,  # 瞬间破底最大K线数
                  triangle_enabled: bool = True,  # 三角整理启用
                  flag_enabled: bool = True,  # 旗形整理启用
-                 rectangle_enabled: bool = True):  # 矩形整理启用
+                 rectangle_enabled: bool = True,  # 矩形整理启用
+                 rounding_bottom_enabled: bool = True):  # 圆弧底启用
 
         # 参数验证（蔡森理论标准）
         self._validate_params(
@@ -131,6 +133,7 @@ class CaiSenStrategy(Strategy):
         self.triangle_enabled = triangle_enabled
         self.flag_enabled = flag_enabled
         self.rectangle_enabled = rectangle_enabled
+        self.rounding_bottom_enabled = rounding_bottom_enabled
 
     def _validate_params(self,
                          platform_min_bars: int,
@@ -368,6 +371,18 @@ class CaiSenStrategy(Strategy):
                     self.stop_loss = rectangle_signal.stop_loss
                     self.target_price = rectangle_signal.target
                     return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
+
+        # 0.11 检测圆弧底（无持仓时）
+        if self.position == 0 and self.rounding_bottom_enabled and self.state == PatternType.NONE:
+            rounding_signal = self._detect_rounding_bottom(bar)
+            if rounding_signal:
+                self.signals.append(rounding_signal)
+                self._add_annotation(bar, "圆弧底突破", "green")
+                self.position = 1
+                self.entry_price = rounding_signal.price
+                self.stop_loss = rounding_signal.stop_loss
+                self.target_price = rounding_signal.target
+                return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
 
         # 1. 检测整理平台
         if self.state == PatternType.NONE:
@@ -1155,6 +1170,69 @@ class CaiSenStrategy(Strategy):
                 stop_loss=stop_loss,
                 target=target,
                 reason="矩形整理向下跌破"
+            )
+
+        return None
+
+    def _detect_rounding_bottom(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测圆弧底形态
+
+        简化实现：检测价格先降后升的圆弧形状
+        - 至少15根K线形成形态
+        - 价格先下跌后上涨，形成圆弧
+        - 突破颈线（起点水平）买入
+        """
+        if len(self.bars) < 16:
+            return None
+
+        # 获取最近15根历史K线（不包括当前K线）
+        recent = self.bars[-16:-1]
+
+        # 颈线 = 形态起点价格
+        neckline = recent[0].high
+
+        # 找最低点（应在形态中间区域）
+        lows = [(i, b.low) for i, b in enumerate(recent)]
+        min_idx, min_low = min(lows, key=lambda x: x[1])
+
+        # 最低点应在中间区域（避免在两端）
+        if min_idx < 5 or min_idx > 10:
+            return None
+
+        # 检查前半段是否整体下降（从起点到最低点）
+        first_half = recent[:min_idx]
+        if len(first_half) < 3:
+            return None
+
+        # 起点应高于最低点
+        if recent[0].high <= min_low * 1.05:  # 至少5%跌幅
+            return None
+
+        # 检查后半段是否整体上升（从最低点到终点）
+        second_half = recent[min_idx:]
+        if len(second_half) < 3:
+            return None
+
+        # 终点应接近颈线（在颈线下方5%以内）
+        if recent[-1].high < neckline * 0.95:
+            return None
+
+        # 检查突破
+        if bar.close > neckline:
+            # 向上突破颈线
+            amplitude = neckline - min_low
+            target = bar.close + amplitude
+            stop_loss = min_low * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.ROUNDING_BOTTOM,
+                action="BUY",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="圆弧底突破颈线"
             )
 
         return None

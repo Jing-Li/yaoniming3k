@@ -22,8 +22,8 @@ class StrategyConfig:
 
 
 @dataclass
-class DataConfig:
-    """数据配置"""
+class RunDataConfig:
+    """数据配置（用于一次回测运行）"""
     symbol: str = ""
     freq: str = "1d"
     start: str = ""
@@ -46,7 +46,7 @@ class Config:
     """完整配置"""
     backtest: BacktestConfig = field(default_factory=BacktestConfig)
     strategy: StrategyConfig = field(default_factory=StrategyConfig)
-    data: DataConfig = field(default_factory=DataConfig)
+    data: RunDataConfig = field(default_factory=RunDataConfig)
     llm: Optional[LLMStrategyConfig] = None
     mode: str = "code"  # code 或 llm
     output_dir: str = "./runs"
@@ -64,7 +64,7 @@ class Config:
         """从字典创建"""
         backtest = BacktestConfig(**data.get("backtest", {}))
         strategy = StrategyConfig(**data.get("strategy", {}))
-        data_cfg = DataConfig(**data.get("data", {}))
+        data_cfg = RunDataConfig(**data.get("data", {}))
         llm = None
         if "llm" in data:
             llm = LLMStrategyConfig(**data["llm"])

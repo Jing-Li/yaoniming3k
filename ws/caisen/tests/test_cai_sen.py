@@ -594,3 +594,54 @@ def test_rectangle_consolidation_breakout():
     # 应产生买入信号
     assert order is not None, "向上突破矩形应产生买入信号"
     assert order.side == Side.BUY, "矩形突破应为买入信号"
+
+
+def test_rounding_bottom_breakout():
+    """测试圆弧底突破产生买入信号"""
+    from datetime import timedelta
+
+    # 禁用其他形态，只测试圆弧底
+    strategy = CaiSenStrategy(platform_min_bars=20,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=False,
+                              triangle_enabled=False,
+                              flag_enabled=False,
+                              rectangle_enabled=False,
+                              rounding_bottom_enabled=True)
+
+    base_time = datetime(2024, 1, 1)
+
+    # 构建圆弧底：价格缓慢下跌后缓慢上涨，形成圆弧形
+    # 颈线在120，底部在100附近
+    rounding_data = [
+        (0, 118, 122, 116, 120),   # 起点，颈线120
+        (1, 116, 120, 112, 118),   # 开始下跌
+        (2, 114, 118, 110, 116),   # 继续下跌
+        (3, 112, 116, 108, 114),   # 继续下跌
+        (4, 110, 114, 106, 112),   # 继续下跌
+        (5, 108, 112, 104, 110),   # 接近底部
+        (6, 106, 110, 102, 108),   # 接近底部
+        (7, 104, 108, 100, 106),   # 底部区域
+        (8, 102, 106, 98, 104),    # 底部区域（最低点100）
+        (9, 103, 107, 99, 105),    # 开始上涨
+        (10, 105, 109, 101, 107),  # 继续上涨
+        (11, 107, 111, 103, 109),  # 继续上涨
+        (12, 109, 113, 105, 111),  # 继续上涨
+        (13, 111, 115, 107, 113),  # 继续上涨
+        (14, 113, 117, 109, 115),  # 接近颈线
+    ]
+
+    for idx, open_p, high, low, close in rounding_data:
+        bar = make_bar(idx, open_p, high, low, close, volume=800)  # 底部缩量
+        bar.timestamp = base_time + timedelta(days=idx)
+        strategy.on_bar(bar)
+
+    # 向上突破颈线（120）
+    bar_breakout = make_bar(15, 118, 125, 118, 124, volume=1500)  # 突破放量
+    bar_breakout.timestamp = base_time + timedelta(days=15)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应产生买入信号
+    assert order is not None, "圆弧底突破颈线应产生买入信号"
+    assert order.side == Side.BUY, "圆弧底突破应为买入信号"

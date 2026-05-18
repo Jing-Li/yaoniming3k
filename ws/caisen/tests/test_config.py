@@ -3,7 +3,8 @@
 import tempfile
 from pathlib import Path
 
-from caisen.core.config import Config, BacktestConfig, StrategyConfig, DataConfig
+from caisen.core.config import Config, BacktestConfig, StrategyConfig, RunDataConfig
+from caisen.data.config import DataConfig
 
 
 def test_default_config():
@@ -46,7 +47,7 @@ def test_config_to_dict():
     config = Config(
         backtest=BacktestConfig(initial_capital=80000),
         strategy=StrategyConfig(name="test"),
-        data=DataConfig(symbol="TEST")
+        data=RunDataConfig(symbol="TEST")
     )
 
     d = config.to_dict()

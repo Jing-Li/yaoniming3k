@@ -1,6 +1,7 @@
 """LLM Strategy (LLM 驱动的策略)"""
 
 import json
+from collections import OrderedDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -9,6 +10,32 @@ from ..core.order import Order, Side
 from ..core.config import BacktestConfig
 from ..strategy.base import Strategy, Annotation, AnnotationType
 from ..llm.provider import LLMProvider
+
+
+class LRUCache:
+    """LRU 缓存实现"""
+
+    def __init__(self, maxsize: int = 10000):
+        self.maxsize = maxsize
+        self._cache: OrderedDict = OrderedDict()
+
+    def get(self, key: str) -> Optional[dict]:
+        """获取缓存，如果存在则移到末尾"""
+        if key in self._cache:
+            self._cache.move_to_end(key)
+            return self._cache[key]
+        return None
+
+    def set(self, key: str, value: dict) -> None:
+        """设置缓存，超容量时淘汰最旧的"""
+        if key in self._cache:
+            self._cache.move_to_end(key)
+        self._cache[key] = value
+        while len(self._cache) > self.maxsize:
+            self._cache.popitem(last=False)
+
+    def __len__(self) -> int:
+        return len(self._cache)
 
 
 class LLMStrategy(Strategy):
@@ -32,7 +59,7 @@ class LLMStrategy(Strategy):
 
         self.all_bars: List[Bar] = []
         self.annotations: List[Annotation] = []
-        self.response_cache: dict = {}
+        self.response_cache: LRUCache = LRUCache(max_cache_size)
         self.bar_index = 0
 
     def on_init(self, config: BacktestConfig) -> None:
@@ -40,7 +67,7 @@ class LLMStrategy(Strategy):
         self.all_bars = []
         self.annotations = []
         self.bar_index = 0
-        self.response_cache = {}
+        self.response_cache = LRUCache(self.max_cache_size)
 
     def on_bar(self, bar: Bar) -> Optional[Order]:
         """每根 K 线调用 LLM"""
@@ -49,8 +76,10 @@ class LLMStrategy(Strategy):
 
         # 检查缓存
         cache_key = f"{bar.symbol}_{bar.timestamp.isoformat()}"
-        if self.cache_enabled and cache_key in self.response_cache:
-            return self._parse_response_to_order(self.response_cache[cache_key])
+        if self.cache_enabled:
+            cached = self.response_cache.get(cache_key)
+            if cached:
+                return self._parse_response_to_order(cached)
 
         # 构造 prompt
         prompt = self._build_prompt(bar)
@@ -63,7 +92,7 @@ class LLMStrategy(Strategy):
 
         # 缓存
         if self.cache_enabled:
-            self.response_cache[cache_key] = result
+            self.response_cache.set(cache_key, result)
 
         # 记录标注
         for annotation in result.get("annotations", []):
