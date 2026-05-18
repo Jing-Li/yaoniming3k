@@ -284,3 +284,48 @@ def test_head_and_shoulders_bottom_pattern():
     # 验证信号
     hs_signals = [s for s in strategy.signals if "头肩底" in s.reason]
     assert len(hs_signals) >= 1
+
+
+def test_head_and_shoulders_top_pattern():
+    """测试头肩顶形态识别"""
+    from datetime import timedelta
+
+    # 使用较大的platform_min_bars，禁用W底、M头、头肩底以避免干扰
+    strategy = CaiSenStrategy(platform_min_bars=20, platform_max_amplitude=0.05,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=True)
+
+    # 头肩顶场景：左肩、头（最高）、右肩，然后跌破颈线
+    base_time = datetime(2024, 1, 1)
+
+    # 1. 左肩（4根K线）
+    for i in range(4):
+        bar = make_bar(i, 104, 106, 102, 105, volume=1000)
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 2. 头部（最高，4根K线）
+    for i in range(4, 8):
+        bar = make_bar(i, 106, 108, 104, 107, volume=1200)  # 放量上涨
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 3. 右肩（与左肩相近，4根K线）
+    for i in range(8, 12):
+        bar = make_bar(i, 104, 106, 102, 105, volume=800)  # 缩量反弹
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 4. 跌破颈线（确保高点与左肩差异>5%，避免被识别为右肩）
+    bar_breakdown = make_bar(12, 100, 100, 98, 98, volume=1500)  # 放量跌破，高点100与左肩106差异5.7%
+    bar_breakdown.timestamp = base_time + timedelta(days=12)
+    order = strategy.on_bar(bar_breakdown)
+
+    # 应该产生头肩顶卖出信号
+    assert order is not None
+    assert order.side == Side.SELL
+
+    # 验证信号
+    hs_signals = [s for s in strategy.signals if "头肩顶" in s.reason]
+    assert len(hs_signals) >= 1

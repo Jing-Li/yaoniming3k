@@ -27,6 +27,8 @@ class PatternType(Enum):
     FAKE_BREAKOUT = auto()      # 假突破（空头信号）
     W_BOTTOM = auto()           # W底
     M_TOP = auto()              # M头
+    HEAD_AND_SHOULDERS_BOTTOM = auto()  # 头肩底
+    HEAD_AND_SHOULDERS_TOP = auto()     # 头肩顶
 
 
 @dataclass
@@ -136,6 +138,12 @@ class CaiSenStrategy(Strategy):
         self.hs_bottom_head: Optional[Bar] = None
         self.hs_bottom_right_shoulder: Optional[Bar] = None
         self.hs_bottom_neckline: float = 0
+
+        # 头肩顶跟踪
+        self.hs_top_left_shoulder: Optional[Bar] = None
+        self.hs_top_head: Optional[Bar] = None
+        self.hs_top_right_shoulder: Optional[Bar] = None
+        self.hs_top_neckline: float = 0
         
     def on_init(self, config: BacktestConfig) -> None:
         """初始化，可从config获取参数"""
@@ -189,6 +197,18 @@ class CaiSenStrategy(Strategy):
                 self.stop_loss = hs_signal.stop_loss
                 self.target_price = hs_signal.target
                 return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+
+        # 0.7 检测头肩顶（无持仓时）
+        if self.position == 0 and self.head_and_shoulders_top_enabled and self.state == PatternType.NONE:
+            hs_signal = self._detect_head_and_shoulders_top(bar)
+            if hs_signal:
+                self.signals.append(hs_signal)
+                self._add_annotation(bar, "头肩顶跌破", "red")
+                self.position = -1
+                self.entry_price = hs_signal.price
+                self.stop_loss = hs_signal.stop_loss
+                self.target_price = hs_signal.target
+                return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
 
         # 1. 检测整理平台
         if self.state == PatternType.NONE:
@@ -464,12 +484,66 @@ class CaiSenStrategy(Strategy):
 
             return PatternSignal(
                 bar_index=len(self.bars) - 1,
-                pattern=PatternType.W_BOTTOM,  # 复用W_BOTTOM类型，或添加新类型
+                pattern=PatternType.HEAD_AND_SHOULDERS_BOTTOM,
                 action="BUY_1",
                 price=bar.close,
                 stop_loss=stop_loss,
                 target=target,
                 reason="头肩底形态确认，突破颈线"
+            )
+
+        return None
+
+    def _detect_head_and_shoulders_top(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测头肩顶形态
+
+        简化实现：检测左肩、头（最高）、右肩后的颈线跌破
+        """
+        if len(self.bars) < 12:
+            return None
+
+        # 获取最近12根K线
+        recent = self.bars[-12:]
+        highs = [b.high for b in recent]
+
+        # 找头部（最高点，在中间区域）
+        head_idx = 3 + highs[3:9].index(max(highs[3:9]))
+        head = recent[head_idx].high
+
+        # 找左肩（头部左侧，比头部低但不要太低）
+        left_shoulder_candidates = [b for b in recent[:head_idx] if b.high < head * 0.99 and b.high > head * 0.9]
+        if not left_shoulder_candidates:
+            return None
+        left_shoulder = max(left_shoulder_candidates, key=lambda b: b.high)
+
+        # 找右肩（头部右侧，与左肩相近）
+        right_shoulder_candidates = [b for b in recent[head_idx+1:] if abs(b.high - left_shoulder.high) / left_shoulder.high < 0.05]
+        if not right_shoulder_candidates:
+            return None
+        right_shoulder = max(right_shoulder_candidates, key=lambda b: b.high)
+
+        # 找颈线（左肩和右肩之间的低点）
+        left_idx = recent.index(left_shoulder)
+        right_idx = recent.index(right_shoulder)
+        between_bars = recent[left_idx:right_idx+1]
+        neckline = min(b.low for b in between_bars)
+
+        # 检查是否跌破颈线
+        if bar.close < neckline:
+            # 头肩顶确认
+            amplitude = head - neckline
+            target = neckline - amplitude
+            stop_loss = head * 1.01
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.HEAD_AND_SHOULDERS_TOP,
+                action="SELL",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="头肩顶形态确认，跌破颈线"
             )
 
         return None
