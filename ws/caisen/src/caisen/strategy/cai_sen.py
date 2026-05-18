@@ -85,7 +85,11 @@ class CaiSenStrategy(Strategy):
                  pullback_max_bars: int = 3,
                  volume_confirm: bool = True,
                  first_position_pct: float = 0.3,
-                 second_position_pct: float = 0.7):
+                 second_position_pct: float = 0.7,
+                 w_bottom_enabled: bool = True,
+                 m_top_enabled: bool = True,
+                 head_and_shoulders_bottom_enabled: bool = True,
+                 head_and_shoulders_top_enabled: bool = True):
 
         self.platform_min_bars = platform_min_bars
         self.platform_max_amplitude = platform_max_amplitude
@@ -94,6 +98,10 @@ class CaiSenStrategy(Strategy):
         self.volume_confirm = volume_confirm
         self.first_position_pct = first_position_pct
         self.second_position_pct = second_position_pct
+        self.w_bottom_enabled = w_bottom_enabled
+        self.m_top_enabled = m_top_enabled
+        self.head_and_shoulders_bottom_enabled = head_and_shoulders_bottom_enabled
+        self.head_and_shoulders_top_enabled = head_and_shoulders_top_enabled
         
         # 状态
         self.bars: List[Bar] = []
@@ -112,6 +120,22 @@ class CaiSenStrategy(Strategy):
         self.entry_price = 0.0
         self.stop_loss = 0.0
         self.target_price = 0.0  # 目标价（止盈）
+
+        # W底跟踪
+        self.w_bottom_first_low: Optional[Bar] = None
+        self.w_bottom_neckline: float = 0
+        self.w_bottom_second_low: Optional[Bar] = None
+
+        # M头跟踪
+        self.m_top_first_high: Optional[Bar] = None
+        self.m_top_neckline: float = 0
+        self.m_top_second_high: Optional[Bar] = None
+
+        # 头肩底跟踪
+        self.hs_bottom_left_shoulder: Optional[Bar] = None
+        self.hs_bottom_head: Optional[Bar] = None
+        self.hs_bottom_right_shoulder: Optional[Bar] = None
+        self.hs_bottom_neckline: float = 0
         
     def on_init(self, config: BacktestConfig) -> None:
         """初始化，可从config获取参数"""
@@ -129,7 +153,43 @@ class CaiSenStrategy(Strategy):
         5. 检测假突破（空头信号）
         """
         self.bars.append(bar)
-        
+
+        # 0. 检测W底（无平台时，优先于平台检测）
+        if self.position == 0 and self.w_bottom_enabled and self.state == PatternType.NONE:
+            w_signal = self._detect_w_bottom(bar)
+            if w_signal:
+                self.signals.append(w_signal)
+                self._add_annotation(bar, "W底突破", "green")
+                self.position = 1
+                self.entry_price = w_signal.price
+                self.stop_loss = w_signal.stop_loss
+                self.target_price = w_signal.target
+                return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+
+        # 0.5 检测M头（无持仓时）
+        if self.position == 0 and self.m_top_enabled and self.state == PatternType.NONE:
+            m_signal = self._detect_m_top(bar)
+            if m_signal:
+                self.signals.append(m_signal)
+                self._add_annotation(bar, "M头跌破", "red")
+                self.position = -1  # 空头持仓标记
+                self.entry_price = m_signal.price
+                self.stop_loss = m_signal.stop_loss
+                self.target_price = m_signal.target
+                return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
+
+        # 0.6 检测头肩底（无持仓时）
+        if self.position == 0 and self.head_and_shoulders_bottom_enabled and self.state == PatternType.NONE:
+            hs_signal = self._detect_head_and_shoulders_bottom(bar)
+            if hs_signal:
+                self.signals.append(hs_signal)
+                self._add_annotation(bar, "头肩底突破", "green")
+                self.position = 1
+                self.entry_price = hs_signal.price
+                self.stop_loss = hs_signal.stop_loss
+                self.target_price = hs_signal.target
+                return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+
         # 1. 检测整理平台
         if self.state == PatternType.NONE:
             self._detect_platform()
@@ -185,7 +245,7 @@ class CaiSenStrategy(Strategy):
                     self.position = 2
                     self.target_price = signal.target
                     return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.second_position_pct)
-        
+
         # 5. 检测假突破（空头信号）
         if self.state == PatternType.PLATFORM_FORMING:
             fake_breakout = self._detect_fake_breakout(bar)
@@ -193,7 +253,7 @@ class CaiSenStrategy(Strategy):
                 self.signals.append(fake_breakout)
                 self._add_annotation(bar, "假突破", "orange")
                 return Order(symbol=bar.symbol, side=Side.SELL, quantity=0)
-        
+
         # 持仓中：检查止盈止损
         if self.position > 0:
             # 止盈：到达目标价
@@ -360,22 +420,182 @@ class CaiSenStrategy(Strategy):
             # 需要缩量：当前成交量 < 平台平均
             return bar.volume < self.platform_avg_volume
     
+    def _detect_head_and_shoulders_bottom(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测头肩底形态
+
+        简化实现：检测左肩、头（最低）、右肩后的颈线突破
+        """
+        if len(self.bars) < 12:
+            return None
+
+        # 获取最近12根K线
+        recent = self.bars[-12:]
+        lows = [b.low for b in recent]
+
+        # 找头部（最低点，在中间区域）
+        head_idx = 3 + lows[3:9].index(min(lows[3:9]))
+        head = recent[head_idx].low
+
+        # 找左肩（头部左侧，比头部高）
+        left_shoulder_candidates = [b for b in recent[:head_idx] if b.low > head * 1.02 and b.low < head * 1.1]
+        if not left_shoulder_candidates:
+            return None
+        left_shoulder = max(left_shoulder_candidates, key=lambda b: b.low)
+
+        # 找右肩（头部右侧，与左肩相近）
+        right_shoulder_candidates = [b for b in recent[head_idx+1:] if abs(b.low - left_shoulder.low) / left_shoulder.low < 0.05]
+        if not right_shoulder_candidates:
+            return None
+        right_shoulder = max(right_shoulder_candidates, key=lambda b: b.low)
+
+        # 找颈线（左肩和右肩之间的高点）
+        left_idx = recent.index(left_shoulder)
+        right_idx = recent.index(right_shoulder)
+        between_bars = recent[left_idx:right_idx+1]
+        neckline = max(b.high for b in between_bars)
+
+        # 检查是否突破颈线
+        if bar.close > neckline:
+            # 头肩底确认
+            amplitude = neckline - head
+            target = neckline + amplitude
+            stop_loss = head * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.W_BOTTOM,  # 复用W_BOTTOM类型，或添加新类型
+                action="BUY_1",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="头肩底形态确认，突破颈线"
+            )
+
+        return None
+
+    def _detect_m_top(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测M头形态
+
+        简化实现：检测两个相近高点后的颈线跌破
+        """
+        if len(self.bars) < 10:
+            return None
+
+        # 获取最近10根K线
+        recent = self.bars[-10:]
+        highs = [b.high for b in recent]
+
+        # 找两个高点
+        # 第一个高点在前5根
+        first_high_idx = highs[:5].index(max(highs[:5]))
+        first_high = recent[first_high_idx].high
+
+        # 第二个高点在后5根，与第一个相近（±5%）
+        second_high_candidates = [b for b in recent[5:] if abs(b.high - first_high) / first_high < 0.05]
+        if not second_high_candidates:
+            return None
+
+        second_high_bar = max(second_high_candidates, key=lambda b: b.high)
+        second_high = second_high_bar.high
+
+        # 找颈线（两个高点之间的低点）
+        first_high_bar = recent[first_high_idx]
+        between_bars = [b for b in recent if b.timestamp > first_high_bar.timestamp and b.timestamp < second_high_bar.timestamp]
+        if not between_bars:
+            return None
+
+        neckline = min(b.low for b in between_bars)
+
+        # 检查是否跌破颈线
+        if bar.close < neckline:
+            # M头确认
+            amplitude = first_high - neckline
+            target = neckline - amplitude
+            stop_loss = max(first_high, second_high) * 1.01
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.M_TOP,
+                action="SELL",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="M头形态确认，跌破颈线"
+            )
+
+        return None
+
+    def _detect_w_bottom(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测W底形态
+
+        简化实现：检测两个相近低点后的颈线突破
+        """
+        if len(self.bars) < 10:
+            return None
+
+        # 获取最近10根K线
+        recent = self.bars[-10:]
+        lows = [b.low for b in recent]
+
+        # 找两个低点
+        # 第一个低点在前5根
+        first_low_idx = lows[:5].index(min(lows[:5]))
+        first_low = recent[first_low_idx].low
+
+        # 第二个低点在后5根，与第一个相近（±5%）
+        second_low_candidates = [b for b in recent[5:] if abs(b.low - first_low) / first_low < 0.05]
+        if not second_low_candidates:
+            return None
+
+        second_low_bar = min(second_low_candidates, key=lambda b: b.low)
+        second_low = second_low_bar.low
+
+        # 找颈线（两个低点之间的高点）
+        first_low_bar = recent[first_low_idx]
+        between_bars = [b for b in recent if b.timestamp > first_low_bar.timestamp and b.timestamp < second_low_bar.timestamp]
+        if not between_bars:
+            return None
+
+        neckline = max(b.high for b in between_bars)
+
+        # 检查是否突破颈线
+        if bar.close > neckline:
+            # W底确认
+            amplitude = neckline - first_low
+            target = neckline + amplitude
+            stop_loss = min(first_low, second_low) * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.W_BOTTOM,
+                action="BUY_1",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="W底形态确认，突破颈线"
+            )
+
+        return None
+
     def _calculate_target(self) -> float:
         """
         等幅测距计算目标价
-        
+
         方法：从颈线到形态极值点的垂直距离，突破后向上投射
         破底翻：从平台下沿到破底低点的距离，加到平台上沿
         """
         if not self.platform:
             return 0
-        
+
         # 等幅距离 = 平台下沿 - 破底低点
         amplitude = self.platform.lower - self.breakdown_low
-        
+
         # 目标价 = 平台上沿 + 等幅距离
         target = self.platform.upper + amplitude
-        
+
         return target
     
     def _add_annotation(self, bar: Bar, label: str, color: str):

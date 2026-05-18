@@ -111,23 +111,24 @@ class LocalDataLoader(BaseDataLoader):
 
             # Check if it's a single date file (8 digits)
             if len(stem) == 8 and stem.isdigit():
-                date_str = stem
+                if start_cmp and stem < start_cmp:
+                    continue
+                if end_cmp and stem > end_cmp:
+                    continue
+                filtered.append(pf)
+
             # Check if it's a range file (YYYYMMDD_YYYYMMDD)
             elif "_" in stem:
                 parts = stem.split("_")
-                if len(parts) == 2:
-                    # Use start date of the range
-                    date_str = parts[0]
-                else:
-                    continue
-            else:
-                continue
-
-            if start_cmp and date_str < start_cmp:
-                continue
-            if end_cmp and date_str > end_cmp:
-                continue
-            filtered.append(pf)
+                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                    file_start = parts[0]
+                    file_end = parts[1]
+                    # File range must overlap with query range
+                    if start_cmp and file_end < start_cmp:
+                        continue
+                    if end_cmp and file_start > end_cmp:
+                        continue
+                    filtered.append(pf)
 
         return filtered
 

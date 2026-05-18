@@ -152,3 +152,135 @@ def test_stop_loss():
     assert order is not None
     assert order.side == Side.SELL
     assert strategy.position == 0
+
+
+def test_w_bottom_pattern():
+    """测试W底形态识别"""
+    from datetime import timedelta
+
+    # 使用较大的platform_min_bars，使第一个底部不构成平台
+    strategy = CaiSenStrategy(platform_min_bars=20, platform_max_amplitude=0.05, w_bottom_enabled=True)
+
+    # W底场景：两个低点，中间有反弹
+    # 第一个低点 @ 95，反弹到颈线 @ 100，第二个低点 @ 96，突破颈线
+
+    base_time = datetime(2024, 1, 1)
+
+    # 1. 第一个底部区域（4根K线，不足以形成平台）
+    for i in range(4):
+        bar = make_bar(i, 96, 98, 94, 95, volume=1000)
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 2. 反弹到颈线
+    for i in range(4, 7):
+        bar = make_bar(i, 96, 101, 98, 100, volume=800)  # 缩量反弹
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 3. 第二个底部（略高于第一个，缩量）
+    for i in range(7, 10):
+        bar = make_bar(i, 97, 99, 95, 96, volume=600)  # 缩量筑底
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 4. 突破颈线
+    bar_breakout = make_bar(10, 100, 103, 100, 102, volume=1500)  # 放量突破
+    bar_breakout.timestamp = base_time + timedelta(days=10)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应该产生W底买入信号
+    assert order is not None
+    assert order.side == Side.BUY
+
+    # 验证信号
+    w_signals = [s for s in strategy.signals if "W底" in s.reason]
+    assert len(w_signals) >= 1
+
+
+def test_m_top_pattern():
+    """测试M头形态识别"""
+    from datetime import timedelta
+
+    # 使用较大的platform_min_bars，使第一个顶部不构成平台
+    strategy = CaiSenStrategy(platform_min_bars=20, platform_max_amplitude=0.05, m_top_enabled=True)
+
+    # M头场景：两个高点，中间有回调
+    # 第一个高点 @ 105，回调到颈线 @ 100，第二个高点 @ 104，跌破颈线
+
+    base_time = datetime(2024, 1, 1)
+
+    # 1. 第一个顶部区域（4根K线，不足以形成平台）
+    for i in range(4):
+        bar = make_bar(i, 104, 106, 102, 105, volume=1000)
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 2. 回调到颈线
+    for i in range(4, 7):
+        bar = make_bar(i, 102, 101, 99, 100, volume=800)  # 缩量回调
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 3. 第二个顶部（略低于第一个，缩量）
+    for i in range(7, 10):
+        bar = make_bar(i, 103, 105, 101, 104, volume=600)  # 缩量筑顶
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 4. 跌破颈线
+    bar_breakdown = make_bar(10, 100, 99, 98, 98, volume=1500)  # 放量跌破
+    bar_breakdown.timestamp = base_time + timedelta(days=10)
+    order = strategy.on_bar(bar_breakdown)
+
+    # 应该产生M头卖出信号
+    assert order is not None
+    assert order.side == Side.SELL
+
+    # 验证信号
+    m_signals = [s for s in strategy.signals if "M头" in s.reason]
+    assert len(m_signals) >= 1
+
+
+def test_head_and_shoulders_bottom_pattern():
+    """测试头肩底形态识别"""
+    from datetime import timedelta
+
+    # 使用较大的platform_min_bars，禁用W底和M头以避免干扰
+    strategy = CaiSenStrategy(platform_min_bars=20, platform_max_amplitude=0.05,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=True)
+
+    # 头肩底场景：左肩、头（最低）、右肩，然后突破颈线
+    base_time = datetime(2024, 1, 1)
+
+    # 1. 左肩（4根K线，确保有足够数据）
+    for i in range(4):
+        bar = make_bar(i, 96, 98, 94, 95, volume=1000)
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 2. 头部（最低，4根K线）
+    for i in range(4, 8):
+        bar = make_bar(i, 94, 95, 92, 93, volume=1200)  # 放量下跌
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 3. 右肩（与左肩相近，4根K线）
+    for i in range(8, 12):
+        bar = make_bar(i, 95, 97, 93, 95, volume=800)  # 缩量反弹
+        bar.timestamp = base_time + timedelta(days=i)
+        strategy.on_bar(bar)
+
+    # 4. 突破颈线（确保低点与左肩差异>5%，避免被识别为右肩）
+    bar_breakout = make_bar(12, 100, 105, 100, 104, volume=1500)  # 放量突破，低点100与左肩94差异6.4%
+    bar_breakout.timestamp = base_time + timedelta(days=12)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应该产生头肩底买入信号
+    assert order is not None
+    assert order.side == Side.BUY
+
+    # 验证信号
+    hs_signals = [s for s in strategy.signals if "头肩底" in s.reason]
+    assert len(hs_signals) >= 1
