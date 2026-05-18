@@ -96,12 +96,18 @@ reports/
 
 | type | data 字段 | 说明 |
 |------|----------|------|
-| `buy_signal` | `price`, `label`, `color` | 买入信号 |
-| `sell_signal` | `price`, `label`, `color` | 卖出信号 |
-| `pattern_mark` | `pattern`, `points`, `neckline`, `label`, `color` | 形态标注 |
+| `buy_signal` | `price`, `label`, `color` | 买入信号，绿色向上三角 |
+| `sell_signal` | `price`, `label`, `color` | 卖出信号，红色向下三角 |
+| `neutral_signal` | `price`, `label`, `color` | 中性信号，灰色菱形 |
+| `pattern_mark` | `pattern`, `points`, `neckline`, `label`, `color` | 形态标注（头肩底、W底等） |
 | `horizontal_line` | `price`, `label`, `color` | 水平线 |
-| `trend_line` | `start`, `end`, `label`, `color` | 趋势线 |
+| `trend_line` | `start`, `end`, `label`, `color` | 趋势线（起点+终点） |
+| `support_zone` | `price`, `label`, `color` | 支撑区，绿色虚线 |
+| `resistance_zone` | `price`, `label`, `color` | 阻力区，红色虚线 |
+| `volume_spike` | `timestamp`, `data` | 成交量突增标记（由成交量系列处理） |
 | `text_label` | `text`, `price`, `color` | 文本标注 |
+| `rectangle` | `start`, `end`, `color` | 矩形区间（起点+终点） |
+| `polygon` | `points`, `label`, `color` | 多边形（多点连线） |
 
 #### pattern_mark 完整结构
 

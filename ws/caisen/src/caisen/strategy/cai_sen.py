@@ -33,6 +33,7 @@ class PatternType(Enum):
     FLAG = auto()               # 旗形整理
     RECTANGLE = auto()          # 矩形整理
     ROUNDING_BOTTOM = auto()    # 圆弧底
+    CUP_HANDLE = auto()         # 杯柄形态
 
 
 @dataclass
@@ -108,7 +109,8 @@ class CaiSenStrategy(Strategy):
                  triangle_enabled: bool = True,  # 三角整理启用
                  flag_enabled: bool = True,  # 旗形整理启用
                  rectangle_enabled: bool = True,  # 矩形整理启用
-                 rounding_bottom_enabled: bool = True):  # 圆弧底启用
+                 rounding_bottom_enabled: bool = True,  # 圆弧底启用
+                 cup_handle_enabled: bool = True):  # 杯柄形态启用
 
         # 参数验证（蔡森理论标准）
         self._validate_params(
@@ -134,6 +136,7 @@ class CaiSenStrategy(Strategy):
         self.flag_enabled = flag_enabled
         self.rectangle_enabled = rectangle_enabled
         self.rounding_bottom_enabled = rounding_bottom_enabled
+        self.cup_handle_enabled = cup_handle_enabled
 
     def _validate_params(self,
                          platform_min_bars: int,
@@ -382,6 +385,18 @@ class CaiSenStrategy(Strategy):
                 self.entry_price = rounding_signal.price
                 self.stop_loss = rounding_signal.stop_loss
                 self.target_price = rounding_signal.target
+                return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+
+        # 0.12 检测杯柄形态（无持仓时）
+        if self.position == 0 and self.cup_handle_enabled and self.state == PatternType.NONE:
+            cup_signal = self._detect_cup_handle(bar)
+            if cup_signal:
+                self.signals.append(cup_signal)
+                self._add_annotation(bar, "杯柄突破", "green")
+                self.position = 1
+                self.entry_price = cup_signal.price
+                self.stop_loss = cup_signal.stop_loss
+                self.target_price = cup_signal.target
                 return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
 
         # 1. 检测整理平台
@@ -1233,6 +1248,79 @@ class CaiSenStrategy(Strategy):
                 stop_loss=stop_loss,
                 target=target,
                 reason="圆弧底突破颈线"
+            )
+
+        return None
+
+    def _detect_cup_handle(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测杯柄形态
+
+        简化实现：杯部（圆弧底）+ 柄部（小幅回调）
+        - 杯部：15-20根K线，圆弧形下跌上涨
+        - 柄部：5-10根K线，小幅回调（不超过杯深1/3）
+        - 突破杯口买入
+        """
+        if len(self.bars) < 25:
+            return None
+
+        # 获取最近24根历史K线（不包括当前K线）
+        recent = self.bars[-25:-1]
+
+        # 杯口水平（阻力位）= 形态起点
+        cup_rim = recent[0].high
+
+        # 找杯底最低点（应在杯部区域）
+        cup_section = recent[:19]  # 前19根为杯部
+        cup_lows = [(i, b.low) for i, b in enumerate(cup_section)]
+        cup_min_idx, cup_min_low = min(cup_lows, key=lambda x: x[1])
+
+        # 杯底应在杯部中间区域
+        if cup_min_idx < 7 or cup_min_idx > 12:
+            return None
+
+        # 杯深至少5%
+        cup_depth = cup_rim - cup_min_low
+        if cup_depth < cup_rim * 0.05:
+            return None
+
+        # 检查杯部终点是否回到杯口附近（在杯口下方3%以内）
+        cup_end_idx = 18  # 杯部结束索引
+        if recent[cup_end_idx].high < cup_rim * 0.97:
+            return None
+
+        # 柄部区域（后5根K线）
+        handle_section = recent[19:]
+        if len(handle_section) < 5:
+            return None
+
+        # 找柄部最低点
+        handle_lows = [b.low for b in handle_section]
+        handle_min_low = min(handle_lows)
+
+        # 柄部回调不应超过杯深的1/3
+        handle_retracement = cup_rim - handle_min_low
+        if handle_retracement > cup_depth / 3:
+            return None
+
+        # 柄部终点应接近杯口（在杯口下方2%以内）
+        if recent[-1].high < cup_rim * 0.98:
+            return None
+
+        # 检查突破杯口
+        if bar.close > cup_rim:
+            # 向上突破杯口
+            target = bar.close + cup_depth
+            stop_loss = handle_min_low * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.CUP_HANDLE,
+                action="BUY",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="杯柄形态突破杯口"
             )
 
         return None

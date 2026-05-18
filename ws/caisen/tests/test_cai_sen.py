@@ -645,3 +645,67 @@ def test_rounding_bottom_breakout():
     # 应产生买入信号
     assert order is not None, "圆弧底突破颈线应产生买入信号"
     assert order.side == Side.BUY, "圆弧底突破应为买入信号"
+
+
+def test_cup_and_handle_breakout():
+    """测试杯柄形态突破产生买入信号"""
+    from datetime import timedelta
+
+    # 禁用其他形态，只测试杯柄形态
+    strategy = CaiSenStrategy(platform_min_bars=30,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=False,
+                              triangle_enabled=False,
+                              flag_enabled=False,
+                              rectangle_enabled=False,
+                              rounding_bottom_enabled=False,
+                              cup_handle_enabled=True)
+
+    base_time = datetime(2024, 1, 1)
+
+    # 构建杯柄形态：杯部（圆弧下跌上涨）+ 柄部（小幅回调）
+    # 杯口在120，杯底在100，柄部回调到110
+    cup_handle_data = [
+        # 杯部：圆弧下跌
+        (0, 118, 122, 116, 120),   # 杯口起点
+        (1, 116, 120, 112, 118),
+        (2, 114, 118, 110, 116),
+        (3, 112, 116, 108, 114),
+        (4, 110, 114, 106, 112),
+        (5, 108, 112, 104, 110),
+        (6, 106, 110, 102, 108),
+        (7, 104, 108, 100, 106),   # 接近杯底
+        (8, 102, 106, 98, 104),
+        (9, 101, 105, 97, 103),
+        (10, 102, 106, 98, 104),   # 杯底（最低点100）
+        # 杯部：圆弧上涨
+        (11, 104, 108, 100, 106),
+        (12, 106, 110, 102, 108),
+        (13, 108, 112, 104, 110),
+        (14, 110, 114, 106, 112),
+        (15, 112, 116, 108, 114),
+        (16, 114, 118, 110, 116),
+        (17, 116, 120, 112, 118),
+        (18, 118, 122, 116, 120),  # 回到杯口
+        # 柄部：小幅回调（不超过杯部涨幅的1/3）
+        (19, 119, 122, 116, 120),  # 柄部起点接近杯口
+        (20, 118, 121, 115, 119),
+        (21, 117, 120, 114, 118),  # 柄部低点114（回调8，杯深25，符合1/3原则）
+        (22, 118, 121, 115, 119),
+        (23, 119, 122, 116, 121),  # 回到杯口附近（121 > 122*0.98=119.6）
+    ]
+
+    for idx, open_p, high, low, close in cup_handle_data:
+        bar = make_bar(idx, open_p, high, low, close, volume=800)
+        bar.timestamp = base_time + timedelta(days=idx)
+        strategy.on_bar(bar)
+
+    # 向上突破杯口（120）
+    bar_breakout = make_bar(24, 119, 126, 119, 125, volume=1500)
+    bar_breakout.timestamp = base_time + timedelta(days=24)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应产生买入信号
+    assert order is not None, "杯柄形态突破杯口应产生买入信号"
+    assert order.side == Side.BUY, "杯柄形态突破应为买入信号"

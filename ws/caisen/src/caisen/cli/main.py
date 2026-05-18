@@ -71,7 +71,8 @@ def cli():
 @click.option("--end", default="2024-12-31", help="结束日期")
 @click.option("--config", "-c", help="配置文件路径")
 @click.option("--output-dir", default="./runs", help="输出目录")
-def run(strategy: str, symbol: str, start: str, end: str, config: str, output_dir: str):
+@click.option("--mock", is_flag=True, help="使用模拟数据运行测试")
+def run(strategy: str, symbol: str, start: str, end: str, config: str, output_dir: str, mock: bool):
     """运行回测"""
 
     # 加载配置
@@ -96,24 +97,33 @@ def run(strategy: str, symbol: str, start: str, end: str, config: str, output_di
             click.echo(f"Strategy '{strategy}' not found")
             sys.exit(1)
 
-    # 加载数据
-    data_cfg = DataConfig(
-        symbol=symbol,
-        start=start,
-        end=end,
-        data_dir=cfg.data.get("data_dir", "./data") if isinstance(cfg.data, dict) else cfg.data.data_dir if hasattr(cfg.data, 'data_dir') else "./data",
-    )
-    try:
-        bars = load_bars(data_cfg)
-    except DataNotFoundError:
-        click.echo("No data found. Use --mock flag to generate test data.")
-        sys.exit(1)
+    # 加载数据或使用 mock 数据
+    if mock:
+        from datetime import date
+        start_date = datetime.strptime(start, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end, "%Y-%m-%d").date()
+        days = (end_date - start_date).days + 1
+        bars = generate_mock_bars(symbol, days)
+        click.echo(f"Generated {len(bars)} mock bars for {symbol}")
+    else:
+        data_cfg = DataConfig(
+            symbol=symbol,
+            start=start,
+            end=end,
+            data_dir=cfg.data.get("data_dir", "./data") if isinstance(cfg.data, dict) else cfg.data.data_dir if hasattr(cfg.data, 'data_dir') else "./data",
+        )
+        try:
+            bars = load_bars(data_cfg)
+        except DataNotFoundError:
+            click.echo("No data found. Use --mock flag to generate test data.")
+            sys.exit(1)
 
-    if not bars:
-        click.echo("No data found")
-        sys.exit(1)
+        if not bars:
+            click.echo("No data found")
+            sys.exit(1)
 
-    click.echo(f"Loaded {len(bars)} bars for {symbol}")
+        click.echo(f"Loaded {len(bars)} bars for {symbol}")
+
     click.echo(f"Running backtest with strategy: {type(strat).__name__}")
 
     # 运行回测

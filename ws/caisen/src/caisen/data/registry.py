@@ -1,10 +1,14 @@
 """Registry for data source plugins."""
 
+import threading
 from typing import Dict, Optional, Type
 
 from .loader import BaseDataLoader, DataLoader
 from .local import LocalDataLoader
 from .exceptions import DataSourceNotAvailableError
+
+# Thread-safe lock for registry operations
+_registry_lock = threading.Lock()
 
 # Global registry for datasources
 _datasources: Dict[str, Type[DataLoader]] = {
@@ -22,7 +26,8 @@ def register_datasource(name: str, loader_class: Type[DataLoader]) -> None:
         name: Unique name for the datasource
         loader_class: Class implementing DataLoader protocol
     """
-    _datasources[name] = loader_class
+    with _registry_lock:
+        _datasources[name] = loader_class
 
 
 def set_active_datasource(name: str) -> None:
@@ -34,10 +39,11 @@ def set_active_datasource(name: str) -> None:
     Raises:
         ValueError: Unknown datasource name
     """
-    if name not in _datasources:
-        raise ValueError(f"Unknown datasource: {name}. Available: {list(_datasources.keys())}")
-    global _active_datasource
-    _active_datasource = name
+    with _registry_lock:
+        if name not in _datasources:
+            raise ValueError(f"Unknown datasource: {name}. Available: {list(_datasources.keys())}")
+        global _active_datasource
+        _active_datasource = name
 
 
 def get_datasource(name: str) -> DataLoader:
@@ -52,9 +58,10 @@ def get_datasource(name: str) -> DataLoader:
     Raises:
         DataSourceNotAvailableError: Unknown datasource
     """
-    if name not in _datasources:
-        raise DataSourceNotAvailableError(f"Unknown datasource: {name}")
-    return _datasources[name]()
+    with _registry_lock:
+        if name not in _datasources:
+            raise DataSourceNotAvailableError(f"Unknown datasource: {name}")
+        return _datasources[name]()
 
 
 def load_datasource(name: Optional[str] = None) -> DataLoader:
@@ -72,12 +79,13 @@ def load_datasource(name: Optional[str] = None) -> DataLoader:
     # Use specified name or active datasource or fallback to local
     target = name or _active_datasource or "local"
 
-    if target not in _datasources:
-        raise DataSourceNotAvailableError(
-            f"Datasource '{target}' not found. Available: {list(_datasources.keys())}"
-        )
+    with _registry_lock:
+        if target not in _datasources:
+            raise DataSourceNotAvailableError(
+                f"Datasource '{target}' not found. Available: {list(_datasources.keys())}"
+            )
 
-    return _datasources[target]()
+        return _datasources[target]()
 
 
 def list_datasources() -> list:
@@ -86,7 +94,8 @@ def list_datasources() -> list:
     Returns:
         List of datasource names
     """
-    return list(_datasources.keys())
+    with _registry_lock:
+        return list(_datasources.keys())
 
 
 def get_active_datasource() -> Optional[str]:
@@ -95,4 +104,5 @@ def get_active_datasource() -> Optional[str]:
     Returns:
         Name of active datasource or None
     """
-    return _active_datasource
+    with _registry_lock:
+        return _active_datasource
