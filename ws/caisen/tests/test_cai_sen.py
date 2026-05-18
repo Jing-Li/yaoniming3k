@@ -406,3 +406,46 @@ def test_caisen_instant_breakdown():
     strategy2.on_bar(bar_breakdown)
 
     assert strategy2.breakdown_bar is None, "平台形成后3根K线才破底不应被识别为瞬间破底"
+
+
+def test_symmetric_triangle_breakout():
+    """测试对称三角形向上突破产生买入信号"""
+    from datetime import timedelta
+
+    # 禁用其他形态，只测试三角整理
+    strategy = CaiSenStrategy(platform_min_bars=20,  # 设置较大值避免平台检测干扰
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=False,
+                              triangle_enabled=True)
+
+    base_time = datetime(2024, 1, 1)
+
+    # 构建对称三角形：高点递减、低点递增，收敛
+    # 严格递减高点和递增低点形成三角形
+    triangle_data = [
+        (0, 110, 120, 100, 110),   # 高点120
+        (1, 94, 104, 84, 89),      # 低点84
+        (2, 108, 118, 98, 108),    # 高点118
+        (3, 96, 106, 86, 91),      # 低点86
+        (4, 106, 116, 96, 106),    # 高点116
+        (5, 98, 108, 88, 93),      # 低点88
+        (6, 104, 114, 94, 104),    # 高点114
+        (7, 100, 110, 90, 95),     # 低点90
+        (8, 102, 112, 92, 102),    # 高点112
+        (9, 102, 112, 92, 97),     # 低点92，收盘价97（在三角形内）
+    ]
+
+    for idx, open_p, high, low, close in triangle_data:
+        bar = make_bar(idx, open_p, high, low, close, volume=1000)
+        bar.timestamp = base_time + timedelta(days=idx)
+        strategy.on_bar(bar)
+
+    # 向上突破三角形上沿（下降趋势线约110）
+    bar_breakout = make_bar(10, 110, 125, 110, 120, volume=1500)
+    bar_breakout.timestamp = base_time + timedelta(days=10)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应产生买入信号
+    assert order is not None, "向上突破三角形应产生买入信号"
+    assert order.side == Side.BUY, "三角形突破应为买入信号"

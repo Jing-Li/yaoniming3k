@@ -69,10 +69,19 @@ class LLMStrategy(Strategy):
         for annotation in result.get("annotations", []):
             ann_type = annotation.get("type", "marker")
             # 映射到 AnnotationType
-            try:
-                ann_type_enum = AnnotationType(ann_type)
-            except ValueError:
-                ann_type_enum = AnnotationType.TEXT_LABEL
+            type_mapping = {
+                "line": AnnotationType.TREND_LINE,
+                "marker": AnnotationType.TEXT_LABEL,
+                "buy": AnnotationType.BUY_SIGNAL,
+                "sell": AnnotationType.SELL_SIGNAL,
+                "horizontal": AnnotationType.HORIZONTAL_LINE,
+            }
+            ann_type_enum = type_mapping.get(ann_type)
+            if ann_type_enum is None:
+                try:
+                    ann_type_enum = AnnotationType(ann_type)
+                except ValueError:
+                    ann_type_enum = AnnotationType.TEXT_LABEL
 
             self.annotations.append(Annotation(
                 type=ann_type_enum,

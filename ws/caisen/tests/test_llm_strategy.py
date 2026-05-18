@@ -8,6 +8,7 @@ from caisen.core.config import BacktestConfig
 from caisen.llm.provider import LLMProvider
 from caisen.llm.openai import OpenAIProvider
 from caisen.strategy.llm_strategy import LLMStrategy
+from caisen.strategy.base import AnnotationType
 
 
 class MockProvider(LLMProvider):
@@ -121,5 +122,5 @@ def test_llm_strategy_collects_annotations():
 
     annotations = strategy.get_annotations()
     assert len(annotations) == 1
-    assert annotations[0].type == "line"
+    assert annotations[0].type == AnnotationType.TREND_LINE
     assert annotations[0].label == "支撑线"
