@@ -34,6 +34,7 @@ class PatternType(Enum):
     RECTANGLE = auto()          # 矩形整理
     ROUNDING_BOTTOM = auto()    # 圆弧底
     CUP_HANDLE = auto()         # 杯柄形态
+    BREAKOUT_PULLBACK = auto()  # 过前高
 
 
 @dataclass
@@ -109,8 +110,9 @@ class CaiSenStrategy(Strategy):
                  triangle_enabled: bool = True,  # 三角整理启用
                  flag_enabled: bool = True,  # 旗形整理启用
                  rectangle_enabled: bool = True,  # 矩形整理启用
-                 rounding_bottom_enabled: bool = True,  # 圆弧底启用
-                 cup_handle_enabled: bool = True):  # 杯柄形态启用
+rounding_bottom_enabled: bool = True,  # 圆弧底启用
+cup_handle_enabled: bool = True,  # 杯柄形态启用
+breakout_pullback_enabled: bool = True):  # 过前高启用
 
         # 参数验证（蔡森理论标准）
         self._validate_params(
@@ -137,6 +139,7 @@ class CaiSenStrategy(Strategy):
         self.rectangle_enabled = rectangle_enabled
         self.rounding_bottom_enabled = rounding_bottom_enabled
         self.cup_handle_enabled = cup_handle_enabled
+        self.breakout_pullback_enabled = breakout_pullback_enabled
 
     def _validate_params(self,
                          platform_min_bars: int,
@@ -397,6 +400,18 @@ class CaiSenStrategy(Strategy):
                 self.entry_price = cup_signal.price
                 self.stop_loss = cup_signal.stop_loss
                 self.target_price = cup_signal.target
+                return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+
+        # 0.13 检测过前高（无持仓时）
+        if self.position == 0 and self.breakout_pullback_enabled and self.state == PatternType.NONE:
+            breakout_signal = self._detect_breakout_pullback(bar)
+            if breakout_signal:
+                self.signals.append(breakout_signal)
+                self._add_annotation(bar, "过前高", "green")
+                self.position = 1
+                self.entry_price = breakout_signal.price
+                self.stop_loss = breakout_signal.stop_loss
+                self.target_price = breakout_signal.target
                 return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
 
         # 1. 检测整理平台
@@ -1321,6 +1336,66 @@ class CaiSenStrategy(Strategy):
                 stop_loss=stop_loss,
                 target=target,
                 reason="杯柄形态突破杯口"
+            )
+
+        return None
+
+    def _detect_breakout_pullback(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测过前高形态
+
+        简化实现：
+        - 记录最近10根K线的高点作为前期高点
+        - 突破前期高点后，3-5根K线内回踩不破前高
+        - 再突破买入
+        """
+        if len(self.bars) < 20:
+            return None
+
+        # 获取最近20根历史K线（不包括当前K线）
+        recent = self.bars[-20:-1]
+
+        # 前期高点 = 前10根K线的最高点（突破前的整理区间）
+        prior_section = recent[:10]
+        prior_high = max(b.high for b in prior_section)
+
+        # 找突破点（在后10根K线中找收盘价突破前期高点的位置）
+        breakout_section = recent[10:]
+        breakout_idx = None
+        for i, b in enumerate(breakout_section):
+            if b.close > prior_high:
+                breakout_idx = 10 + i
+                break
+
+        if breakout_idx is None:
+            return None
+
+        # 突破后需要有回踩（至少2根K线）
+        if len(recent) - breakout_idx < 3:
+            return None
+
+        # 检查回踩是否跌破前高
+        pullback_section = recent[breakout_idx + 1:]
+        for b in pullback_section:
+            if b.low < prior_high * 0.99:  # 允许1%误差
+                return None
+
+        # 检查当前是否再次突破（收盘价高于突破点）
+        breakout_price = recent[breakout_idx].close
+        if bar.close > breakout_price:
+            # 计算目标价（等幅测距）
+            amplitude = breakout_price - prior_high
+            target = bar.close + amplitude
+            stop_loss = prior_high * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.BREAKOUT_PULLBACK,
+                action="BUY",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="过前高形态确认"
             )
 
         return None

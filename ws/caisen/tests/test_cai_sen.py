@@ -709,3 +709,70 @@ def test_cup_and_handle_breakout():
     # 应产生买入信号
     assert order is not None, "杯柄形态突破杯口应产生买入信号"
     assert order.side == Side.BUY, "杯柄形态突破应为买入信号"
+
+
+def test_breakout_with_pullback():
+    """测试过前高形态产生买入信号"""
+    from datetime import timedelta
+
+    # 禁用其他形态，只测试过前高
+    strategy = CaiSenStrategy(platform_min_bars=30,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=False,
+                              triangle_enabled=False,
+                              flag_enabled=False,
+                              rectangle_enabled=False,
+                              rounding_bottom_enabled=False,
+                              cup_handle_enabled=False,
+                              breakout_pullback_enabled=True)
+
+    base_time = datetime(2024, 1, 1)
+
+    # 构建过前高形态：前期高点 -> 突破 -> 回踩 -> 再突破
+    # 前期高点在120
+    breakout_data = [
+        # 前期整理（5根K线，用于满足20根要求）
+        (0, 100, 105, 95, 102),
+        (1, 102, 107, 97, 104),
+        (2, 104, 109, 99, 106),
+        (3, 106, 111, 101, 108),
+        (4, 108, 113, 103, 110),
+        # 形成高点120（10根K线）
+        (5, 105, 110, 100, 108),
+        (6, 107, 112, 102, 110),
+        (7, 109, 114, 104, 112),
+        (8, 110, 115, 105, 113),
+        (9, 112, 117, 107, 115),
+        (10, 114, 119, 109, 117),
+        (11, 115, 120, 110, 118),
+        (12, 116, 121, 111, 119),
+        (13, 114, 120, 112, 117),
+        (14, 117, 122, 113, 120),   # 前期高点122
+        # 突破前期高点
+        (15, 121, 126, 120, 125),   # 突破122，创新高
+        (16, 124, 128, 123, 127),   # 继续上涨
+        # 回踩（不跌破前高122）
+        (17, 125, 127, 123, 124),   # 回调到124（高于122）
+        (18, 123, 126, 122, 125),   # 继续回调，但不破122
+        # 再突破
+        (19, 125, 130, 125, 129),   # 再次突破，过前高
+    ]
+
+    for idx, open_p, high, low, close in breakout_data:
+        bar = make_bar(idx, open_p, high, low, close, volume=1000)
+        bar.timestamp = base_time + timedelta(days=idx)
+        strategy.on_bar(bar)
+
+    # 再突破确认
+    bar_confirm = make_bar(20, 128, 135, 128, 134, volume=1500)
+    bar_confirm.timestamp = base_time + timedelta(days=20)
+    order = strategy.on_bar(bar_confirm)
+
+    # 应产生买入信号（过前高确认）
+    assert order is not None, "过前高形态应产生买入信号"
+    assert order.side == Side.BUY, "过前高应为买入信号"
+
+    # 检查是否有买入信号
+    buy_signals = [s for s in strategy.signals if s.action == "BUY"]
+    assert len(buy_signals) > 0, "过前高应产生买入信号"

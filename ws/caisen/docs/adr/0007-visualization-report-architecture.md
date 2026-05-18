@@ -30,18 +30,33 @@ Accepted
 
 ## Decision
 
-### 1. 数据格式：JSON 文件
+### 1. 目录结构
 
-每个回测结果生成一个 JSON 文件，前端独立渲染。
+回测结果保存到 `./runs/{run_id}/` 目录：
 
 ```
-reports/
-  {run_id}/
-    data.json      # 回测数据
-    index.html     # 前端渲染器（由前端 agent 生成）
+runs/{run_id}/
+├── meta.json          # 元数据（策略名、时间等）
+├── equity.parquet     # 净值曲线（Parquet 格式，高效存储）
+├── trades.parquet     # 交易记录（Parquet 格式）
+├── annotations.json   # 可视化标注
+└── metrics.json       # 绩效指标
 ```
 
-### 2. JSON 数据结构
+前端可视化需要 `data.json`（包含 bars + equity_curve + trades + annotations + metrics），由后端命令生成。
+
+### 2. 可视化报告生成
+
+使用 `caisen report <run_id>` 命令生成可视化报告：
+
+```
+runs/{run_id}/
+├── data.json          # 可视化专用综合数据文件
+├── index.html         # 前端渲染器（从 src/caisen/visualization/ 复制）
+└── [其他回测数据文件]
+```
+
+#### data.json 结构
 
 ```json
 {
@@ -69,20 +84,19 @@ reports/
     {"timestamp": "...", "side": "BUY", "price": 20000, "quantity": 5, "commission": 30}
   ],
   "annotations": [
-    {"type": "buy_signal", "timestamp": "...", "data": {"price": 20000, "label": "MA金叉", "color": "green"}},
-    {"type": "pattern_mark", "timestamp": "...", "data": {
-      "pattern": "head_and_shoulders_bottom",
-      "points": [
-        {"timestamp": "...", "price": 100, "label": "左肩"},
-        {"timestamp": "...", "price": 95, "label": "头"},
-        {"timestamp": "...", "price": 100, "label": "右肩"}
-      ],
-      "neckline": {"price": 100},
-      "label": "头肩底",
-      "color": "purple"
-    }}
+    {"type": "buy_signal", "timestamp": "...", "data": {"price": 20000, "label": "MA金叉", "color": "green"}}
   ]
 }
+```
+
+#### CLI 命令
+
+```bash
+# 生成可视化报告
+caisen report <run_id> --output-dir ./runs
+
+# 查看报告
+open runs/{run_id}/index.html
 ```
 
 ### 3. Annotation 接口约定
