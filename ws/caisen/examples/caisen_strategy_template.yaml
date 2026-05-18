@@ -29,6 +29,11 @@ strategy:
   head_and_shoulders_bottom_enabled: true   # 头肩底
   head_and_shoulders_top_enabled: true      # 头肩顶
   triangle_enabled: true             # 三角整理
+  flag_enabled: true                 # 旗形整理
+  rectangle_enabled: true            # 矩形整理
+  rounding_bottom_enabled: true      # 圆弧底
+  cup_handle_enabled: true           # 杯柄形态
+  breakout_pullback_enabled: true    # 过前高
 
 # 回测配置
 backtest:

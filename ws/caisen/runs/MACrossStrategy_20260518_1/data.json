@@ -1,0 +1,6725 @@
+{
+  "meta": {
+    "strategy_name": "MACrossStrategy",
+    "symbol": "TEST",
+    "start": "2024-01-01T00:00:00",
+    "end": "2024-12-31T00:00:00",
+    "freq": "1d"
+  },
+  "metrics": {
+    "annual_return": 0.6707176537115551,
+    "max_drawdown": -0.10101500626225912,
+    "sharpe_ratio": 2.9799558122923675,
+    "win_rate": 0.5,
+    "total_trades": 11,
+    "profit_factor": 3.8169941651920785,
+    "avg_win": 14331.017976456473,
+    "avg_loss": 3754.529704850966,
+    "total_return": 1.1199717915322074
+  },
+  "bars": [
+    {
+      "timestamp": "2024-01-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 100.0,
+      "high": 100.01,
+      "low": 98.15,
+      "close": 99.03,
+      "volume": 1651017.5103729255
+    },
+    {
+      "timestamp": "2024-01-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 99.03,
+      "high": 100.25,
+      "low": 98.09,
+      "close": 99.84,
+      "volume": 2708819.2018025876
+    },
+    {
+      "timestamp": "2024-01-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 99.84,
+      "high": 102.4,
+      "low": 99.58,
+      "close": 102.11,
+      "volume": 2217787.787644936
+    },
+    {
+      "timestamp": "2024-01-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 102.11,
+      "high": 104.88,
+      "low": 101.8,
+      "close": 104.66,
+      "volume": 1517351.1486397798
+    },
+    {
+      "timestamp": "2024-01-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 104.66,
+      "high": 107.54,
+      "low": 104.66,
+      "close": 106.9,
+      "volume": 2059657.871362881
+    },
+    {
+      "timestamp": "2024-01-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 106.9,
+      "high": 107.22,
+      "low": 105.05,
+      "close": 105.66,
+      "volume": 2995311.133810487
+    },
+    {
+      "timestamp": "2024-01-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.66,
+      "high": 106.43,
+      "low": 105.2,
+      "close": 105.26,
+      "volume": 4959855.026268475
+    },
+    {
+      "timestamp": "2024-01-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.26,
+      "high": 106.51,
+      "low": 105.25,
+      "close": 106.28,
+      "volume": 3000800.4620345663
+    },
+    {
+      "timestamp": "2024-01-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 106.28,
+      "high": 108.21,
+      "low": 105.81,
+      "close": 108.15,
+      "volume": 3642571.539026886
+    },
+    {
+      "timestamp": "2024-01-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 108.15,
+      "high": 109.17,
+      "low": 106.65,
+      "close": 107.15,
+      "volume": 3884332.761406544
+    },
+    {
+      "timestamp": "2024-01-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 107.15,
+      "high": 108.9,
+      "low": 106.88,
+      "close": 108.01,
+      "volume": 3410262.725608071
+    },
+    {
+      "timestamp": "2024-01-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 108.01,
+      "high": 110.66,
+      "low": 107.43,
+      "close": 109.81,
+      "volume": 3067263.582321155
+    },
+    {
+      "timestamp": "2024-01-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.81,
+      "high": 110.05,
+      "low": 108.75,
+      "close": 108.95,
+      "volume": 4976477.799160047
+    },
+    {
+      "timestamp": "2024-01-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 108.95,
+      "high": 109.62,
+      "low": 108.59,
+      "close": 109.0,
+      "volume": 4845325.748698715
+    },
+    {
+      "timestamp": "2024-01-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.0,
+      "high": 109.65,
+      "low": 107.52,
+      "close": 107.9,
+      "volume": 2107073.7583472263
+    },
+    {
+      "timestamp": "2024-01-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 107.9,
+      "high": 109.33,
+      "low": 107.58,
+      "close": 109.22,
+      "volume": 4091891.6237220154
+    },
+    {
+      "timestamp": "2024-01-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.22,
+      "high": 111.95,
+      "low": 109.0,
+      "close": 111.54,
+      "volume": 4764630.820626058
+    },
+    {
+      "timestamp": "2024-01-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.54,
+      "high": 112.28,
+      "low": 109.79,
+      "close": 110.7,
+      "volume": 4445075.224732034
+    },
+    {
+      "timestamp": "2024-01-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 110.7,
+      "high": 112.65,
+      "low": 110.48,
+      "close": 111.85,
+      "volume": 3855899.7035163785
+    },
+    {
+      "timestamp": "2024-01-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.85,
+      "high": 112.16,
+      "low": 110.05,
+      "close": 110.52,
+      "volume": 1263442.4129279172
+    },
+    {
+      "timestamp": "2024-01-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 110.52,
+      "high": 113.29,
+      "low": 109.75,
+      "close": 112.61,
+      "volume": 1901180.5879496038
+    },
+    {
+      "timestamp": "2024-01-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 112.61,
+      "high": 112.63,
+      "low": 111.04,
+      "close": 111.36,
+      "volume": 4419031.249575347
+    },
+    {
+      "timestamp": "2024-01-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.36,
+      "high": 111.59,
+      "low": 108.86,
+      "close": 109.63,
+      "volume": 4190675.7814543894
+    },
+    {
+      "timestamp": "2024-01-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.63,
+      "high": 110.03,
+      "low": 109.16,
+      "close": 109.4,
+      "volume": 2819546.428557161
+    },
+    {
+      "timestamp": "2024-01-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.4,
+      "high": 111.06,
+      "low": 108.58,
+      "close": 110.68,
+      "volume": 1838084.3564592828
+    },
+    {
+      "timestamp": "2024-01-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 110.68,
+      "high": 111.33,
+      "low": 109.75,
+      "close": 111.01,
+      "volume": 4253964.0508842245
+    },
+    {
+      "timestamp": "2024-01-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.01,
+      "high": 111.25,
+      "low": 110.4,
+      "close": 110.84,
+      "volume": 3939388.2305082595
+    },
+    {
+      "timestamp": "2024-01-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 110.84,
+      "high": 111.64,
+      "low": 108.98,
+      "close": 109.31,
+      "volume": 4015592.1247389996
+    },
+    {
+      "timestamp": "2024-01-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.31,
+      "high": 110.31,
+      "low": 109.1,
+      "close": 109.9,
+      "volume": 4263321.602301199
+    },
+    {
+      "timestamp": "2024-01-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.9,
+      "high": 112.12,
+      "low": 109.72,
+      "close": 111.29,
+      "volume": 3145441.140450403
+    },
+    {
+      "timestamp": "2024-01-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.29,
+      "high": 111.91,
+      "low": 110.1,
+      "close": 110.8,
+      "volume": 1751079.4428711147
+    },
+    {
+      "timestamp": "2024-02-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 110.8,
+      "high": 111.91,
+      "low": 108.86,
+      "close": 109.15,
+      "volume": 2537100.613490128
+    },
+    {
+      "timestamp": "2024-02-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.15,
+      "high": 109.67,
+      "low": 106.47,
+      "close": 107.23,
+      "volume": 3759259.4994283565
+    },
+    {
+      "timestamp": "2024-02-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 107.23,
+      "high": 107.79,
+      "low": 106.66,
+      "close": 106.68,
+      "volume": 1806140.1287734546
+    },
+    {
+      "timestamp": "2024-02-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 106.68,
+      "high": 106.84,
+      "low": 105.07,
+      "close": 105.98,
+      "volume": 1471443.8166280868
+    },
+    {
+      "timestamp": "2024-02-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.98,
+      "high": 107.29,
+      "low": 105.32,
+      "close": 107.07,
+      "volume": 3374937.0084634745
+    },
+    {
+      "timestamp": "2024-02-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 107.07,
+      "high": 107.96,
+      "low": 105.91,
+      "close": 106.34,
+      "volume": 4145163.9258187097
+    },
+    {
+      "timestamp": "2024-02-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 106.34,
+      "high": 107.27,
+      "low": 104.43,
+      "close": 105.46,
+      "volume": 1854198.0442243083
+    },
+    {
+      "timestamp": "2024-02-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.46,
+      "high": 106.27,
+      "low": 103.38,
+      "close": 103.96,
+      "volume": 3686563.553897815
+    },
+    {
+      "timestamp": "2024-02-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 103.96,
+      "high": 106.11,
+      "low": 103.15,
+      "close": 105.81,
+      "volume": 4032455.4563665404
+    },
+    {
+      "timestamp": "2024-02-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.81,
+      "high": 106.95,
+      "low": 105.55,
+      "close": 105.93,
+      "volume": 3012698.3777286727
+    },
+    {
+      "timestamp": "2024-02-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.93,
+      "high": 106.45,
+      "low": 105.29,
+      "close": 106.38,
+      "volume": 3817040.5580874635
+    },
+    {
+      "timestamp": "2024-02-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 106.38,
+      "high": 107.73,
+      "low": 106.21,
+      "close": 106.82,
+      "volume": 2446154.7686887304
+    },
+    {
+      "timestamp": "2024-02-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 106.82,
+      "high": 107.17,
+      "low": 104.89,
+      "close": 105.62,
+      "volume": 1680061.893955863
+    },
+    {
+      "timestamp": "2024-02-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.62,
+      "high": 105.65,
+      "low": 103.9,
+      "close": 104.08,
+      "volume": 1050039.8472325343
+    },
+    {
+      "timestamp": "2024-02-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 104.08,
+      "high": 105.42,
+      "low": 103.05,
+      "close": 104.81,
+      "volume": 1481047.5863616222
+    },
+    {
+      "timestamp": "2024-02-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 104.81,
+      "high": 106.24,
+      "low": 104.45,
+      "close": 105.57,
+      "volume": 4150732.475538682
+    },
+    {
+      "timestamp": "2024-02-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 105.57,
+      "high": 107.44,
+      "low": 104.9,
+      "close": 107.09,
+      "volume": 1422968.8665161123
+    },
+    {
+      "timestamp": "2024-02-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 107.09,
+      "high": 110.44,
+      "low": 106.13,
+      "close": 109.57,
+      "volume": 2477882.814932271
+    },
+    {
+      "timestamp": "2024-02-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.57,
+      "high": 112.24,
+      "low": 108.93,
+      "close": 111.15,
+      "volume": 2921162.582737474
+    },
+    {
+      "timestamp": "2024-02-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.15,
+      "high": 111.29,
+      "low": 108.97,
+      "close": 108.98,
+      "volume": 4974573.990785383
+    },
+    {
+      "timestamp": "2024-02-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 108.98,
+      "high": 109.48,
+      "low": 106.36,
+      "close": 107.12,
+      "volume": 1639532.8697181202
+    },
+    {
+      "timestamp": "2024-02-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 107.12,
+      "high": 108.98,
+      "low": 106.29,
+      "close": 108.27,
+      "volume": 4559808.786610265
+    },
+    {
+      "timestamp": "2024-02-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 108.27,
+      "high": 110.2,
+      "low": 107.56,
+      "close": 109.21,
+      "volume": 2349256.6428301167
+    },
+    {
+      "timestamp": "2024-02-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.21,
+      "high": 110.7,
+      "low": 108.48,
+      "close": 109.91,
+      "volume": 3258564.040672598
+    },
+    {
+      "timestamp": "2024-02-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 109.91,
+      "high": 111.64,
+      "low": 109.47,
+      "close": 111.62,
+      "volume": 4980932.977628132
+    },
+    {
+      "timestamp": "2024-02-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 111.62,
+      "high": 114.2,
+      "low": 111.19,
+      "close": 113.54,
+      "volume": 3507025.759751387
+    },
+    {
+      "timestamp": "2024-02-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 113.54,
+      "high": 113.98,
+      "low": 111.65,
+      "close": 112.41,
+      "volume": 1119600.1218200338
+    },
+    {
+      "timestamp": "2024-02-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 112.41,
+      "high": 113.86,
+      "low": 112.06,
+      "close": 113.38,
+      "volume": 4923578.888859732
+    },
+    {
+      "timestamp": "2024-02-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 113.38,
+      "high": 113.78,
+      "low": 112.11,
+      "close": 112.62,
+      "volume": 3592116.213666168
+    },
+    {
+      "timestamp": "2024-03-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 112.62,
+      "high": 112.91,
+      "low": 111.66,
+      "close": 112.08,
+      "volume": 2652812.619459208
+    },
+    {
+      "timestamp": "2024-03-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 112.08,
+      "high": 114.44,
+      "low": 112.07,
+      "close": 113.36,
+      "volume": 2341957.240646964
+    },
+    {
+      "timestamp": "2024-03-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 113.36,
+      "high": 116.82,
+      "low": 112.96,
+      "close": 116.04,
+      "volume": 1882912.1229837318
+    },
+    {
+      "timestamp": "2024-03-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.04,
+      "high": 116.53,
+      "low": 115.52,
+      "close": 116.08,
+      "volume": 3598052.4151491486
+    },
+    {
+      "timestamp": "2024-03-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.08,
+      "high": 116.5,
+      "low": 115.11,
+      "close": 115.48,
+      "volume": 1241729.978483594
+    },
+    {
+      "timestamp": "2024-03-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.48,
+      "high": 115.94,
+      "low": 114.48,
+      "close": 115.75,
+      "volume": 2036639.990473101
+    },
+    {
+      "timestamp": "2024-03-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.75,
+      "high": 116.87,
+      "low": 115.14,
+      "close": 115.87,
+      "volume": 4024783.877690746
+    },
+    {
+      "timestamp": "2024-03-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.87,
+      "high": 115.95,
+      "low": 114.58,
+      "close": 115.37,
+      "volume": 2407137.6069523115
+    },
+    {
+      "timestamp": "2024-03-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.37,
+      "high": 117.21,
+      "low": 115.16,
+      "close": 116.1,
+      "volume": 3864947.0153436847
+    },
+    {
+      "timestamp": "2024-03-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.1,
+      "high": 116.34,
+      "low": 112.99,
+      "close": 113.82,
+      "volume": 2795960.104653772
+    },
+    {
+      "timestamp": "2024-03-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 113.82,
+      "high": 116.25,
+      "low": 112.96,
+      "close": 116.13,
+      "volume": 2501389.7215368142
+    },
+    {
+      "timestamp": "2024-03-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.13,
+      "high": 118.23,
+      "low": 115.5,
+      "close": 117.87,
+      "volume": 4360044.359705433
+    },
+    {
+      "timestamp": "2024-03-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 117.87,
+      "high": 121.33,
+      "low": 117.64,
+      "close": 120.14,
+      "volume": 2283439.723468096
+    },
+    {
+      "timestamp": "2024-03-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 120.14,
+      "high": 121.05,
+      "low": 119.83,
+      "close": 119.87,
+      "volume": 2468069.239722143
+    },
+    {
+      "timestamp": "2024-03-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.87,
+      "high": 122.94,
+      "low": 119.76,
+      "close": 122.79,
+      "volume": 4521561.605121091
+    },
+    {
+      "timestamp": "2024-03-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 122.79,
+      "high": 126.21,
+      "low": 122.64,
+      "close": 125.29,
+      "volume": 4112701.2721863785
+    },
+    {
+      "timestamp": "2024-03-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 125.29,
+      "high": 126.16,
+      "low": 124.11,
+      "close": 126.01,
+      "volume": 2847662.8601012095
+    },
+    {
+      "timestamp": "2024-03-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 126.01,
+      "high": 127.03,
+      "low": 123.83,
+      "close": 124.09,
+      "volume": 1902127.887653518
+    },
+    {
+      "timestamp": "2024-03-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 124.09,
+      "high": 124.11,
+      "low": 121.66,
+      "close": 122.15,
+      "volume": 3831032.962320686
+    },
+    {
+      "timestamp": "2024-03-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 122.15,
+      "high": 122.95,
+      "low": 119.21,
+      "close": 120.29,
+      "volume": 2675635.889703473
+    },
+    {
+      "timestamp": "2024-03-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 120.29,
+      "high": 121.34,
+      "low": 119.51,
+      "close": 119.83,
+      "volume": 4056389.152126123
+    },
+    {
+      "timestamp": "2024-03-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.83,
+      "high": 119.92,
+      "low": 119.15,
+      "close": 119.85,
+      "volume": 4129821.4382992093
+    },
+    {
+      "timestamp": "2024-03-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.85,
+      "high": 121.82,
+      "low": 119.22,
+      "close": 121.08,
+      "volume": 4127926.2970138155
+    },
+    {
+      "timestamp": "2024-03-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 121.08,
+      "high": 121.1,
+      "low": 119.72,
+      "close": 120.53,
+      "volume": 2509166.3084481843
+    },
+    {
+      "timestamp": "2024-03-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 120.53,
+      "high": 121.48,
+      "low": 118.5,
+      "close": 118.59,
+      "volume": 3836022.3037964087
+    },
+    {
+      "timestamp": "2024-03-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 118.59,
+      "high": 119.18,
+      "low": 117.54,
+      "close": 119.0,
+      "volume": 1545746.1531170039
+    },
+    {
+      "timestamp": "2024-03-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.0,
+      "high": 119.5,
+      "low": 117.81,
+      "close": 118.4,
+      "volume": 4856192.120968023
+    },
+    {
+      "timestamp": "2024-03-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 118.4,
+      "high": 119.8,
+      "low": 117.47,
+      "close": 119.02,
+      "volume": 2198667.900124319
+    },
+    {
+      "timestamp": "2024-03-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.02,
+      "high": 122.7,
+      "low": 118.44,
+      "close": 121.63,
+      "volume": 1299610.2704225953
+    },
+    {
+      "timestamp": "2024-03-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 121.63,
+      "high": 122.73,
+      "low": 118.51,
+      "close": 119.47,
+      "volume": 1210837.8924407898
+    },
+    {
+      "timestamp": "2024-03-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.47,
+      "high": 120.22,
+      "low": 118.57,
+      "close": 118.86,
+      "volume": 2337553.6537298225
+    },
+    {
+      "timestamp": "2024-04-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 118.86,
+      "high": 120.35,
+      "low": 118.5,
+      "close": 120.27,
+      "volume": 2840234.066314359
+    },
+    {
+      "timestamp": "2024-04-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 120.27,
+      "high": 120.93,
+      "low": 117.43,
+      "close": 118.44,
+      "volume": 1229927.0608588401
+    },
+    {
+      "timestamp": "2024-04-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 118.44,
+      "high": 118.6,
+      "low": 116.11,
+      "close": 116.62,
+      "volume": 2934835.909826245
+    },
+    {
+      "timestamp": "2024-04-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.62,
+      "high": 117.41,
+      "low": 114.44,
+      "close": 115.55,
+      "volume": 4133940.579671474
+    },
+    {
+      "timestamp": "2024-04-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.55,
+      "high": 115.57,
+      "low": 113.58,
+      "close": 114.46,
+      "volume": 4014587.9788857596
+    },
+    {
+      "timestamp": "2024-04-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 114.46,
+      "high": 117.07,
+      "low": 113.55,
+      "close": 116.24,
+      "volume": 3210990.100116413
+    },
+    {
+      "timestamp": "2024-04-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.24,
+      "high": 117.72,
+      "low": 115.35,
+      "close": 116.62,
+      "volume": 1103902.793650604
+    },
+    {
+      "timestamp": "2024-04-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.62,
+      "high": 117.65,
+      "low": 114.36,
+      "close": 114.82,
+      "volume": 3478634.7339640134
+    },
+    {
+      "timestamp": "2024-04-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 114.82,
+      "high": 114.84,
+      "low": 112.67,
+      "close": 113.62,
+      "volume": 1668309.784766234
+    },
+    {
+      "timestamp": "2024-04-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 113.62,
+      "high": 114.92,
+      "low": 112.83,
+      "close": 114.22,
+      "volume": 4699970.271467784
+    },
+    {
+      "timestamp": "2024-04-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 114.22,
+      "high": 114.6,
+      "low": 113.99,
+      "close": 114.37,
+      "volume": 3264072.1761534787
+    },
+    {
+      "timestamp": "2024-04-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 114.37,
+      "high": 117.26,
+      "low": 113.41,
+      "close": 117.21,
+      "volume": 2036278.059798352
+    },
+    {
+      "timestamp": "2024-04-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 117.21,
+      "high": 117.64,
+      "low": 115.73,
+      "close": 116.32,
+      "volume": 4376607.448179247
+    },
+    {
+      "timestamp": "2024-04-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 116.32,
+      "high": 116.69,
+      "low": 114.21,
+      "close": 115.13,
+      "volume": 3121765.850640032
+    },
+    {
+      "timestamp": "2024-04-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.13,
+      "high": 115.91,
+      "low": 114.55,
+      "close": 115.58,
+      "volume": 4641566.521289723
+    },
+    {
+      "timestamp": "2024-04-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 115.58,
+      "high": 118.67,
+      "low": 114.88,
+      "close": 118.23,
+      "volume": 4232469.561434032
+    },
+    {
+      "timestamp": "2024-04-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 118.23,
+      "high": 118.61,
+      "low": 117.6,
+      "close": 118.17,
+      "volume": 4110791.3191596656
+    },
+    {
+      "timestamp": "2024-04-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 118.17,
+      "high": 119.0,
+      "low": 116.39,
+      "close": 117.04,
+      "volume": 3914058.8880802765
+    },
+    {
+      "timestamp": "2024-04-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 117.04,
+      "high": 120.74,
+      "low": 117.03,
+      "close": 119.84,
+      "volume": 2671503.1286608186
+    },
+    {
+      "timestamp": "2024-04-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.84,
+      "high": 120.63,
+      "low": 119.17,
+      "close": 119.95,
+      "volume": 4884395.839055318
+    },
+    {
+      "timestamp": "2024-04-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 119.95,
+      "high": 122.77,
+      "low": 119.75,
+      "close": 121.92,
+      "volume": 1973434.7708945847
+    },
+    {
+      "timestamp": "2024-04-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 121.92,
+      "high": 123.11,
+      "low": 120.82,
+      "close": 121.94,
+      "volume": 2561341.141101298
+    },
+    {
+      "timestamp": "2024-04-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 121.94,
+      "high": 124.79,
+      "low": 121.44,
+      "close": 123.6,
+      "volume": 2629168.6800409295
+    },
+    {
+      "timestamp": "2024-04-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 123.6,
+      "high": 124.46,
+      "low": 122.29,
+      "close": 123.21,
+      "volume": 4707561.937299156
+    },
+    {
+      "timestamp": "2024-04-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 123.21,
+      "high": 124.49,
+      "low": 122.08,
+      "close": 123.83,
+      "volume": 1311681.497243256
+    },
+    {
+      "timestamp": "2024-04-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 123.83,
+      "high": 126.52,
+      "low": 123.31,
+      "close": 125.79,
+      "volume": 2686505.4306347845
+    },
+    {
+      "timestamp": "2024-04-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 125.79,
+      "high": 126.23,
+      "low": 124.92,
+      "close": 126.05,
+      "volume": 4663191.538919848
+    },
+    {
+      "timestamp": "2024-04-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 126.05,
+      "high": 129.09,
+      "low": 124.87,
+      "close": 127.93,
+      "volume": 1280322.624934969
+    },
+    {
+      "timestamp": "2024-04-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 127.93,
+      "high": 130.07,
+      "low": 127.09,
+      "close": 129.27,
+      "volume": 3355741.9759063353
+    },
+    {
+      "timestamp": "2024-04-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 129.27,
+      "high": 130.03,
+      "low": 128.51,
+      "close": 129.15,
+      "volume": 3869406.4017507043
+    },
+    {
+      "timestamp": "2024-05-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 129.15,
+      "high": 131.78,
+      "low": 128.19,
+      "close": 131.42,
+      "volume": 1381790.151732321
+    },
+    {
+      "timestamp": "2024-05-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 131.42,
+      "high": 136.05,
+      "low": 130.41,
+      "close": 134.71,
+      "volume": 3898151.2022423227
+    },
+    {
+      "timestamp": "2024-05-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 134.71,
+      "high": 138.51,
+      "low": 134.23,
+      "close": 137.5,
+      "volume": 1540187.5532720494
+    },
+    {
+      "timestamp": "2024-05-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 137.5,
+      "high": 137.66,
+      "low": 135.49,
+      "close": 136.26,
+      "volume": 4162096.7280910364
+    },
+    {
+      "timestamp": "2024-05-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 136.26,
+      "high": 137.15,
+      "low": 135.63,
+      "close": 136.19,
+      "volume": 4890400.550238121
+    },
+    {
+      "timestamp": "2024-05-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 136.19,
+      "high": 138.43,
+      "low": 135.54,
+      "close": 138.08,
+      "volume": 1274926.9053764064
+    },
+    {
+      "timestamp": "2024-05-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 138.08,
+      "high": 138.87,
+      "low": 135.55,
+      "close": 136.78,
+      "volume": 3179554.4446140397
+    },
+    {
+      "timestamp": "2024-05-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 136.78,
+      "high": 138.63,
+      "low": 135.87,
+      "close": 137.73,
+      "volume": 4286475.858969705
+    },
+    {
+      "timestamp": "2024-05-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 137.73,
+      "high": 140.02,
+      "low": 137.18,
+      "close": 139.42,
+      "volume": 1051868.8586992773
+    },
+    {
+      "timestamp": "2024-05-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 139.42,
+      "high": 139.65,
+      "low": 137.09,
+      "close": 137.85,
+      "volume": 2827288.75486141
+    },
+    {
+      "timestamp": "2024-05-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 137.85,
+      "high": 139.49,
+      "low": 137.76,
+      "close": 138.13,
+      "volume": 1796553.7481792602
+    },
+    {
+      "timestamp": "2024-05-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 138.13,
+      "high": 141.92,
+      "low": 138.11,
+      "close": 140.82,
+      "volume": 4673422.913519236
+    },
+    {
+      "timestamp": "2024-05-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 140.82,
+      "high": 141.77,
+      "low": 138.57,
+      "close": 138.67,
+      "volume": 4332366.24483595
+    },
+    {
+      "timestamp": "2024-05-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 138.67,
+      "high": 139.54,
+      "low": 137.06,
+      "close": 137.08,
+      "volume": 2617657.8106535487
+    },
+    {
+      "timestamp": "2024-05-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 137.08,
+      "high": 137.27,
+      "low": 134.45,
+      "close": 134.49,
+      "volume": 2029429.5647264076
+    },
+    {
+      "timestamp": "2024-05-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 134.49,
+      "high": 136.44,
+      "low": 133.32,
+      "close": 135.49,
+      "volume": 3156564.0772699066
+    },
+    {
+      "timestamp": "2024-05-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 135.49,
+      "high": 136.97,
+      "low": 135.19,
+      "close": 136.63,
+      "volume": 2474183.386332339
+    },
+    {
+      "timestamp": "2024-05-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 136.63,
+      "high": 137.21,
+      "low": 133.6,
+      "close": 134.08,
+      "volume": 2244299.118021411
+    },
+    {
+      "timestamp": "2024-05-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 134.08,
+      "high": 134.95,
+      "low": 133.14,
+      "close": 134.68,
+      "volume": 3968732.782186374
+    },
+    {
+      "timestamp": "2024-05-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 134.68,
+      "high": 136.39,
+      "low": 134.16,
+      "close": 136.09,
+      "volume": 1866077.1215737353
+    },
+    {
+      "timestamp": "2024-05-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 136.09,
+      "high": 136.78,
+      "low": 134.81,
+      "close": 135.62,
+      "volume": 4111627.4591638306
+    },
+    {
+      "timestamp": "2024-05-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 135.62,
+      "high": 135.96,
+      "low": 134.17,
+      "close": 135.21,
+      "volume": 2906430.8919283114
+    },
+    {
+      "timestamp": "2024-05-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 135.21,
+      "high": 136.84,
+      "low": 134.3,
+      "close": 136.71,
+      "volume": 1845021.685125587
+    },
+    {
+      "timestamp": "2024-05-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 136.71,
+      "high": 137.91,
+      "low": 135.31,
+      "close": 135.9,
+      "volume": 2462509.119649089
+    },
+    {
+      "timestamp": "2024-05-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 135.9,
+      "high": 137.96,
+      "low": 135.54,
+      "close": 137.4,
+      "volume": 2314982.5877978383
+    },
+    {
+      "timestamp": "2024-05-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 137.4,
+      "high": 139.54,
+      "low": 136.04,
+      "close": 139.33,
+      "volume": 3572338.409201926
+    },
+    {
+      "timestamp": "2024-05-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 139.33,
+      "high": 140.58,
+      "low": 138.07,
+      "close": 139.55,
+      "volume": 1307452.4579543308
+    },
+    {
+      "timestamp": "2024-05-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 139.55,
+      "high": 143.41,
+      "low": 138.63,
+      "close": 142.82,
+      "volume": 3925221.275766017
+    },
+    {
+      "timestamp": "2024-05-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 142.82,
+      "high": 144.05,
+      "low": 140.26,
+      "close": 141.47,
+      "volume": 4651940.553423755
+    },
+    {
+      "timestamp": "2024-05-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 141.47,
+      "high": 142.86,
+      "low": 140.09,
+      "close": 141.1,
+      "volume": 2404876.4755879315
+    },
+    {
+      "timestamp": "2024-05-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 141.1,
+      "high": 142.12,
+      "low": 139.75,
+      "close": 140.22,
+      "volume": 1175154.8941727448
+    },
+    {
+      "timestamp": "2024-06-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 140.22,
+      "high": 143.97,
+      "low": 139.78,
+      "close": 143.04,
+      "volume": 1859870.7158839134
+    },
+    {
+      "timestamp": "2024-06-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 143.04,
+      "high": 145.38,
+      "low": 141.87,
+      "close": 144.81,
+      "volume": 1079244.5059562095
+    },
+    {
+      "timestamp": "2024-06-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 144.81,
+      "high": 145.82,
+      "low": 144.8,
+      "close": 145.15,
+      "volume": 1032115.311451736
+    },
+    {
+      "timestamp": "2024-06-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 145.15,
+      "high": 149.85,
+      "low": 144.34,
+      "close": 148.63,
+      "volume": 3927618.418425377
+    },
+    {
+      "timestamp": "2024-06-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 148.63,
+      "high": 152.68,
+      "low": 148.61,
+      "close": 151.84,
+      "volume": 2300149.385523424
+    },
+    {
+      "timestamp": "2024-06-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 151.84,
+      "high": 152.28,
+      "low": 149.84,
+      "close": 149.88,
+      "volume": 1617195.9367957385
+    },
+    {
+      "timestamp": "2024-06-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 149.88,
+      "high": 150.9,
+      "low": 149.62,
+      "close": 150.21,
+      "volume": 2958853.479497361
+    },
+    {
+      "timestamp": "2024-06-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 150.21,
+      "high": 151.62,
+      "low": 149.97,
+      "close": 150.05,
+      "volume": 4758114.620765375
+    },
+    {
+      "timestamp": "2024-06-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 150.05,
+      "high": 153.06,
+      "low": 149.95,
+      "close": 152.24,
+      "volume": 2549737.7273342796
+    },
+    {
+      "timestamp": "2024-06-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 152.24,
+      "high": 153.21,
+      "low": 151.22,
+      "close": 151.26,
+      "volume": 3071395.6460271645
+    },
+    {
+      "timestamp": "2024-06-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 151.26,
+      "high": 152.96,
+      "low": 150.45,
+      "close": 152.87,
+      "volume": 3905965.074591543
+    },
+    {
+      "timestamp": "2024-06-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 152.87,
+      "high": 153.92,
+      "low": 150.34,
+      "close": 150.71,
+      "volume": 1482291.404737051
+    },
+    {
+      "timestamp": "2024-06-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 150.71,
+      "high": 150.94,
+      "low": 148.83,
+      "close": 149.19,
+      "volume": 4071081.5652780947
+    },
+    {
+      "timestamp": "2024-06-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 149.19,
+      "high": 153.7,
+      "low": 148.74,
+      "close": 152.65,
+      "volume": 2643383.476766198
+    },
+    {
+      "timestamp": "2024-06-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 152.65,
+      "high": 153.78,
+      "low": 149.69,
+      "close": 150.01,
+      "volume": 4171802.9169837856
+    },
+    {
+      "timestamp": "2024-06-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 150.01,
+      "high": 152.89,
+      "low": 149.22,
+      "close": 151.78,
+      "volume": 3560540.176335286
+    },
+    {
+      "timestamp": "2024-06-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 151.78,
+      "high": 155.51,
+      "low": 151.1,
+      "close": 155.14,
+      "volume": 3298115.096706524
+    },
+    {
+      "timestamp": "2024-06-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 155.14,
+      "high": 159.12,
+      "low": 153.77,
+      "close": 157.77,
+      "volume": 1532945.2980863727
+    },
+    {
+      "timestamp": "2024-06-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 157.77,
+      "high": 158.92,
+      "low": 156.85,
+      "close": 157.66,
+      "volume": 4593283.110946485
+    },
+    {
+      "timestamp": "2024-06-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 157.66,
+      "high": 159.42,
+      "low": 156.77,
+      "close": 159.4,
+      "volume": 3934831.977018658
+    },
+    {
+      "timestamp": "2024-06-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 159.4,
+      "high": 160.69,
+      "low": 158.65,
+      "close": 159.43,
+      "volume": 4090020.594274189
+    },
+    {
+      "timestamp": "2024-06-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 159.43,
+      "high": 162.29,
+      "low": 158.3,
+      "close": 161.5,
+      "volume": 4861517.7971695885
+    },
+    {
+      "timestamp": "2024-06-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 161.5,
+      "high": 161.56,
+      "low": 160.84,
+      "close": 161.07,
+      "volume": 2960066.360174522
+    },
+    {
+      "timestamp": "2024-06-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 161.07,
+      "high": 162.38,
+      "low": 159.45,
+      "close": 159.5,
+      "volume": 3671443.8026408516
+    },
+    {
+      "timestamp": "2024-06-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 159.5,
+      "high": 160.0,
+      "low": 158.34,
+      "close": 158.79,
+      "volume": 2205952.0430960543
+    },
+    {
+      "timestamp": "2024-06-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 158.79,
+      "high": 158.91,
+      "low": 155.3,
+      "close": 156.82,
+      "volume": 4599032.478474776
+    },
+    {
+      "timestamp": "2024-06-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 156.82,
+      "high": 158.82,
+      "low": 155.89,
+      "close": 158.62,
+      "volume": 3018646.5365829077
+    },
+    {
+      "timestamp": "2024-06-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 158.62,
+      "high": 162.66,
+      "low": 157.49,
+      "close": 162.56,
+      "volume": 2733358.684430087
+    },
+    {
+      "timestamp": "2024-06-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 162.56,
+      "high": 164.05,
+      "low": 159.3,
+      "close": 160.14,
+      "volume": 1417837.148374644
+    },
+    {
+      "timestamp": "2024-06-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 160.14,
+      "high": 161.37,
+      "low": 156.71,
+      "close": 157.09,
+      "volume": 1694553.66171378
+    },
+    {
+      "timestamp": "2024-07-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 157.09,
+      "high": 158.21,
+      "low": 155.11,
+      "close": 155.65,
+      "volume": 3952951.2845711154
+    },
+    {
+      "timestamp": "2024-07-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 155.65,
+      "high": 157.81,
+      "low": 154.12,
+      "close": 157.65,
+      "volume": 2227589.6334140934
+    },
+    {
+      "timestamp": "2024-07-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 157.65,
+      "high": 160.34,
+      "low": 157.21,
+      "close": 159.23,
+      "volume": 3758743.5439862367
+    },
+    {
+      "timestamp": "2024-07-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 159.23,
+      "high": 163.39,
+      "low": 158.12,
+      "close": 162.86,
+      "volume": 3830524.6735733133
+    },
+    {
+      "timestamp": "2024-07-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 162.86,
+      "high": 164.48,
+      "low": 161.67,
+      "close": 163.56,
+      "volume": 1375789.0836281378
+    },
+    {
+      "timestamp": "2024-07-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 163.56,
+      "high": 168.87,
+      "low": 163.22,
+      "close": 167.2,
+      "volume": 4220123.32670125
+    },
+    {
+      "timestamp": "2024-07-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 167.2,
+      "high": 171.14,
+      "low": 166.65,
+      "close": 170.79,
+      "volume": 2132229.117640828
+    },
+    {
+      "timestamp": "2024-07-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 170.79,
+      "high": 175.04,
+      "low": 170.78,
+      "close": 173.31,
+      "volume": 4312233.342965703
+    },
+    {
+      "timestamp": "2024-07-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 173.31,
+      "high": 174.26,
+      "low": 169.68,
+      "close": 170.92,
+      "volume": 4638827.030448012
+    },
+    {
+      "timestamp": "2024-07-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 170.92,
+      "high": 175.33,
+      "low": 169.36,
+      "close": 173.67,
+      "volume": 2965105.3565133866
+    },
+    {
+      "timestamp": "2024-07-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 173.67,
+      "high": 175.74,
+      "low": 171.97,
+      "close": 174.05,
+      "volume": 3533311.345878507
+    },
+    {
+      "timestamp": "2024-07-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 174.05,
+      "high": 174.76,
+      "low": 170.77,
+      "close": 171.09,
+      "volume": 1724434.4321464277
+    },
+    {
+      "timestamp": "2024-07-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 171.09,
+      "high": 172.56,
+      "low": 169.87,
+      "close": 172.55,
+      "volume": 4424322.447975773
+    },
+    {
+      "timestamp": "2024-07-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 172.55,
+      "high": 172.74,
+      "low": 169.61,
+      "close": 169.83,
+      "volume": 4854530.113376405
+    },
+    {
+      "timestamp": "2024-07-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 169.83,
+      "high": 170.05,
+      "low": 166.89,
+      "close": 168.5,
+      "volume": 3016079.4728069026
+    },
+    {
+      "timestamp": "2024-07-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 168.5,
+      "high": 169.91,
+      "low": 167.82,
+      "close": 168.64,
+      "volume": 1213131.5076038246
+    },
+    {
+      "timestamp": "2024-07-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 168.64,
+      "high": 171.24,
+      "low": 167.85,
+      "close": 169.8,
+      "volume": 4583674.631667261
+    },
+    {
+      "timestamp": "2024-07-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 169.8,
+      "high": 174.33,
+      "low": 169.23,
+      "close": 173.23,
+      "volume": 2703435.8401662684
+    },
+    {
+      "timestamp": "2024-07-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 173.23,
+      "high": 174.49,
+      "low": 171.24,
+      "close": 172.03,
+      "volume": 1379925.401134409
+    },
+    {
+      "timestamp": "2024-07-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 172.03,
+      "high": 174.64,
+      "low": 170.54,
+      "close": 174.56,
+      "volume": 1722405.909508006
+    },
+    {
+      "timestamp": "2024-07-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 174.56,
+      "high": 176.0,
+      "low": 173.54,
+      "close": 173.79,
+      "volume": 2478858.558998977
+    },
+    {
+      "timestamp": "2024-07-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 173.79,
+      "high": 174.71,
+      "low": 170.37,
+      "close": 170.42,
+      "volume": 3116667.8293800275
+    },
+    {
+      "timestamp": "2024-07-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 170.42,
+      "high": 171.35,
+      "low": 168.13,
+      "close": 169.59,
+      "volume": 3998133.2159278938
+    },
+    {
+      "timestamp": "2024-07-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 169.59,
+      "high": 173.88,
+      "low": 168.67,
+      "close": 173.65,
+      "volume": 2841096.618053273
+    },
+    {
+      "timestamp": "2024-07-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 173.65,
+      "high": 178.19,
+      "low": 171.97,
+      "close": 177.95,
+      "volume": 2992412.5805950034
+    },
+    {
+      "timestamp": "2024-07-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 177.95,
+      "high": 178.85,
+      "low": 175.31,
+      "close": 175.71,
+      "volume": 2965791.569077514
+    },
+    {
+      "timestamp": "2024-07-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 175.71,
+      "high": 177.07,
+      "low": 173.97,
+      "close": 175.63,
+      "volume": 3326909.0416275975
+    },
+    {
+      "timestamp": "2024-07-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 175.63,
+      "high": 179.36,
+      "low": 173.92,
+      "close": 178.19,
+      "volume": 2357298.363824725
+    },
+    {
+      "timestamp": "2024-07-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 178.19,
+      "high": 178.74,
+      "low": 176.03,
+      "close": 176.56,
+      "volume": 3509522.938754602
+    },
+    {
+      "timestamp": "2024-07-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 176.56,
+      "high": 180.53,
+      "low": 175.92,
+      "close": 179.34,
+      "volume": 4486301.515009619
+    },
+    {
+      "timestamp": "2024-07-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 179.34,
+      "high": 182.95,
+      "low": 179.14,
+      "close": 181.27,
+      "volume": 4278286.494606826
+    },
+    {
+      "timestamp": "2024-08-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.27,
+      "high": 185.86,
+      "low": 179.67,
+      "close": 184.63,
+      "volume": 4506369.632005855
+    },
+    {
+      "timestamp": "2024-08-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 184.63,
+      "high": 185.65,
+      "low": 184.24,
+      "close": 184.6,
+      "volume": 3027385.3781283093
+    },
+    {
+      "timestamp": "2024-08-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 184.6,
+      "high": 185.95,
+      "low": 182.09,
+      "close": 183.17,
+      "volume": 1063293.6085330052
+    },
+    {
+      "timestamp": "2024-08-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 183.17,
+      "high": 183.99,
+      "low": 181.83,
+      "close": 183.06,
+      "volume": 4831160.179005669
+    },
+    {
+      "timestamp": "2024-08-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 183.06,
+      "high": 184.05,
+      "low": 182.33,
+      "close": 183.44,
+      "volume": 1829376.1349330125
+    },
+    {
+      "timestamp": "2024-08-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 183.44,
+      "high": 185.6,
+      "low": 182.84,
+      "close": 184.61,
+      "volume": 4754325.635287359
+    },
+    {
+      "timestamp": "2024-08-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 184.61,
+      "high": 190.6,
+      "low": 182.98,
+      "close": 188.77,
+      "volume": 2846110.428509486
+    },
+    {
+      "timestamp": "2024-08-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 188.77,
+      "high": 193.61,
+      "low": 187.47,
+      "close": 192.9,
+      "volume": 3697864.4876067387
+    },
+    {
+      "timestamp": "2024-08-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 192.9,
+      "high": 194.18,
+      "low": 191.69,
+      "close": 192.84,
+      "volume": 2873604.5952750714
+    },
+    {
+      "timestamp": "2024-08-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 192.84,
+      "high": 197.64,
+      "low": 192.35,
+      "close": 197.25,
+      "volume": 3177049.618611379
+    },
+    {
+      "timestamp": "2024-08-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 197.25,
+      "high": 199.8,
+      "low": 197.09,
+      "close": 198.09,
+      "volume": 2803256.5516584003
+    },
+    {
+      "timestamp": "2024-08-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 198.09,
+      "high": 198.56,
+      "low": 193.66,
+      "close": 194.77,
+      "volume": 1224732.470606921
+    },
+    {
+      "timestamp": "2024-08-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 194.77,
+      "high": 195.04,
+      "low": 191.8,
+      "close": 192.4,
+      "volume": 2910790.961504747
+    },
+    {
+      "timestamp": "2024-08-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 192.4,
+      "high": 194.16,
+      "low": 190.41,
+      "close": 190.92,
+      "volume": 1955810.1091532772
+    },
+    {
+      "timestamp": "2024-08-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 190.92,
+      "high": 191.18,
+      "low": 188.28,
+      "close": 189.61,
+      "volume": 4519099.04842697
+    },
+    {
+      "timestamp": "2024-08-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 189.61,
+      "high": 190.2,
+      "low": 186.46,
+      "close": 187.97,
+      "volume": 4971267.676011147
+    },
+    {
+      "timestamp": "2024-08-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 187.97,
+      "high": 188.51,
+      "low": 183.96,
+      "close": 185.09,
+      "volume": 1592155.1365115196
+    },
+    {
+      "timestamp": "2024-08-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 185.09,
+      "high": 186.49,
+      "low": 179.67,
+      "close": 181.47,
+      "volume": 3127225.176862722
+    },
+    {
+      "timestamp": "2024-08-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.47,
+      "high": 182.93,
+      "low": 176.66,
+      "close": 178.05,
+      "volume": 1012781.5333916743
+    },
+    {
+      "timestamp": "2024-08-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 178.05,
+      "high": 182.5,
+      "low": 176.5,
+      "close": 181.99,
+      "volume": 3487632.5300766523
+    },
+    {
+      "timestamp": "2024-08-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.99,
+      "high": 185.93,
+      "low": 180.35,
+      "close": 185.29,
+      "volume": 4265442.813599203
+    },
+    {
+      "timestamp": "2024-08-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 185.29,
+      "high": 187.04,
+      "low": 182.6,
+      "close": 183.69,
+      "volume": 1852722.7266049208
+    },
+    {
+      "timestamp": "2024-08-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 183.69,
+      "high": 185.52,
+      "low": 183.48,
+      "close": 185.14,
+      "volume": 3214258.331301858
+    },
+    {
+      "timestamp": "2024-08-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 185.14,
+      "high": 185.71,
+      "low": 183.19,
+      "close": 184.54,
+      "volume": 3273559.200049167
+    },
+    {
+      "timestamp": "2024-08-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 184.54,
+      "high": 186.06,
+      "low": 180.64,
+      "close": 181.31,
+      "volume": 1131040.834084852
+    },
+    {
+      "timestamp": "2024-08-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.31,
+      "high": 182.49,
+      "low": 179.13,
+      "close": 179.29,
+      "volume": 2586992.0119220875
+    },
+    {
+      "timestamp": "2024-08-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 179.29,
+      "high": 180.22,
+      "low": 178.04,
+      "close": 179.69,
+      "volume": 3435272.7249956485
+    },
+    {
+      "timestamp": "2024-08-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 179.69,
+      "high": 182.15,
+      "low": 179.03,
+      "close": 181.01,
+      "volume": 3772941.521876355
+    },
+    {
+      "timestamp": "2024-08-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.01,
+      "high": 182.42,
+      "low": 178.78,
+      "close": 179.29,
+      "volume": 3300277.3266444136
+    },
+    {
+      "timestamp": "2024-08-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 179.29,
+      "high": 179.89,
+      "low": 175.18,
+      "close": 176.01,
+      "volume": 1218832.4775327279
+    },
+    {
+      "timestamp": "2024-08-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 176.01,
+      "high": 178.22,
+      "low": 174.66,
+      "close": 176.64,
+      "volume": 3573751.5684777247
+    },
+    {
+      "timestamp": "2024-09-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 176.64,
+      "high": 177.83,
+      "low": 173.48,
+      "close": 174.8,
+      "volume": 3984947.478683325
+    },
+    {
+      "timestamp": "2024-09-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 174.8,
+      "high": 175.23,
+      "low": 174.25,
+      "close": 174.54,
+      "volume": 3156183.380238978
+    },
+    {
+      "timestamp": "2024-09-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 174.54,
+      "high": 179.42,
+      "low": 173.97,
+      "close": 178.77,
+      "volume": 3799608.011566461
+    },
+    {
+      "timestamp": "2024-09-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 178.77,
+      "high": 183.9,
+      "low": 177.14,
+      "close": 182.55,
+      "volume": 1867821.6492885596
+    },
+    {
+      "timestamp": "2024-09-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 182.55,
+      "high": 184.09,
+      "low": 177.79,
+      "close": 179.52,
+      "volume": 4191940.953207918
+    },
+    {
+      "timestamp": "2024-09-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 179.52,
+      "high": 179.94,
+      "low": 178.0,
+      "close": 178.95,
+      "volume": 2448805.7556294138
+    },
+    {
+      "timestamp": "2024-09-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 178.95,
+      "high": 183.23,
+      "low": 177.74,
+      "close": 181.69,
+      "volume": 3054282.623724946
+    },
+    {
+      "timestamp": "2024-09-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.69,
+      "high": 182.56,
+      "low": 180.42,
+      "close": 181.39,
+      "volume": 4354150.872077421
+    },
+    {
+      "timestamp": "2024-09-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.39,
+      "high": 184.04,
+      "low": 180.87,
+      "close": 183.35,
+      "volume": 4362173.526369199
+    },
+    {
+      "timestamp": "2024-09-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 183.35,
+      "high": 183.53,
+      "low": 181.31,
+      "close": 181.61,
+      "volume": 4329402.073784461
+    },
+    {
+      "timestamp": "2024-09-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.61,
+      "high": 183.15,
+      "low": 177.22,
+      "close": 178.93,
+      "volume": 2360561.03262781
+    },
+    {
+      "timestamp": "2024-09-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 178.93,
+      "high": 182.99,
+      "low": 177.94,
+      "close": 182.17,
+      "volume": 3633590.7914588912
+    },
+    {
+      "timestamp": "2024-09-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 182.17,
+      "high": 182.25,
+      "low": 180.16,
+      "close": 180.84,
+      "volume": 2376749.7933636103
+    },
+    {
+      "timestamp": "2024-09-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 180.84,
+      "high": 182.29,
+      "low": 180.4,
+      "close": 181.98,
+      "volume": 3916103.242921322
+    },
+    {
+      "timestamp": "2024-09-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 181.98,
+      "high": 182.23,
+      "low": 178.48,
+      "close": 178.76,
+      "volume": 2271427.8647863874
+    },
+    {
+      "timestamp": "2024-09-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 178.76,
+      "high": 183.35,
+      "low": 177.98,
+      "close": 182.35,
+      "volume": 1376609.1963224113
+    },
+    {
+      "timestamp": "2024-09-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 182.35,
+      "high": 187.61,
+      "low": 180.61,
+      "close": 186.31,
+      "volume": 2536346.3818468773
+    },
+    {
+      "timestamp": "2024-09-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 186.31,
+      "high": 187.34,
+      "low": 183.14,
+      "close": 183.53,
+      "volume": 3895171.5763741876
+    },
+    {
+      "timestamp": "2024-09-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 183.53,
+      "high": 185.72,
+      "low": 183.16,
+      "close": 185.66,
+      "volume": 2879898.3066755775
+    },
+    {
+      "timestamp": "2024-09-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 185.66,
+      "high": 187.45,
+      "low": 184.42,
+      "close": 186.58,
+      "volume": 3354864.254383739
+    },
+    {
+      "timestamp": "2024-09-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 186.58,
+      "high": 187.33,
+      "low": 183.5,
+      "close": 184.52,
+      "volume": 3393786.710110418
+    },
+    {
+      "timestamp": "2024-09-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 184.52,
+      "high": 187.74,
+      "low": 184.0,
+      "close": 187.12,
+      "volume": 1885033.77551676
+    },
+    {
+      "timestamp": "2024-09-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 187.12,
+      "high": 189.49,
+      "low": 186.66,
+      "close": 189.33,
+      "volume": 4605616.684449717
+    },
+    {
+      "timestamp": "2024-09-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 189.33,
+      "high": 191.47,
+      "low": 188.66,
+      "close": 189.87,
+      "volume": 1050316.3341130258
+    },
+    {
+      "timestamp": "2024-09-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 189.87,
+      "high": 191.75,
+      "low": 188.02,
+      "close": 188.91,
+      "volume": 3436902.1364104315
+    },
+    {
+      "timestamp": "2024-09-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 188.91,
+      "high": 191.84,
+      "low": 187.57,
+      "close": 190.62,
+      "volume": 1363990.7612243744
+    },
+    {
+      "timestamp": "2024-09-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 190.62,
+      "high": 190.77,
+      "low": 186.1,
+      "close": 186.92,
+      "volume": 1148358.1527005758
+    },
+    {
+      "timestamp": "2024-09-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 186.92,
+      "high": 187.24,
+      "low": 186.12,
+      "close": 186.92,
+      "volume": 2254499.8441122645
+    },
+    {
+      "timestamp": "2024-09-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 186.92,
+      "high": 188.76,
+      "low": 185.75,
+      "close": 186.18,
+      "volume": 1620462.292269381
+    },
+    {
+      "timestamp": "2024-09-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 186.18,
+      "high": 191.2,
+      "low": 185.36,
+      "close": 190.78,
+      "volume": 4835189.804433303
+    },
+    {
+      "timestamp": "2024-10-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 190.78,
+      "high": 192.36,
+      "low": 187.5,
+      "close": 188.66,
+      "volume": 1031318.780697843
+    },
+    {
+      "timestamp": "2024-10-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 188.66,
+      "high": 193.85,
+      "low": 188.05,
+      "close": 193.21,
+      "volume": 1962055.8619263768
+    },
+    {
+      "timestamp": "2024-10-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 193.21,
+      "high": 194.18,
+      "low": 192.0,
+      "close": 192.98,
+      "volume": 1250116.5727053834
+    },
+    {
+      "timestamp": "2024-10-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 192.98,
+      "high": 197.22,
+      "low": 192.5,
+      "close": 195.86,
+      "volume": 4417764.012961179
+    },
+    {
+      "timestamp": "2024-10-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 195.86,
+      "high": 198.65,
+      "low": 194.85,
+      "close": 196.93,
+      "volume": 2829696.747257926
+    },
+    {
+      "timestamp": "2024-10-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 196.93,
+      "high": 198.4,
+      "low": 193.41,
+      "close": 195.0,
+      "volume": 1741907.0113475607
+    },
+    {
+      "timestamp": "2024-10-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 195.0,
+      "high": 196.38,
+      "low": 193.3,
+      "close": 194.31,
+      "volume": 3814428.539878626
+    },
+    {
+      "timestamp": "2024-10-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 194.31,
+      "high": 196.31,
+      "low": 192.39,
+      "close": 194.93,
+      "volume": 3524987.1971458914
+    },
+    {
+      "timestamp": "2024-10-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 194.93,
+      "high": 196.48,
+      "low": 194.15,
+      "close": 194.96,
+      "volume": 1187161.159212934
+    },
+    {
+      "timestamp": "2024-10-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 194.96,
+      "high": 197.83,
+      "low": 194.87,
+      "close": 197.03,
+      "volume": 2763065.716819631
+    },
+    {
+      "timestamp": "2024-10-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 197.03,
+      "high": 198.39,
+      "low": 195.93,
+      "close": 197.82,
+      "volume": 3617902.1619169097
+    },
+    {
+      "timestamp": "2024-10-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 197.82,
+      "high": 199.23,
+      "low": 196.3,
+      "close": 197.15,
+      "volume": 4991236.5822752435
+    },
+    {
+      "timestamp": "2024-10-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 197.15,
+      "high": 198.01,
+      "low": 196.91,
+      "close": 197.39,
+      "volume": 1483738.911115244
+    },
+    {
+      "timestamp": "2024-10-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 197.39,
+      "high": 202.66,
+      "low": 196.74,
+      "close": 201.63,
+      "volume": 4562500.739551673
+    },
+    {
+      "timestamp": "2024-10-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 201.63,
+      "high": 204.21,
+      "low": 200.75,
+      "close": 204.02,
+      "volume": 2942040.4869255396
+    },
+    {
+      "timestamp": "2024-10-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 204.02,
+      "high": 208.23,
+      "low": 203.06,
+      "close": 207.96,
+      "volume": 1571384.1623185498
+    },
+    {
+      "timestamp": "2024-10-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 207.96,
+      "high": 210.72,
+      "low": 207.65,
+      "close": 209.62,
+      "volume": 4470951.112022282
+    },
+    {
+      "timestamp": "2024-10-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 209.62,
+      "high": 210.74,
+      "low": 206.75,
+      "close": 207.09,
+      "volume": 4515548.3728167135
+    },
+    {
+      "timestamp": "2024-10-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 207.09,
+      "high": 211.71,
+      "low": 206.5,
+      "close": 210.54,
+      "volume": 3736179.7869798406
+    },
+    {
+      "timestamp": "2024-10-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 210.54,
+      "high": 211.54,
+      "low": 205.54,
+      "close": 207.39,
+      "volume": 4115874.4562255866
+    },
+    {
+      "timestamp": "2024-10-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 207.39,
+      "high": 212.26,
+      "low": 206.21,
+      "close": 211.22,
+      "volume": 4315010.410505118
+    },
+    {
+      "timestamp": "2024-10-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 211.22,
+      "high": 211.42,
+      "low": 207.56,
+      "close": 208.49,
+      "volume": 4637563.46725014
+    },
+    {
+      "timestamp": "2024-10-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 208.49,
+      "high": 209.48,
+      "low": 203.07,
+      "close": 204.82,
+      "volume": 1640968.4588060447
+    },
+    {
+      "timestamp": "2024-10-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 204.82,
+      "high": 206.1,
+      "low": 202.17,
+      "close": 202.63,
+      "volume": 1873449.7952388267
+    },
+    {
+      "timestamp": "2024-10-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 202.63,
+      "high": 202.74,
+      "low": 197.31,
+      "close": 199.0,
+      "volume": 3958997.5184635245
+    },
+    {
+      "timestamp": "2024-10-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 199.0,
+      "high": 203.46,
+      "low": 197.38,
+      "close": 201.51,
+      "volume": 1123372.4257459077
+    },
+    {
+      "timestamp": "2024-10-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 201.51,
+      "high": 203.29,
+      "low": 196.75,
+      "close": 198.43,
+      "volume": 4778567.713542612
+    },
+    {
+      "timestamp": "2024-10-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 198.43,
+      "high": 200.83,
+      "low": 197.14,
+      "close": 200.82,
+      "volume": 3750404.943507496
+    },
+    {
+      "timestamp": "2024-10-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 200.82,
+      "high": 203.84,
+      "low": 199.48,
+      "close": 203.51,
+      "volume": 4691505.944535759
+    },
+    {
+      "timestamp": "2024-10-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 203.51,
+      "high": 205.78,
+      "low": 202.48,
+      "close": 205.21,
+      "volume": 2096259.5419375773
+    },
+    {
+      "timestamp": "2024-10-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 205.21,
+      "high": 205.77,
+      "low": 204.8,
+      "close": 205.31,
+      "volume": 4788361.932718489
+    },
+    {
+      "timestamp": "2024-11-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 205.31,
+      "high": 206.94,
+      "low": 203.46,
+      "close": 205.07,
+      "volume": 1204450.6845999465
+    },
+    {
+      "timestamp": "2024-11-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 205.07,
+      "high": 210.57,
+      "low": 203.56,
+      "close": 210.15,
+      "volume": 2834109.569034179
+    },
+    {
+      "timestamp": "2024-11-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 210.15,
+      "high": 215.67,
+      "low": 208.75,
+      "close": 214.99,
+      "volume": 2996920.346807142
+    },
+    {
+      "timestamp": "2024-11-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 214.99,
+      "high": 216.78,
+      "low": 212.62,
+      "close": 214.02,
+      "volume": 3908110.619646888
+    },
+    {
+      "timestamp": "2024-11-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 214.02,
+      "high": 217.11,
+      "low": 213.99,
+      "close": 215.69,
+      "volume": 4899914.965020457
+    },
+    {
+      "timestamp": "2024-11-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 215.69,
+      "high": 217.26,
+      "low": 211.63,
+      "close": 212.78,
+      "volume": 3718900.9214573866
+    },
+    {
+      "timestamp": "2024-11-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 212.78,
+      "high": 217.44,
+      "low": 212.75,
+      "close": 217.24,
+      "volume": 1301202.2560495976
+    },
+    {
+      "timestamp": "2024-11-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 217.24,
+      "high": 217.81,
+      "low": 215.01,
+      "close": 216.67,
+      "volume": 2538474.4539989815
+    },
+    {
+      "timestamp": "2024-11-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 216.67,
+      "high": 217.31,
+      "low": 211.19,
+      "close": 212.99,
+      "volume": 4432112.517175403
+    },
+    {
+      "timestamp": "2024-11-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 212.99,
+      "high": 215.48,
+      "low": 210.87,
+      "close": 214.4,
+      "volume": 1686889.4032006045
+    },
+    {
+      "timestamp": "2024-11-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 214.4,
+      "high": 216.27,
+      "low": 211.86,
+      "close": 212.6,
+      "volume": 4971429.420160737
+    },
+    {
+      "timestamp": "2024-11-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 212.6,
+      "high": 213.68,
+      "low": 208.12,
+      "close": 209.58,
+      "volume": 4055335.816496051
+    },
+    {
+      "timestamp": "2024-11-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 209.58,
+      "high": 209.73,
+      "low": 204.14,
+      "close": 206.19,
+      "volume": 4370981.788811661
+    },
+    {
+      "timestamp": "2024-11-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 206.19,
+      "high": 210.08,
+      "low": 206.15,
+      "close": 208.93,
+      "volume": 1843931.7253571055
+    },
+    {
+      "timestamp": "2024-11-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 208.93,
+      "high": 213.78,
+      "low": 207.4,
+      "close": 213.77,
+      "volume": 3537143.7521761255
+    },
+    {
+      "timestamp": "2024-11-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 213.77,
+      "high": 217.64,
+      "low": 212.58,
+      "close": 217.49,
+      "volume": 1170012.528150128
+    },
+    {
+      "timestamp": "2024-11-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 217.49,
+      "high": 220.49,
+      "low": 215.32,
+      "close": 219.73,
+      "volume": 1154693.2856437287
+    },
+    {
+      "timestamp": "2024-11-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 219.73,
+      "high": 221.19,
+      "low": 216.76,
+      "close": 218.0,
+      "volume": 3834469.4886505683
+    },
+    {
+      "timestamp": "2024-11-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 218.0,
+      "high": 218.67,
+      "low": 215.86,
+      "close": 216.82,
+      "volume": 2678945.131152003
+    },
+    {
+      "timestamp": "2024-11-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 216.82,
+      "high": 217.39,
+      "low": 215.88,
+      "close": 216.73,
+      "volume": 4837761.12322573
+    },
+    {
+      "timestamp": "2024-11-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 216.73,
+      "high": 216.99,
+      "low": 212.78,
+      "close": 214.17,
+      "volume": 3722291.418726943
+    },
+    {
+      "timestamp": "2024-11-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 214.17,
+      "high": 218.99,
+      "low": 212.54,
+      "close": 217.53,
+      "volume": 3647275.7204993
+    },
+    {
+      "timestamp": "2024-11-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 217.53,
+      "high": 223.81,
+      "low": 216.24,
+      "close": 222.74,
+      "volume": 1267006.593518273
+    },
+    {
+      "timestamp": "2024-11-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 222.74,
+      "high": 223.57,
+      "low": 221.34,
+      "close": 222.16,
+      "volume": 3305520.6026992993
+    },
+    {
+      "timestamp": "2024-11-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 222.16,
+      "high": 228.38,
+      "low": 221.01,
+      "close": 226.86,
+      "volume": 4556040.052274124
+    },
+    {
+      "timestamp": "2024-11-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 226.86,
+      "high": 227.36,
+      "low": 222.95,
+      "close": 225.18,
+      "volume": 2655729.2866134658
+    },
+    {
+      "timestamp": "2024-11-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 225.18,
+      "high": 226.92,
+      "low": 223.14,
+      "close": 224.21,
+      "volume": 2796311.6336168163
+    },
+    {
+      "timestamp": "2024-11-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 224.21,
+      "high": 225.13,
+      "low": 219.42,
+      "close": 221.21,
+      "volume": 3692632.1505927024
+    },
+    {
+      "timestamp": "2024-11-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 221.21,
+      "high": 225.06,
+      "low": 220.2,
+      "close": 224.05,
+      "volume": 4063387.5078850207
+    },
+    {
+      "timestamp": "2024-11-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 224.05,
+      "high": 225.86,
+      "low": 223.99,
+      "close": 224.22,
+      "volume": 4325187.436340622
+    },
+    {
+      "timestamp": "2024-12-01T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 224.22,
+      "high": 226.85,
+      "low": 223.33,
+      "close": 225.85,
+      "volume": 3586173.0678744367
+    },
+    {
+      "timestamp": "2024-12-02T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 225.85,
+      "high": 227.39,
+      "low": 221.71,
+      "close": 223.6,
+      "volume": 3558204.715775334
+    },
+    {
+      "timestamp": "2024-12-03T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 223.6,
+      "high": 230.3,
+      "low": 222.76,
+      "close": 228.83,
+      "volume": 4666713.787680298
+    },
+    {
+      "timestamp": "2024-12-04T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 228.83,
+      "high": 232.07,
+      "low": 226.67,
+      "close": 231.36,
+      "volume": 1444983.9050912717
+    },
+    {
+      "timestamp": "2024-12-05T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 231.36,
+      "high": 231.37,
+      "low": 229.12,
+      "close": 229.91,
+      "volume": 4555079.650285041
+    },
+    {
+      "timestamp": "2024-12-06T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 229.91,
+      "high": 235.3,
+      "low": 229.09,
+      "close": 233.98,
+      "volume": 4443428.830351736
+    },
+    {
+      "timestamp": "2024-12-07T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 233.98,
+      "high": 235.51,
+      "low": 232.69,
+      "close": 235.4,
+      "volume": 3786547.9682878433
+    },
+    {
+      "timestamp": "2024-12-08T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 235.4,
+      "high": 240.44,
+      "low": 233.78,
+      "close": 239.41,
+      "volume": 2794951.347370019
+    },
+    {
+      "timestamp": "2024-12-09T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 239.41,
+      "high": 239.66,
+      "low": 234.22,
+      "close": 235.72,
+      "volume": 1877513.265962372
+    },
+    {
+      "timestamp": "2024-12-10T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 235.72,
+      "high": 242.77,
+      "low": 235.02,
+      "close": 241.24,
+      "volume": 4185674.0191054605
+    },
+    {
+      "timestamp": "2024-12-11T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 241.24,
+      "high": 244.02,
+      "low": 239.34,
+      "close": 242.27,
+      "volume": 2570776.6111404332
+    },
+    {
+      "timestamp": "2024-12-12T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 242.27,
+      "high": 246.34,
+      "low": 240.81,
+      "close": 244.09,
+      "volume": 4725566.050281767
+    },
+    {
+      "timestamp": "2024-12-13T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 244.09,
+      "high": 247.08,
+      "low": 242.93,
+      "close": 246.48,
+      "volume": 2748366.449362948
+    },
+    {
+      "timestamp": "2024-12-14T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 246.48,
+      "high": 249.84,
+      "low": 244.19,
+      "close": 247.92,
+      "volume": 4928640.064305711
+    },
+    {
+      "timestamp": "2024-12-15T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 247.92,
+      "high": 253.44,
+      "low": 245.93,
+      "close": 251.08,
+      "volume": 3762403.8111063507
+    },
+    {
+      "timestamp": "2024-12-16T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 251.08,
+      "high": 255.94,
+      "low": 250.54,
+      "close": 253.46,
+      "volume": 2110520.8357742615
+    },
+    {
+      "timestamp": "2024-12-17T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 253.46,
+      "high": 253.78,
+      "low": 253.08,
+      "close": 253.48,
+      "volume": 1469593.6559010264
+    },
+    {
+      "timestamp": "2024-12-18T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 253.48,
+      "high": 260.31,
+      "low": 253.07,
+      "close": 258.84,
+      "volume": 1974487.1592705976
+    },
+    {
+      "timestamp": "2024-12-19T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 258.84,
+      "high": 264.04,
+      "low": 257.22,
+      "close": 261.96,
+      "volume": 4056429.5919385375
+    },
+    {
+      "timestamp": "2024-12-20T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 261.96,
+      "high": 264.29,
+      "low": 255.74,
+      "close": 257.8,
+      "volume": 3890181.0381380334
+    },
+    {
+      "timestamp": "2024-12-21T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 257.8,
+      "high": 261.04,
+      "low": 256.07,
+      "close": 260.58,
+      "volume": 1794900.3456576662
+    },
+    {
+      "timestamp": "2024-12-22T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 260.58,
+      "high": 267.42,
+      "low": 258.76,
+      "close": 265.36,
+      "volume": 3877174.5561035993
+    },
+    {
+      "timestamp": "2024-12-23T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 265.36,
+      "high": 266.53,
+      "low": 260.29,
+      "close": 261.41,
+      "volume": 4035302.387354457
+    },
+    {
+      "timestamp": "2024-12-24T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 261.41,
+      "high": 264.01,
+      "low": 258.86,
+      "close": 262.82,
+      "volume": 2926595.8895924967
+    },
+    {
+      "timestamp": "2024-12-25T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 262.82,
+      "high": 262.83,
+      "low": 258.29,
+      "close": 260.62,
+      "volume": 1568140.5574448905
+    },
+    {
+      "timestamp": "2024-12-26T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 260.62,
+      "high": 262.87,
+      "low": 258.85,
+      "close": 260.93,
+      "volume": 1059228.2729247096
+    },
+    {
+      "timestamp": "2024-12-27T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 260.93,
+      "high": 267.66,
+      "low": 260.03,
+      "close": 265.29,
+      "volume": 2884965.8680013106
+    },
+    {
+      "timestamp": "2024-12-28T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 265.29,
+      "high": 267.75,
+      "low": 260.96,
+      "close": 263.04,
+      "volume": 4587169.369939674
+    },
+    {
+      "timestamp": "2024-12-29T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 263.04,
+      "high": 265.37,
+      "low": 262.27,
+      "close": 262.34,
+      "volume": 3478569.45387824
+    },
+    {
+      "timestamp": "2024-12-30T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 262.34,
+      "high": 267.31,
+      "low": 260.53,
+      "close": 264.66,
+      "volume": 4198327.567894086
+    },
+    {
+      "timestamp": "2024-12-31T00:00:00",
+      "symbol": "TEST",
+      "freq": "1d",
+      "open": 264.66,
+      "high": 266.32,
+      "low": 262.03,
+      "close": 263.62,
+      "volume": 3496880.7468490736
+    }
+  ],
+  "equity_curve": [
+    {
+      "timestamp": "2024-01-01T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-02T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-03T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-04T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-05T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-06T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-07T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-08T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-09T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-10T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-11T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-12T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-13T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-14T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-15T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-16T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-17T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-18T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-19T00:00:00",
+      "equity": 100000.0,
+      "cash": 100000.0,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-01-20T00:00:00",
+      "equity": 99870.13885844237,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-21T00:00:00",
+      "equity": 101758.74354731447,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-22T00:00:00",
+      "equity": 100629.19528841968,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-23T00:00:00",
+      "equity": 99065.90049810927,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-24T00:00:00",
+      "equity": 98858.06361847265,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-25T00:00:00",
+      "equity": 100014.72103558092,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-26T00:00:00",
+      "equity": 100312.92177592915,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-27T00:00:00",
+      "equity": 100159.30321271945,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-28T00:00:00",
+      "equity": 98776.73614383221,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-29T00:00:00",
+      "equity": 99309.88292203056,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-30T00:00:00",
+      "equity": 100565.94058592158,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-01-31T00:00:00",
+      "equity": 100123.15766843481,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 903.6386071158377
+      }
+    },
+    {
+      "timestamp": "2024-02-01T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-02T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-03T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-04T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-05T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-06T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-07T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-08T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-09T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-10T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-11T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-12T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-13T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-14T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-15T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-16T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-17T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-18T00:00:00",
+      "equity": 98503.96175618317,
+      "cash": 98503.96175618317,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-02-19T00:00:00",
+      "equity": 98376.04338696711,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-20T00:00:00",
+      "equity": 96455.43147378926,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-21T00:00:00",
+      "equity": 94809.19269106539,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-22T00:00:00",
+      "equity": 95827.0284975882,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-23T00:00:00",
+      "equity": 96658.99863509381,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-24T00:00:00",
+      "equity": 97278.55086515119,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-25T00:00:00",
+      "equity": 98792.02845571992,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-26T00:00:00",
+      "equity": 100491.37171530585,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-27T00:00:00",
+      "equity": 99491.23740107038,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-28T00:00:00",
+      "equity": 100349.75977700701,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-02-29T00:00:00",
+      "equity": 99677.1030700876,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-01T00:00:00",
+      "equity": 99199.16277832905,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-02T00:00:00",
+      "equity": 100332.05828471966,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-03T00:00:00",
+      "equity": 102704.05825122504,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-04T00:00:00",
+      "equity": 102739.46123579974,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-05T00:00:00",
+      "equity": 102208.41646717915,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-06T00:00:00",
+      "equity": 102447.3866130584,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-07T00:00:00",
+      "equity": 102553.59556678253,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-08T00:00:00",
+      "equity": 102111.0582595987,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-09T00:00:00",
+      "equity": 102757.16272808709,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-10T00:00:00",
+      "equity": 100739.19260732879,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-11T00:00:00",
+      "equity": 102783.71496651812,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-12T00:00:00",
+      "equity": 104323.7447955179,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-13T00:00:00",
+      "equity": 106332.86417013251,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-14T00:00:00",
+      "equity": 106093.89402425324,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-15T00:00:00",
+      "equity": 108678.31189820686,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-16T00:00:00",
+      "equity": 110890.99843412604,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-17T00:00:00",
+      "equity": 111528.25215647077,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-18T00:00:00",
+      "equity": 109828.90889688482,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-19T00:00:00",
+      "equity": 108111.86414501154,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-20T00:00:00",
+      "equity": 106465.62536228767,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-21T00:00:00",
+      "equity": 106058.49103967853,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-22T00:00:00",
+      "equity": 106076.19253196588,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-23T00:00:00",
+      "equity": 107164.83430763813,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-24T00:00:00",
+      "equity": 106678.0432697359,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-25T00:00:00",
+      "equity": 104960.99851786261,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-26T00:00:00",
+      "equity": 105323.87910975335,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 885.0746143676753
+      }
+    },
+    {
+      "timestamp": "2024-03-27T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-03-28T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-03-29T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-03-30T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-03-31T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-01T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-02T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-03T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-04T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-05T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-06T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-07T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-08T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-09T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-10T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-11T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-12T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-13T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-14T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-15T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-16T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-17T00:00:00",
+      "equity": 104656.6350943396,
+      "cash": 104656.6350943396,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-04-18T00:00:00",
+      "equity": 104520.72679329029,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-19T00:00:00",
+      "equity": 107021.2226495891,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-20T00:00:00",
+      "equity": 107119.45641537226,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-21T00:00:00",
+      "equity": 108878.73385712536,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-22T00:00:00",
+      "equity": 108896.5945418132,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-23T00:00:00",
+      "equity": 110379.03137090463,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-24T00:00:00",
+      "equity": 110030.74801949158,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-25T00:00:00",
+      "equity": 110584.4292448149,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-26T00:00:00",
+      "equity": 112334.77634422407,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-27T00:00:00",
+      "equity": 112566.9652451661,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-28T00:00:00",
+      "equity": 114245.86960582389,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-29T00:00:00",
+      "equity": 115442.53547990974,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-04-30T00:00:00",
+      "equity": 115335.37137178265,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-01T00:00:00",
+      "equity": 117362.55908385346,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-02T00:00:00",
+      "equity": 120300.64171500457,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-03T00:00:00",
+      "equity": 122792.20722895945,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-04T00:00:00",
+      "equity": 121684.84477831284,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-05T00:00:00",
+      "equity": 121622.33238190536,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-06T00:00:00",
+      "equity": 123310.16708490708,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-07T00:00:00",
+      "equity": 122149.2225801969,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-08T00:00:00",
+      "equity": 122997.60510286971,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-09T00:00:00",
+      "equity": 124506.83295899292,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-10T00:00:00",
+      "equity": 123104.7692109968,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-11T00:00:00",
+      "equity": 123354.81879662669,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-12T00:00:00",
+      "equity": 125757.08088714232,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-13T00:00:00",
+      "equity": 123837.05728319859,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-14T00:00:00",
+      "equity": 122417.13285051464,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-15T00:00:00",
+      "equity": 120104.17418343824,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-16T00:00:00",
+      "equity": 120997.20841783067,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-17T00:00:00",
+      "equity": 122015.26744503803,
+      "cash": -1.4551915228366852e-11,
+      "positions": {
+        "TEST": 893.0342343924325
+      }
+    },
+    {
+      "timestamp": "2024-05-18T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-19T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-20T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-21T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-22T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-23T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-24T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-25T00:00:00",
+      "equity": 119582.40662955484,
+      "cash": 119582.40662955484,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-05-26T00:00:00",
+      "equity": 119427.11555120363,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-05-27T00:00:00",
+      "equity": 119615.68919235245,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-05-28T00:00:00",
+      "equity": 122418.57922215533,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-05-29T00:00:00",
+      "equity": 121261.42278783304,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-05-30T00:00:00",
+      "equity": 120944.2762095373,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-05-31T00:00:00",
+      "equity": 120189.98164494203,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-01T00:00:00",
+      "equity": 122607.15286330415,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-02T00:00:00",
+      "equity": 124124.31352163783,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-03T00:00:00",
+      "equity": 124415.74551250419,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-04T00:00:00",
+      "equity": 127398.63765431274,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-05T00:00:00",
+      "equity": 130150.09850925687,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-06T00:00:00",
+      "equity": 128470.07879720377,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-07T00:00:00",
+      "equity": 128752.939258927,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-08T00:00:00",
+      "equity": 128615.79479263695,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-09T00:00:00",
+      "equity": 130492.959674982,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-10T00:00:00",
+      "equity": 129652.94981895543,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-11T00:00:00",
+      "equity": 131032.96601099907,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-12T00:00:00",
+      "equity": 129181.5157160834,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-13T00:00:00",
+      "equity": 127878.64328632792,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-14T00:00:00",
+      "equity": 130844.39236985025,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-15T00:00:00",
+      "equity": 128581.50867606442,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-16T00:00:00",
+      "equity": 130098.6693343981,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-17T00:00:00",
+      "equity": 132978.70312648913,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-18T00:00:00",
+      "equity": 135233.01529113183,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-19T00:00:00",
+      "equity": 135138.7284705574,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-20T00:00:00",
+      "equity": 136630.17454146172,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-21T00:00:00",
+      "equity": 136655.88912889108,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-22T00:00:00",
+      "equity": 138430.1956615186,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-23T00:00:00",
+      "equity": 138061.61990836408,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-24T00:00:00",
+      "equity": 136715.88983289298,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-25T00:00:00",
+      "equity": 136107.3112637309,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-26T00:00:00",
+      "equity": 134418.72002253466,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-27T00:00:00",
+      "equity": 135961.5952682977,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-28T00:00:00",
+      "equity": 139338.77775069018,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-29T00:00:00",
+      "equity": 137264.46769805317,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-06-30T00:00:00",
+      "equity": 134650.1513093991,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-01T00:00:00",
+      "equity": 133415.85111278866,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-02T00:00:00",
+      "equity": 135130.1569414143,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-03T00:00:00",
+      "equity": 136484.4585460285,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-04T00:00:00",
+      "equity": 139595.92362498402,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-05T00:00:00",
+      "equity": 140195.930665003,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-06T00:00:00",
+      "equity": 143315.9672731016,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-07T00:00:00",
+      "equity": 146393.14623548457,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-08T00:00:00",
+      "equity": 148553.17157955287,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-09T00:00:00",
+      "equity": 146504.57611434525,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-10T00:00:00",
+      "equity": 148861.74662870547,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-11T00:00:00",
+      "equity": 149187.46473614435,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-12T00:00:00",
+      "equity": 146650.29210977844,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-13T00:00:00",
+      "equity": 147901.73536467514,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-14T00:00:00",
+      "equity": 145570.2794377443,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-15T00:00:00",
+      "equity": 144430.26606170827,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-16T00:00:00",
+      "equity": 144550.26746971204,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-17T00:00:00",
+      "equity": 145544.56485031493,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-18T00:00:00",
+      "equity": 148484.59934640783,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-19T00:00:00",
+      "equity": 147456.01584923247,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-20T00:00:00",
+      "equity": 149624.61272244388,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-21T00:00:00",
+      "equity": 148964.604978423,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-22T00:00:00",
+      "equity": 146075.99965718883,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-23T00:00:00",
+      "equity": 145364.56273830924,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-24T00:00:00",
+      "equity": 148844.60357041922,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-25T00:00:00",
+      "equity": 152530.36110196428,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-26T00:00:00",
+      "equity": 150610.33857390363,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-27T00:00:00",
+      "equity": 150541.7663407586,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-28T00:00:00",
+      "equity": 152736.07780139937,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-29T00:00:00",
+      "equity": 151338.9185510695,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-30T00:00:00",
+      "equity": 153721.80365285912,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-07-31T00:00:00",
+      "equity": 155376.10877748285,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-01T00:00:00",
+      "equity": 158256.14256957386,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-02T00:00:00",
+      "equity": 158230.42798214447,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-03T00:00:00",
+      "equity": 157004.69931467716,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-04T00:00:00",
+      "equity": 156910.41249410275,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-05T00:00:00",
+      "equity": 157236.1306015416,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-06T00:00:00",
+      "equity": 158238.9995112876,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-07T00:00:00",
+      "equity": 161804.7556348289,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-08T00:00:00",
+      "equity": 165344.7971709408,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-09T00:00:00",
+      "equity": 165293.36799608203,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-10T00:00:00",
+      "equity": 169073.4123482015,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-11T00:00:00",
+      "equity": 169793.42079622427,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-12T00:00:00",
+      "equity": 166947.67312070576,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-13T00:00:00",
+      "equity": 164916.2207137844,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-14T00:00:00",
+      "equity": 163647.6344006014,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-15T00:00:00",
+      "equity": 162524.76408285167,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-16T00:00:00",
+      "equity": 161119.03330337864,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-17T00:00:00",
+      "equity": 158650.43291015775,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 857.1529143128087
+      }
+    },
+    {
+      "timestamp": "2024-08-18T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-19T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-20T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-21T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-22T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-23T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-24T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-25T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-26T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-27T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-28T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-29T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-30T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-08-31T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-01T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-02T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-03T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-04T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-05T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-06T00:00:00",
+      "equity": 155345.37422343876,
+      "cash": 155345.37422343876,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-09-07T00:00:00",
+      "equity": 155143.64094711526,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-08T00:00:00",
+      "equity": 154887.47334139046,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-09T00:00:00",
+      "equity": 156561.10169879234,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-10T00:00:00",
+      "equity": 155075.32958558865,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-11T00:00:00",
+      "equity": 152786.8989744473,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-12T00:00:00",
+      "equity": 155553.5091162749,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-13T00:00:00",
+      "equity": 154417.83273089505,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-14T00:00:00",
+      "equity": 155391.2696326492,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-15T00:00:00",
+      "equity": 152641.73733120327,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-16T00:00:00",
+      "equity": 155707.20967970975,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-17T00:00:00",
+      "equity": 159088.6220752768,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-18T00:00:00",
+      "equity": 156714.80226222723,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-19T00:00:00",
+      "equity": 158533.59226287314,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-20T00:00:00",
+      "equity": 159319.17292042912,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-21T00:00:00",
+      "equity": 157560.155361119,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-22T00:00:00",
+      "equity": 159780.2746107337,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-23T00:00:00",
+      "equity": 161667.37597290624,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-24T00:00:00",
+      "equity": 162128.47766321083,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-25T00:00:00",
+      "equity": 161308.74132489154,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-26T00:00:00",
+      "equity": 162768.89667752277,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-27T00:00:00",
+      "equity": 159609.4962069172,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-28T00:00:00",
+      "equity": 159609.4962069172,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-29T00:00:00",
+      "equity": 158977.61611279607,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-09-30T00:00:00",
+      "equity": 162905.51940057598,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-01T00:00:00",
+      "equity": 161095.26832012087,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-02T00:00:00",
+      "equity": 164980.47700694666,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-03T00:00:00",
+      "equity": 164784.08184255764,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-04T00:00:00",
+      "equity": 167243.29085751553,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-05T00:00:00",
+      "equity": 168156.9553179339,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-06T00:00:00",
+      "equity": 166508.9437211045,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-07T00:00:00",
+      "equity": 165919.7582279375,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-08T00:00:00",
+      "equity": 166449.17127976872,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-09T00:00:00",
+      "equity": 166474.7880403412,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-10T00:00:00",
+      "equity": 168242.34451984215,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-11T00:00:00",
+      "equity": 168916.91921491738,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-12T00:00:00",
+      "equity": 168344.81156213206,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-13T00:00:00",
+      "equity": 168549.74564671188,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-14T00:00:00",
+      "equity": 172170.24780762204,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-15T00:00:00",
+      "equity": 174211.04973322945,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-16T00:00:00",
+      "equity": 177575.38428841482,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-17T00:00:00",
+      "equity": 178992.84504009192,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-18T00:00:00",
+      "equity": 176832.49823181296,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-19T00:00:00",
+      "equity": 179778.42569764788,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-20T00:00:00",
+      "equity": 177088.66583753773,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-21T00:00:00",
+      "equity": 180359.07227062405,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-22T00:00:00",
+      "equity": 178027.9470585286,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-23T00:00:00",
+      "equity": 174894.1633484955,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-24T00:00:00",
+      "equity": 173024.13982670463,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-25T00:00:00",
+      "equity": 169924.51179743482,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-26T00:00:00",
+      "equity": 172067.78076533214,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 853.8920190825871
+      }
+    },
+    {
+      "timestamp": "2024-10-27T00:00:00",
+      "equity": 169217.57504654524,
+      "cash": 169217.57504654524,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-10-28T00:00:00",
+      "equity": 169217.57504654524,
+      "cash": 169217.57504654524,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-10-29T00:00:00",
+      "equity": 169217.57504654524,
+      "cash": 169217.57504654524,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-10-30T00:00:00",
+      "equity": 169217.57504654524,
+      "cash": 169217.57504654524,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-10-31T00:00:00",
+      "equity": 169217.57504654524,
+      "cash": 169217.57504654524,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-11-01T00:00:00",
+      "equity": 169217.57504654524,
+      "cash": 169217.57504654524,
+      "positions": {
+        "TEST": null
+      }
+    },
+    {
+      "timestamp": "2024-11-02T00:00:00",
+      "equity": 168997.82717187368,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-03T00:00:00",
+      "equity": 172890.0445571312,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-04T00:00:00",
+      "equity": 172109.99272578827,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-05T00:00:00",
+      "equity": 173452.96855913123,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-06T00:00:00",
+      "equity": 171112.81306510244,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-07T00:00:00",
+      "equity": 174699.4431349885,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-08T00:00:00",
+      "equity": 174241.0621619313,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-09T00:00:00",
+      "equity": 171281.69026570246,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-10T00:00:00",
+      "equity": 172415.5800411597,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-11T00:00:00",
+      "equity": 170968.06117887385,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-12T00:00:00",
+      "equity": 168539.44619881647,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-13T00:00:00",
+      "equity": 165813.28567484478,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-14T00:00:00",
+      "equity": 168016.73105410213,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-15T00:00:00",
+      "equity": 171908.94843935966,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-16T00:00:00",
+      "equity": 174900.4874214171,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-17T00:00:00",
+      "equity": 176701.84422781726,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-18T00:00:00",
+      "equity": 175310.6177657314,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-19T00:00:00",
+      "equity": 174361.68873378847,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-20T00:00:00",
+      "equity": 174289.31279067416,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-21T00:00:00",
+      "equity": 172230.6192976454,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-22T00:00:00",
+      "equity": 174932.65450724566,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-23T00:00:00",
+      "equity": 179122.4174364175,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-24T00:00:00",
+      "equity": 178655.99469190318,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-25T00:00:00",
+      "equity": 182435.6272767607,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-26T00:00:00",
+      "equity": 181084.60967196056,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-27T00:00:00",
+      "equity": 180304.55784061764,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-28T00:00:00",
+      "equity": 177892.02640347453,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-29T00:00:00",
+      "equity": 180175.88949730335,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-11-30T00:00:00",
+      "equity": 180312.59961207476,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-01T00:00:00",
+      "equity": 181623.40835958917,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-02T00:00:00",
+      "equity": 179814.00978173185,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-03T00:00:00",
+      "equity": 184019.856253818,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-04T00:00:00",
+      "equity": 186054.42443247535,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-05T00:00:00",
+      "equity": 184888.3675711895,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-06T00:00:00",
+      "equity": 188161.36855424696,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-07T00:00:00",
+      "equity": 189303.30010116135,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-08T00:00:00",
+      "equity": 192528.05045547595,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-09T00:00:00",
+      "equity": 189560.63678778996,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-10T00:00:00",
+      "equity": 193999.69463213327,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-11T00:00:00",
+      "equity": 194827.99709221904,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-12T00:00:00",
+      "equity": 196291.5994974192,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-13T00:00:00",
+      "equity": 198213.5828756765,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-14T00:00:00",
+      "equity": 199371.59796550518,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-15T00:00:00",
+      "equity": 201912.7977459626,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-16T00:00:00",
+      "equity": 203826.7393527628,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-17T00:00:00",
+      "equity": 203842.82289567706,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-18T00:00:00",
+      "equity": 208153.21239670605,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-19T00:00:00",
+      "equity": 210662.24509133486,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-20T00:00:00",
+      "equity": 207316.86816516312,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-21T00:00:00",
+      "equity": 209552.48063024905,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-22T00:00:00",
+      "equity": 213396.44738676373,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-23T00:00:00",
+      "equity": 210219.94766119198,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-24T00:00:00",
+      "equity": 211353.83743664922,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-25T00:00:00",
+      "equity": 209584.64771607763,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-26T00:00:00",
+      "equity": 209833.94263124908,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-27T00:00:00",
+      "equity": 213340.15498656372,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-28T00:00:00",
+      "equity": 211530.7564087064,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-29T00:00:00",
+      "equity": 210967.83240670632,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-30T00:00:00",
+      "equity": 212833.52338476368,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    },
+    {
+      "timestamp": "2024-12-31T00:00:00",
+      "equity": 211997.17915322073,
+      "cash": 0.0,
+      "positions": {
+        "TEST": 804.1771457143643
+      }
+    }
+  ],
+  "trades": [
+    {
+      "timestamp": "2024-01-21T00:00:00",
+      "symbol": "TEST",
+      "side": "BUY",
+      "quantity": 903.6386071158377,
+      "price": 110.63051999999999,
+      "commission": 29.991002699190243,
+      "slippage": 1.2194800000000043,
+      "order_id": "6bb8d01d-51c3-4ea2-91c5-bfeeaba2fecf"
+    },
+    {
+      "timestamp": "2024-02-02T00:00:00",
+      "symbol": "TEST",
+      "side": "SELL",
+      "quantity": 903.6386071158377,
+      "price": 109.04085,
+      "commission": 29.560056543818096,
+      "slippage": 1.759149999999991,
+      "order_id": "8fff4a50-353a-413c-a5ef-0f8cfc0ed975"
+    },
+    {
+      "timestamp": "2024-02-20T00:00:00",
+      "symbol": "TEST",
+      "side": "BUY",
+      "quantity": 885.0746143676753,
+      "price": 111.26114999999999,
+      "commission": 29.542325829106215,
+      "slippage": 1.6911499999999933,
+      "order_id": "92ace1e5-1f41-438f-b40c-25512a2635c3"
+    },
+    {
+      "timestamp": "2024-03-28T00:00:00",
+      "symbol": "TEST",
+      "side": "SELL",
+      "quantity": 885.0746143676753,
+      "price": 118.28160000000001,
+      "commission": 31.406412452037486,
+      "slippage": 0.7183999999999884,
+      "order_id": "11ec30e5-5931-4a3e-9b29-ff4bc9f6af49"
+    },
+    {
+      "timestamp": "2024-04-19T00:00:00",
+      "symbol": "TEST",
+      "side": "BUY",
+      "quantity": 893.0342343924325,
+      "price": 117.15704,
+      "commission": 31.387574256025076,
+      "slippage": 1.0129600000000067,
+      "order_id": "f985009a-935f-46e9-9617-7103eeb921c2"
+    },
+    {
+      "timestamp": "2024-05-19T00:00:00",
+      "symbol": "TEST",
+      "side": "SELL",
+      "quantity": 893.0342343924325,
+      "price": 133.94592,
+      "commission": 35.885487635157,
+      "slippage": 2.6840799999999945,
+      "order_id": "65a3a1bb-77e7-46e0-9b4e-d9f42aa550f2"
+    },
+    {
+      "timestamp": "2024-05-27T00:00:00",
+      "symbol": "TEST",
+      "side": "BUY",
+      "quantity": 857.1529143128087,
+      "price": 139.46932999999999,
+      "commission": 35.86396280002644,
+      "slippage": 2.0693299999999795,
+      "order_id": "a154d2ef-19b4-481f-b15c-c25c85ab8975"
+    },
+    {
+      "timestamp": "2024-08-19T00:00:00",
+      "symbol": "TEST",
+      "side": "SELL",
+      "quantity": 857.1529143128087,
+      "price": 181.28853,
+      "commission": 46.61759754629551,
+      "slippage": 3.801469999999995,
+      "order_id": "e732cc3c-70d2-42d3-a815-1f5a786d8c0e"
+    },
+    {
+      "timestamp": "2024-09-08T00:00:00",
+      "symbol": "TEST",
+      "side": "BUY",
+      "quantity": 853.8920190825871,
+      "price": 181.87168999999997,
+      "commission": 46.5896353764187,
+      "slippage": 2.921689999999984,
+      "order_id": "c98abaae-b16b-450c-ad4a-92fb11d3e951"
+    },
+    {
+      "timestamp": "2024-10-28T00:00:00",
+      "symbol": "TEST",
+      "side": "SELL",
+      "quantity": 853.8920190825871,
+      "price": 198.23157,
+      "commission": 50.78050666596336,
+      "slippage": 3.278429999999986,
+      "order_id": "a88aa345-0836-45f1-b52e-62baa36e474c"
+    },
+    {
+      "timestamp": "2024-11-03T00:00:00",
+      "symbol": "TEST",
+      "side": "BUY",
+      "quantity": 804.1771457143643,
+      "price": 210.36014999999998,
+      "commission": 50.75004749971365,
+      "slippage": 5.290149999999983,
+      "order_id": "f61d04b3-7cb3-4fa2-9b0a-6648e301de21"
+    }
+  ],
+  "annotations": []
+}
