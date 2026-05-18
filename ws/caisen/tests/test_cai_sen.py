@@ -20,16 +20,19 @@ def make_bar(idx: int, open_p: float, high: float, low: float, close: float, vol
 
 
 def test_platform_detection():
-    """测试整理平台检测 - 10根K线在3%振幅内波动"""
+    """测试整理平台检测 - 10根K线在3%振幅内波动，量能退潮"""
     strategy = CaiSenStrategy(platform_min_bars=10, platform_max_amplitude=0.05)
-    
+
     # 生成10根横盘K线（价格在100±1.5，振幅3%）
+    # 量能退潮：前半段成交量高，后半段成交量低
     base_price = 100.0
     for i in range(10):
-        bar = make_bar(i, base_price, 101.5, 98.5, base_price + (i % 3 - 1))
+        # 前半段成交量1000，后半段成交量600（退潮40%）
+        volume = 1000 if i < 5 else 600
+        bar = make_bar(i, base_price, 101.5, 98.5, base_price + (i % 3 - 1), volume=volume)
         order = strategy.on_bar(bar)
         assert order is None  # 前9根不应产生信号
-    
+
     # 第10根后应检测到整理平台
     assert strategy.platform is not None
     assert strategy.platform.duration() == 10
@@ -38,8 +41,10 @@ def test_platform_detection():
 
 def test_breakdown_pullback_buy_signal():
     """测试破底翻产生第一买点信号"""
-    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05)
-    
+    # 禁用量能退潮检查，因为测试数据只有5根K线
+    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05,
+                              platform_volume_decline=False)
+
     # 1. 形成整理平台（5根K线，价格100±1）
     for i in range(5):
         bar = make_bar(i, 100, 101, 99, 100)
@@ -73,8 +78,9 @@ def test_breakdown_pullback_buy_signal():
 
 def test_breakout_second_buy_signal():
     """测试突破平台上沿产生第二买点"""
-    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05)
-    
+    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05,
+                              platform_volume_decline=False)
+
     # 1. 形成整理平台
     for i in range(5):
         bar = make_bar(i, 100, 101, 99, 100)
@@ -127,8 +133,9 @@ def test_target_calculation():
 
 def test_stop_loss():
     """测试止损逻辑"""
-    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05)
-    
+    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05,
+                              platform_volume_decline=False)
+
     # 形成平台并触发第一买点
     for i in range(5):
         bar = make_bar(i, 100, 101, 99, 100)
@@ -329,3 +336,73 @@ def test_head_and_shoulders_top_pattern():
     # 验证信号
     hs_signals = [s for s in strategy.signals if "头肩顶" in s.reason]
     assert len(hs_signals) >= 1
+
+
+def test_caisen_volume_decline():
+    """测试蔡森量能退潮标准 - 平台后半段成交量应小于前半段"""
+    # 启用严格的量能退潮检查
+    strategy = CaiSenStrategy(platform_min_bars=10, platform_max_amplitude=0.05,
+                              platform_volume_decline=True)
+
+    # 场景1：量能退潮（后半段成交量减少40%）- 应检测到平台
+    for i in range(10):
+        volume = 1000 if i < 5 else 600  # 前半段1000，后半段600
+        bar = make_bar(i, 100, 101, 99, 100, volume=volume)
+        strategy.on_bar(bar)
+
+    assert strategy.platform is not None, "量能退潮时应检测到整理平台"
+
+    # 重置策略
+    strategy2 = CaiSenStrategy(platform_min_bars=10, platform_max_amplitude=0.05,
+                               platform_volume_decline=True)
+
+    # 场景2：量能未退潮（后半段成交量增加）- 不应检测到平台
+    for i in range(10):
+        volume = 600 if i < 5 else 1000  # 前半段600，后半段1000（量能增加）
+        bar = make_bar(i, 100, 101, 99, 100, volume=volume)
+        strategy2.on_bar(bar)
+
+    assert strategy2.platform is None, "量能未退潮时不应检测到整理平台"
+
+
+def test_caisen_instant_breakdown():
+    """测试蔡森瞬间破底标准 - 破底应在平台形成后1-2根K线内完成"""
+    strategy = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05,
+                              platform_volume_decline=False,
+                              breakdown_max_bars=2)
+
+    # 1. 形成整理平台（5根K线）
+    for i in range(5):
+        bar = make_bar(i, 100, 101, 99, 100)
+        strategy.on_bar(bar)
+
+    assert strategy.platform is not None
+    platform_lower = strategy.platform.lower
+
+    # 2. 平台形成后第1根K线破底（瞬间破底）- 应识别
+    breakdown_price = platform_lower * 0.99
+    bar_breakdown = make_bar(5, 100, 100, breakdown_price * 0.998, breakdown_price, volume=2000)
+    strategy.on_bar(bar_breakdown)
+
+    assert strategy.breakdown_bar is not None, "平台形成后1根K线破底应被识别"
+
+    # 重置策略测试非瞬间破底
+    strategy2 = CaiSenStrategy(platform_min_bars=5, platform_max_amplitude=0.05,
+                               platform_volume_decline=False,
+                               breakdown_max_bars=2)
+
+    # 1. 形成整理平台
+    for i in range(5):
+        bar = make_bar(i, 100, 101, 99, 100)
+        strategy2.on_bar(bar)
+
+    # 2. 平台形成后第3、4根K线在平台内波动
+    strategy2.on_bar(make_bar(5, 100, 101, 99, 100))
+    strategy2.on_bar(make_bar(6, 100, 101, 99, 100))
+
+    # 3. 第4根K线才破底（超过breakdown_max_bars=2）- 不应识别为瞬间破底
+    breakdown_price = platform_lower * 0.99
+    bar_breakdown = make_bar(7, 100, 100, breakdown_price * 0.998, breakdown_price, volume=2000)
+    strategy2.on_bar(bar_breakdown)
+
+    assert strategy2.breakdown_bar is None, "平台形成后3根K线才破底不应被识别为瞬间破底"

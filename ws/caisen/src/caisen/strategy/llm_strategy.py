@@ -7,7 +7,7 @@ from datetime import datetime
 from ..core.bar import Bar
 from ..core.order import Order, Side
 from ..core.config import BacktestConfig
-from ..strategy.base import Strategy, Annotation
+from ..strategy.base import Strategy, Annotation, AnnotationType
 from ..llm.provider import LLMProvider
 
 
@@ -67,12 +67,22 @@ class LLMStrategy(Strategy):
 
         # 记录标注
         for annotation in result.get("annotations", []):
+            ann_type = annotation.get("type", "marker")
+            # 映射到 AnnotationType
+            try:
+                ann_type_enum = AnnotationType(ann_type)
+            except ValueError:
+                ann_type_enum = AnnotationType.TEXT_LABEL
+
             self.annotations.append(Annotation(
-                bar_index=self.bar_index - 1,
-                type=annotation.get("type", "marker"),
-                points=annotation.get("points", []),
-                label=annotation.get("label", ""),
-                color=annotation.get("color", "blue")
+                type=ann_type_enum,
+                timestamp=bar.timestamp,
+                data={
+                    "label": annotation.get("label", ""),
+                    "color": annotation.get("color", "blue"),
+                    "price": annotation.get("price", bar.close),
+                    "points": annotation.get("points", []),
+                }
             ))
 
         return self._parse_response_to_order(result)

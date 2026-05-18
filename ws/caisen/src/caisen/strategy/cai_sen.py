@@ -15,7 +15,7 @@ from enum import Enum, auto
 from ..core.bar import Bar
 from ..core.order import Order, Side
 from ..core.config import BacktestConfig
-from .base import Strategy, Annotation
+from .base import Strategy, Annotation, AnnotationType
 
 
 class PatternType(Enum):
@@ -91,7 +91,9 @@ class CaiSenStrategy(Strategy):
                  w_bottom_enabled: bool = True,
                  m_top_enabled: bool = True,
                  head_and_shoulders_bottom_enabled: bool = True,
-                 head_and_shoulders_top_enabled: bool = True):
+                 head_and_shoulders_top_enabled: bool = True,
+                 platform_volume_decline: bool = True,  # 量能退潮确认
+                 breakdown_max_bars: int = 2):  # 瞬间破底最大K线数
 
         self.platform_min_bars = platform_min_bars
         self.platform_max_amplitude = platform_max_amplitude
@@ -104,6 +106,8 @@ class CaiSenStrategy(Strategy):
         self.m_top_enabled = m_top_enabled
         self.head_and_shoulders_bottom_enabled = head_and_shoulders_bottom_enabled
         self.head_and_shoulders_top_enabled = head_and_shoulders_top_enabled
+        self.platform_volume_decline = platform_volume_decline
+        self.breakdown_max_bars = breakdown_max_bars
         
         # 状态
         self.bars: List[Bar] = []
@@ -116,6 +120,7 @@ class CaiSenStrategy(Strategy):
         self.breakdown_bar: Optional[Bar] = None
         self.breakdown_low: float = 0
         self.platform_avg_volume: float = 0
+        self.platform_volume_trend: float = 0  # 量能趋势（负值表示退潮）
         
         # 持仓状态
         self.position = 0  # 0=空仓, 1=第一买点持仓, 2=第二买点持仓
@@ -320,6 +325,16 @@ class CaiSenStrategy(Strategy):
         # 记录平台平均成交量（用于后续确认）
         self.platform_avg_volume = sum(volumes) / len(volumes)
         
+        # 蔡森：量能退潮判断 - 平台后半段成交量应小于前半段
+        if self.platform_volume_decline and len(volumes) >= 6:
+            mid = len(volumes) // 2
+            first_half_avg = sum(volumes[:mid]) / mid
+            second_half_avg = sum(volumes[mid:]) / (len(volumes) - mid)
+            self.platform_volume_trend = (second_half_avg - first_half_avg) / first_half_avg
+            # 量能退潮：后半段成交量比前半段减少10%以上
+            if self.platform_volume_trend > -0.1:
+                return False  # 量能未退潮，不是有效的整理平台
+        
         current_index = len(self.bars) - 1
         start_index = current_index - self.platform_min_bars + 1
         self.platform = Platform(
@@ -335,24 +350,31 @@ class CaiSenStrategy(Strategy):
     def _detect_breakdown(self, bar: Bar) -> bool:
         """
         检测破底
-        
-        标准：
+
+        蔡森标准：
         - 收盘价跌破平台下沿
-        - 跌破幅度不超过breakdown_max_pct（刺破而非真突破）
+        - 跌破幅度不超过breakdown_max_pct（刺破而非真突破，1-3%）
+        - 瞬间破底：1-2根K线完成跌破
         - 破底时可能放量（止损盘涌出）
         """
         if not self.platform:
             return False
-        
+
         # 收盘价跌破平台下沿
         if bar.close >= self.platform.lower:
             return False
-        
+
         # 检查跌破幅度
         breakdown_pct = (self.platform.lower - bar.close) / self.platform.lower
         if breakdown_pct > self.breakdown_max_pct:
             return False  # 真跌破，不是洗盘
-        
+
+        # 蔡森：瞬间破底判断 - 破底应在1-2根K线内完成
+        # 检查平台形成后的K线数
+        if len(self.bars) > self.platform.end_bar_index + self.breakdown_max_bars:
+            # 平台形成后超过breakdown_max_bars根K线才破底，不是"瞬间"破底
+            return False
+
         return True
     
     def _detect_pullback(self, bar: Bar) -> Optional[PatternSignal]:
@@ -674,13 +696,15 @@ class CaiSenStrategy(Strategy):
     
     def _add_annotation(self, bar: Bar, label: str, color: str):
         """添加可视化标注"""
-        current_index = len(self.bars) - 1
+        ann_type = AnnotationType.BUY_SIGNAL if "买入" in label else AnnotationType.SELL_SIGNAL
         self.annotations.append(Annotation(
-            bar_index=current_index,
-            type="marker",
-            points=[(current_index, bar.close)],
-            label=label,
-            color=color
+            type=ann_type,
+            timestamp=bar.timestamp,
+            data={
+                "label": label,
+                "color": color,
+                "price": bar.close,
+            }
         ))
     
     def get_annotations(self) -> List[Annotation]:
