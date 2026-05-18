@@ -550,3 +550,47 @@ def test_symmetric_triangle_breakout():
     # 应产生买入信号
     assert order is not None, "向上突破三角形应产生买入信号"
     assert order.side == Side.BUY, "三角形突破应为买入信号"
+
+
+def test_rectangle_consolidation_breakout():
+    """测试矩形整理向上突破产生买入信号"""
+    from datetime import timedelta
+
+    # 禁用其他形态，只测试矩形整理
+    strategy = CaiSenStrategy(platform_min_bars=20,
+                              w_bottom_enabled=False, m_top_enabled=False,
+                              head_and_shoulders_bottom_enabled=False,
+                              head_and_shoulders_top_enabled=False,
+                              triangle_enabled=False,
+                              flag_enabled=False,
+                              rectangle_enabled=True)
+
+    base_time = datetime(2024, 1, 1)
+
+    # 构建矩形整理：高点在120附近，低点在100附近，严格水平
+    rectangle_data = [
+        (0, 110, 122, 98, 110),    # 高点122，低点98
+        (1, 105, 121, 99, 105),    # 高点121，低点99
+        (2, 115, 123, 97, 115),    # 高点123，低点97
+        (3, 102, 120, 100, 102),   # 高点120，低点100
+        (4, 118, 122, 98, 118),    # 高点122，低点98
+        (5, 108, 121, 99, 108),    # 高点121，低点99
+        (6, 112, 120, 100, 112),   # 高点120，低点100
+        (7, 106, 122, 98, 106),    # 高点122，低点98
+        (8, 116, 121, 99, 116),    # 高点121，低点99
+        (9, 104, 120, 100, 104),   # 高点120，低点100，收盘价104（在矩形内）
+    ]
+
+    for idx, open_p, high, low, close in rectangle_data:
+        bar = make_bar(idx, open_p, high, low, close, volume=1000)
+        bar.timestamp = base_time + timedelta(days=idx)
+        strategy.on_bar(bar)
+
+    # 向上突破矩形上沿（阻力位约120-123）
+    bar_breakout = make_bar(10, 122, 128, 122, 127, volume=1500)
+    bar_breakout.timestamp = base_time + timedelta(days=10)
+    order = strategy.on_bar(bar_breakout)
+
+    # 应产生买入信号
+    assert order is not None, "向上突破矩形应产生买入信号"
+    assert order.side == Side.BUY, "矩形突破应为买入信号"

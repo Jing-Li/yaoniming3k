@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
+# 模块级常量
+SUPPORTED_FREQS = ("1d", "1h", "30m", "15m", "5m", "1m")
+
+
 @dataclass
 class DataConfig:
     """Configuration for data loading.
@@ -26,16 +30,11 @@ class DataConfig:
         """Validate configuration."""
         if not self.symbol:
             raise ValueError("symbol is required")
-        if self.freq not in self.supported_freqs:
+        if self.freq not in SUPPORTED_FREQS:
             raise ValueError(
                 f"Unsupported freq '{self.freq}'. "
-                f"Supported: {', '.join(self.supported_freqs)}"
+                f"Supported: {', '.join(SUPPORTED_FREQS)}"
             )
-
-    @property
-    def supported_freqs(self) -> tuple:
-        """Supported frequency values."""
-        return ("1d", "1h", "30m", "15m", "5m", "1m")
 
     @property
     def data_path(self) -> str:

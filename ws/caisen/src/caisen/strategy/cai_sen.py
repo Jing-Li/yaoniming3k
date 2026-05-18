@@ -31,6 +31,7 @@ class PatternType(Enum):
     HEAD_AND_SHOULDERS_TOP = auto()     # 头肩顶
     TRIANGLE = auto()           # 三角整理
     FLAG = auto()               # 旗形整理
+    RECTANGLE = auto()          # 矩形整理
 
 
 @dataclass
@@ -104,7 +105,8 @@ class CaiSenStrategy(Strategy):
                  platform_volume_decline: bool = True,  # 量能退潮确认
                  breakdown_max_bars: int = 2,  # 瞬间破底最大K线数
                  triangle_enabled: bool = True,  # 三角整理启用
-                 flag_enabled: bool = True):  # 旗形整理启用
+                 flag_enabled: bool = True,  # 旗形整理启用
+                 rectangle_enabled: bool = True):  # 矩形整理启用
 
         # 参数验证（蔡森理论标准）
         self._validate_params(
@@ -128,6 +130,7 @@ class CaiSenStrategy(Strategy):
         self.breakdown_max_bars = breakdown_max_bars
         self.triangle_enabled = triangle_enabled
         self.flag_enabled = flag_enabled
+        self.rectangle_enabled = rectangle_enabled
 
     def _validate_params(self,
                          platform_min_bars: int,
@@ -344,6 +347,26 @@ class CaiSenStrategy(Strategy):
                     self.entry_price = flag_signal.price
                     self.stop_loss = flag_signal.stop_loss
                     self.target_price = flag_signal.target
+                    return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
+
+        # 0.10 检测矩形整理（无持仓时）
+        if self.position == 0 and self.rectangle_enabled and self.state == PatternType.NONE:
+            rectangle_signal = self._detect_rectangle(bar)
+            if rectangle_signal:
+                self.signals.append(rectangle_signal)
+                if rectangle_signal.action == "BUY":
+                    self._add_annotation(bar, "矩形突破", "green")
+                    self.position = 1
+                    self.entry_price = rectangle_signal.price
+                    self.stop_loss = rectangle_signal.stop_loss
+                    self.target_price = rectangle_signal.target
+                    return Order(symbol=bar.symbol, side=Side.BUY, position_pct=self.first_position_pct)
+                else:
+                    self._add_annotation(bar, "矩形跌破", "red")
+                    self.position = -1
+                    self.entry_price = rectangle_signal.price
+                    self.stop_loss = rectangle_signal.stop_loss
+                    self.target_price = rectangle_signal.target
                     return Order(symbol=bar.symbol, side=Side.SELL, position_pct=self.first_position_pct)
 
         # 1. 检测整理平台
@@ -1061,6 +1084,77 @@ class CaiSenStrategy(Strategy):
                 stop_loss=stop_loss,
                 target=target,
                 reason="下降旗形跌破，趋势继续"
+            )
+
+        return None
+
+    def _detect_rectangle(self, bar: Bar) -> Optional[PatternSignal]:
+        """
+        检测矩形整理形态
+
+        简化实现：检测水平整理区间（高点水平、低点水平）
+        突破阻力线 → 买入，跌破支撑线 → 卖出
+        """
+        if len(self.bars) < 11:
+            return None
+
+        # 获取最近10根历史K线（不包括当前K线）
+        recent = self.bars[-11:-1]
+
+        # 找3个最高点（阻力线候选）
+        highs = sorted([b.high for b in recent], reverse=True)[:3]
+        # 找3个最低点（支撑线候选）
+        lows = sorted([b.low for b in recent])[:3]
+
+        if len(highs) < 3 or len(lows) < 3:
+            return None
+
+        # 检查高点是否水平（波动在2%以内）
+        high_avg = sum(highs) / len(highs)
+        high_variance = max(abs(h - high_avg) for h in highs) / high_avg
+        if high_variance > 0.02:  # 2%容差
+            return None
+
+        # 检查低点是否水平（波动在2%以内）
+        low_avg = sum(lows) / len(lows)
+        low_variance = max(abs(l - low_avg) for l in lows) / low_avg
+        if low_variance > 0.02:  # 2%容差
+            return None
+
+        # 检查是否有足够的振幅（矩形高度）
+        rectangle_height = high_avg - low_avg
+        if rectangle_height / low_avg < 0.03:  # 至少3%振幅
+            return None
+
+        # 当前K线突破检测
+        if bar.close > high_avg:
+            # 向上突破阻力线
+            target = bar.close + rectangle_height
+            stop_loss = low_avg * 0.99
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.RECTANGLE,
+                action="BUY",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="矩形整理向上突破"
+            )
+
+        if bar.close < low_avg:
+            # 向下跌破支撑线
+            target = bar.close - rectangle_height
+            stop_loss = high_avg * 1.01
+
+            return PatternSignal(
+                bar_index=len(self.bars) - 1,
+                pattern=PatternType.RECTANGLE,
+                action="SELL",
+                price=bar.close,
+                stop_loss=stop_loss,
+                target=target,
+                reason="矩形整理向下跌破"
             )
 
         return None

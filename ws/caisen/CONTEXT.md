@@ -119,6 +119,14 @@ _Avoid_: 盘整区间、横盘
 **Equity Curve（净值曲线）**:
 回测过程中账户净值随时间变化的序列数据。按每根 K 线采样。
 
+**Visualization Report（可视化报告）**:
+回测结果的可视化输出，包含 K 线图、净值曲线、交易标注、策略形态标记等。由 Python 生成 JSON 数据，前端 agent 生成 HTML 渲染器。
+_Avoid_: 回测图表、报告 HTML
+
+**Annotation（可视化标注）**:
+策略在 K 线图上绘制的辅助信息。包含 type（类型）、timestamp（时间）、data（数据）三个核心字段。类型决定渲染方式。
+_参见_: ADR-0007 可视化报告架构
+
 ## Relationships
 
 - 一个 **BacktestEngine** 执行一次 **Run**，产生一个 **Result**
