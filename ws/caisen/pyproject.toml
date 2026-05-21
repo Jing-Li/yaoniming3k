@@ -21,11 +21,15 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
+    "vitest>=1.0.0",
 ]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
+[tool.vitest]
+testDirectory = "tests/js"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/caisen"]
+
+# Frontend JS files to include in package
+[tool.hatch.build.targets.wheel.force-include]
+"src/caisen/visualization/js/" = "caisen/visualization/js/"

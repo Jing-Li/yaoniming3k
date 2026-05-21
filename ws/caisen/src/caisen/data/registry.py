@@ -3,28 +3,28 @@
 import threading
 from typing import Dict, Optional, Type
 
-from .loader import BaseDataLoader, DataLoader
-from .local import LocalDataLoader
+from .source import BaseDataSource, DataSource
+from .local_source import LocalDataSource
 from .exceptions import DataSourceNotAvailableError
 
 # Thread-safe lock for registry operations
 _registry_lock = threading.Lock()
 
 # Global registry for datasources
-_datasources: Dict[str, Type[DataLoader]] = {
-    "local": LocalDataLoader,
+_datasources: Dict[str, Type[DataSource]] = {
+    "local": LocalDataSource,
 }
 
 # Currently active datasource
 _active_datasource: Optional[str] = None
 
 
-def register_datasource(name: str, loader_class: Type[DataLoader]) -> None:
+def register_datasource(name: str, source_class: Type[DataSource]) -> None:
     """Register a datasource.
 
     Args:
         name: Unique name for the datasource
-        loader_class: Class implementing DataLoader protocol
+        source_class: Class implementing DataSource protocol
     """
     with _registry_lock:
         _datasources[name] = loader_class

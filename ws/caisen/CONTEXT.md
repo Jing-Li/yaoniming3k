@@ -15,7 +15,10 @@ _Avoid_: 模拟交易、策略测试
 以 Python 代码形式实现的策略。继承 `Strategy` 基类，硬编码交易逻辑（如 MA 金叉死叉）。
 
 **LLM Strategy（LLM 策略）**:
-以大语言模型驱动的策略。通过 Prompt 描述交易逻辑，LLM 根据历史数据自主决策。策略提供数据，LLM 提供决策。
+以大语言模型驱动的策略。通过 Prompt 描述交易逻辑，LLM 根据历史数据自主决策。策略提供数据，LLM 提供决策。采用离线预计算模式：历史数据一次性喂给 LLM，决策结果缓存后逐帧回放给回测引擎。
+
+**离线预计算（Offline Pre-computation）**:
+LLM 策略的架构模式。将完整历史数据一次性发送给 LLM 分析，LLM 返回所有时间点的信号和标注，策略缓存后逐帧回放。不改变回测引擎逻辑。
 
 **Strategy Plugin（策略插件）**:
 一种具体的 Strategy 实现，以独立的 Python 文件形式存放在约定目录中。回测系统通过配置文件指定路径加载。
@@ -120,11 +123,21 @@ _Avoid_: 盘整区间、横盘
 回测过程中账户净值随时间变化的序列数据。按每根 K 线采样。
 
 **Visualization Report（可视化报告）**:
-回测结果的可视化输出，包含 K 线图、净值曲线、交易标注、策略形态标记等。由 Python 生成 JSON 数据，前端 agent 生成 HTML 渲染器。
+回测结果的可视化输出，包含 K 线图、净值曲线、交易标注、策略形态标记等。
+由 Python 生成 JSON 数据，前端 HTML 渲染器渲染。
+Web 服务位于 `src/caisen/web/`，前端位于 `src/caisen/frontend/`，通过 `caisen web` 命令启动。
 _Avoid_: 回测图表、报告 HTML
 
 **Annotation（可视化标注）**:
 策略在 K 线图上绘制的辅助信息。包含 type（类型）、timestamp（时间）、data（数据）三个核心字段。类型决定渲染方式。
+_参见_: ADR-0007 可视化报告架构
+
+**MPA（多页应用）**:
+可视化报告采用多页面架构。`index.html` 为 runs 列表页，`report.html` 为回测详情页。两个页面独立，可离线打开。
+_参见_: ADR-0007 可视化报告架构
+
+**Frontend Bundle（前端子目录）**:
+前端代码独立存放于 `frontend/` 子目录，包含 HTML 页面、JS 模块、CSS 样式、单元测试和 E2E 测试。使用 Vite 构建。
 _参见_: ADR-0007 可视化报告架构
 
 ## Relationships

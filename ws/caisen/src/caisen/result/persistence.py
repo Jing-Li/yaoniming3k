@@ -3,12 +3,14 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 
-from ..core.engine import BacktestResult
 from .metrics import calculate_metrics
+
+if TYPE_CHECKING:
+    from ..core.engine import BacktestResult
 
 
 def _generate_run_id(strategy_name: str, output_dir: str) -> str:
@@ -61,7 +63,7 @@ class ResultPersister:
     """结果持久化"""
 
     @staticmethod
-    def save(result: BacktestResult, output_dir: str = "./runs") -> str:
+    def save(result, output_dir: str = "./runs") -> str:
         """保存回测结果，返回 run_id
 
         保存内容：
@@ -98,6 +100,10 @@ class ResultPersister:
         # 保存净值曲线 (Parquet)
         if result.equity_curve:
             df = pd.DataFrame(result.equity_curve)
+            # 处理可能的复杂类型，转为可序列化格式
+            for col in df.columns:
+                if df[col].dtype == object:
+                    df[col] = df[col].astype(str)
             df.to_parquet(run_dir / "equity.parquet", index=False)
 
         # 保存交易记录 (Parquet)

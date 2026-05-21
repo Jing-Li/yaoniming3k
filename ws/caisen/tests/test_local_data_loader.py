@@ -1,4 +1,4 @@
-"""Tests for LocalDataLoader"""
+"""Tests for LocalDataSource"""
 
 import pytest
 from pathlib import Path
@@ -7,7 +7,7 @@ import pandas as pd
 import tempfile
 import shutil
 
-from caisen.data.local import LocalDataLoader
+from caisen.data.local_source import LocalDataSource
 from caisen.data.config import DataConfig
 from caisen.data.exceptions import DataNotFoundError
 
@@ -44,7 +44,7 @@ class TestGetFilesForRange:
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240102.parquet").touch()
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240103.parquet").touch()
 
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
         files = loader._get_files_for_range(
             Path(temp_data_dir) / "AAPL" / "1d",
             "2024-01-01",
@@ -60,7 +60,7 @@ class TestGetFilesForRange:
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240101_20240131.parquet").touch()
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240201_20240229.parquet").touch()
 
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
         files = loader._get_files_for_range(
             Path(temp_data_dir) / "AAPL" / "1d",
             "2024-01-15",
@@ -75,7 +75,7 @@ class TestGetFilesForRange:
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240101.parquet").touch()
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240201.parquet").touch()
 
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
         files = loader._get_files_for_range(
             Path(temp_data_dir) / "AAPL" / "1d",
             None,
@@ -91,7 +91,7 @@ class TestGetFilesForRange:
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240101.parquet").touch()
         (Path(temp_data_dir) / "AAPL" / "1d" / "20240201.parquet").touch()
 
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
         files = loader._get_files_for_range(
             Path(temp_data_dir) / "AAPL" / "1d",
             "2024-01-01",
@@ -112,7 +112,7 @@ class TestLoad:
         sample_bars.to_parquet(data_path / "20240101_20240103.parquet", index=False)
 
         config = DataConfig(symbol="TEST", freq="1d", start="2024-01-01", end="2024-01-03", data_dir=temp_data_dir)
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
         bars = loader.load(config)
 
         assert len(bars) == 3
@@ -122,7 +122,7 @@ class TestLoad:
     def test_load_not_found(self, temp_data_dir):
         """Test DataNotFoundError when path doesn't exist."""
         config = DataConfig(symbol="NOTEXIST", freq="1d", start="2024-01-01", end="2024-01-03", data_dir=temp_data_dir)
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
 
         with pytest.raises(DataNotFoundError):
             loader.load(config)
@@ -134,7 +134,7 @@ class TestLoad:
         sample_bars.to_parquet(data_path / "20240101_20240103.parquet", index=False)
 
         config = DataConfig(symbol="TEST", freq="1d", start="2024-01-02", end="2024-01-03", data_dir=temp_data_dir)
-        loader = LocalDataLoader(temp_data_dir)
+        loader = LocalDataSource(temp_data_dir)
         bars = loader.load(config)
 
         assert len(bars) == 2
@@ -154,7 +154,7 @@ class TestDataFrameToBars:
             "成交量": [1000.0, 1100.0],
         })
 
-        loader = LocalDataLoader()
+        loader = LocalDataSource()
         bars = loader._dataframe_to_bars(df, "TEST", "1d")
 
         assert len(bars) == 2
@@ -172,7 +172,7 @@ class TestDataFrameToBars:
             "volume": [1000.0, 1100.0],
         })
 
-        loader = LocalDataLoader()
+        loader = LocalDataSource()
         bars = loader._dataframe_to_bars(df, "TEST", "1d")
 
         assert len(bars) == 2

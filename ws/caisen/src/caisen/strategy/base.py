@@ -63,12 +63,23 @@ class Annotation:
         """获取价格（如果适用）"""
         return self.data.get("price")
 
+    @staticmethod
+    def _serialize_value(value):
+        """递归序列化值，处理 datetime 对象"""
+        if isinstance(value, datetime):
+            return value.isoformat()
+        elif isinstance(value, dict):
+            return {k: Annotation._serialize_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [Annotation._serialize_value(item) for item in value]
+        return value
+
     def to_dict(self) -> dict:
         """转换为字典（用于序列化）"""
         return {
             "type": self.type.value,
             "timestamp": self.timestamp.isoformat(),
-            "data": self.data,
+            "data": self._serialize_value(self.data),
         }
 
     @classmethod
@@ -96,6 +107,28 @@ class Annotation:
             type=AnnotationType.HORIZONTAL_LINE,
             timestamp=timestamp,
             data={"price": price, "label": label, "color": "blue", **kwargs}
+        )
+
+    @classmethod
+    def pattern_mark(cls, timestamp: datetime, pattern: str, points: List[Dict], label: str = "", **kwargs):
+        """创建形态标记标注
+
+        Args:
+            timestamp: 主时间点
+            pattern: 形态类型 (w_bottom, m_top, head_and_shoulders_bottom 等)
+            points: 形态关键点列表 [{"timestamp": ..., "price": ..., "label": ...}, ...]
+            label: 标签文本
+            **kwargs: 其他参数 (color, neckline 等)
+        """
+        return cls(
+            type=AnnotationType.PATTERN_MARK,
+            timestamp=timestamp,
+            data={
+                "pattern": pattern,
+                "points": points,
+                "label": label,
+                **kwargs
+            }
         )
 
     @classmethod

@@ -1,0 +1,50 @@
+# 蔡森策略配置文件示例
+# 用于参数迭代优化
+
+# ========== 平台检测参数 ==========
+params:
+  platform_min_bars: 10       # 平台最少K线数（5-50）
+  platform_max_amplitude: 0.05  # 平台最大振幅（2%-15%）
+  platform_volume_decline: true  # 是否要求量能退潮
+
+  # ========== 破底翻参数 ==========
+  breakdown_max_pct: 0.02    # 破底最大幅度（0.5%-5%）
+  breakdown_max_bars: 2      # 瞬间破底最大K线数（1-3）
+  pullback_max_bars: 3       # 拉回最大K线数（2-5）
+  volume_confirm: true        # 是否启用成交量确认
+
+  # ========== 仓位管理 ==========
+  first_position_pct: 0.30  # 第一买点仓位（轻仓试单）
+  second_position_pct: 0.50  # 第二买点仓位（确认加仓）
+
+  # ========== 风险控制（可迭代优化） ==========
+  stop_loss_factor: 0.96      # 止损系数：破底低点 × factor
+  min_profit_pct: 0.03       # 最小盈利目标（3%）
+  trailing_stop_pct: 0.05     # 移动止损回撤百分比
+  trailing_stop_enabled: false  # 是否启用移动止损
+
+# ========== 形态开关 ==========
+patterns:
+  W_BOTTOM: true
+  M_TOP: true
+  HEAD_AND_SHOULDERS_BOTTOM: true
+  HEAD_AND_SHOULDERS_TOP: true
+  TRIANGLE: true
+  FLAG: true
+  RECTANGLE: true
+  ROUNDING_BOTTOM: true
+  CUP_HANDLE: true
+  BREAKOUT_PULLBACK: true
+
+# ========== 形态权重（用于质量评分） ==========
+pattern_weights:
+  W_BOTTOM: 1.0
+  HEAD_AND_SHOULDERS_BOTTOM: 1.0
+  CUP_HANDLE: 0.8
+  ROUNDING_BOTTOM: 0.6
+  TRIANGLE: 0.5
+  FLAG: 0.5
+  RECTANGLE: 0.5
+  BREAKOUT_PULLBACK: 0.7
+  M_TOP: 0.8
+  HEAD_AND_SHOULDERS_TOP: 0.8

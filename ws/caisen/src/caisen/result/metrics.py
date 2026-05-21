@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 import numpy as np
 
-from ..core.engine import BacktestResult
+from .types import BacktestResult
 from ..core.order import Side
 
 
@@ -64,31 +64,31 @@ def calculate_metrics(result: BacktestResult) -> PerformanceMetrics:
         )
 
     # 计算胜率（配对买卖）
-    buys = [t for t in trades if t.side == Side.BUY]
-    sells = [t for t in trades if t.side == Side.SELL]
-
     wins = 0
     losses = 0
     total_profit = 0
     total_loss = 0
 
-    # 简化计算：假设买入卖出交替
-    for i, trade in enumerate(trades):
-        if i > 0:
-            prev = trades[i - 1]
-            if trade.side == Side.BUY:
-                # 平空仓
-                profit = (prev.price - trade.price) * trade.quantity - trade.commission - prev.commission
+    # 正确配对：按时间顺序匹配BUY/SELL
+    position = None
+    for trade in trades:
+        if trade.side == Side.BUY:
+            if position is None:
+                # 开多仓
+                position = {'price': trade.price, 'qty': trade.quantity, 'commission': trade.commission}
             else:
-                # 平多仓
-                profit = (trade.price - prev.price) * trade.quantity - trade.commission - prev.commission
-
+                # 已有持仓，追加或平仓（简化处理）
+                pass
+        elif trade.side == Side.SELL and position:
+            # 平多仓
+            profit = (trade.price - position['price']) * position['qty'] - trade.commission - position['commission']
             if profit > 0:
                 wins += 1
                 total_profit += profit
             else:
                 losses += 1
                 total_loss += abs(profit)
+            position = None
 
     win_rate = wins / (wins + losses) if (wins + losses) > 0 else 0
     avg_win = total_profit / wins if wins > 0 else 0

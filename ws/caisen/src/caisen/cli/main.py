@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from ..core.config import Config, BacktestConfig
+from ..core.config import Config, BacktestConfig, RunDataConfig
 from ..core.bar import Bar
 from ..core.engine import BacktestEngine
 from ..strategy.base import Strategy
@@ -66,13 +66,16 @@ def cli():
 
 @cli.command()
 @click.option("--strategy", "-s", required=True, help="策略名称或文件路径")
+@click.option("--type", "-t", default="code", type=click.Choice(["code", "llm"]), help="策略类型 [code/llm]")
 @click.option("--symbol", default="TEST", help="股票代码")
+@click.option("--freq", default="1d", help="K线频率 [1d/1h/30m/15m/5m]")
 @click.option("--start", default="2024-01-01", help="开始日期")
 @click.option("--end", default="2024-12-31", help="结束日期")
 @click.option("--config", "-c", help="配置文件路径")
 @click.option("--output-dir", default="./runs", help="输出目录")
 @click.option("--mock", is_flag=True, help="使用模拟数据运行测试")
-def run(strategy: str, symbol: str, start: str, end: str, config: str, output_dir: str, mock: bool):
+@click.option("--strategy-config", help="策略配置文件路径（YAML）")
+def run(strategy: str, symbol: str, freq: str, start: str, end: str, config: str, output_dir: str, mock: bool, strategy_config: str):
     """运行回测"""
 
     # 加载配置
@@ -81,7 +84,13 @@ def run(strategy: str, symbol: str, start: str, end: str, config: str, output_di
     else:
         cfg = Config(
             backtest=BacktestConfig(),
-            data={"symbol": symbol, "start": start, "end": end},
+            data=RunDataConfig(
+                symbol=symbol,
+                freq=freq,
+                start=start,
+                end=end,
+                data_dir="/home/user/data",
+            ),
             output_dir=output_dir,
         )
 
@@ -89,13 +98,51 @@ def run(strategy: str, symbol: str, start: str, end: str, config: str, output_di
     if Path(strategy).exists():
         strat = load_strategy_from_file(strategy)
     else:
-        # 尝试从 examples 加载
-        try:
-            from examples.ma_cross import MACrossStrategy
-            strat = MACrossStrategy()
-        except ImportError:
-            click.echo(f"Strategy '{strategy}' not found")
-            sys.exit(1)
+        # 尝试从内置策略加载
+        builtin_strategies = {
+            "MACrossStrategy": "caisen.strategy.ma_cross",
+            "CaiSenStrategy": "caisen.strategy.cai_sen",
+        }
+        
+        # 如果指定了策略配置文件，且策略是蔡森策略
+        if strategy_config and strategy in ("CaiSenStrategy", "CaiSenStrategyOptimized"):
+            try:
+                from ..strategy.cai_sen import CaiSenStrategy
+                strat = CaiSenStrategy.from_config_file(strategy_config)
+                click.echo(f"Loaded CaiSenStrategy from config: {strategy_config}")
+            except Exception as e:
+                click.echo(f"Failed to load strategy config: {e}")
+                sys.exit(1)
+        elif strategy in builtin_strategies:
+            try:
+                mod = __import__(builtin_strategies[strategy], fromlist=[""])
+                # 找到指定的 Strategy 子类
+                target_class = None
+                for name in dir(mod):
+                    obj = getattr(mod, name)
+                    if isinstance(obj, type) and issubclass(obj, Strategy) and obj != Strategy:
+                        if name == strategy:
+                            target_class = obj
+                            break
+                        # 如果没有精确匹配，记录第一个找到的
+                        if target_class is None:
+                            target_class = obj
+                if target_class:
+                    strat = target_class()
+                else:
+                    click.echo(f"Strategy '{strategy}' class not found in module")
+                    sys.exit(1)
+            except ImportError as e:
+                click.echo(f"Failed to import {strategy}: {e}")
+                sys.exit(1)
+        else:
+            # 尝试从 examples 加载
+            try:
+                from examples.ma_cross import MACrossStrategy
+                strat = MACrossStrategy()
+            except ImportError:
+                click.echo(f"Strategy '{strategy}' not found")
+                sys.exit(1)
 
     # 加载数据或使用 mock 数据
     if mock:
@@ -107,10 +154,11 @@ def run(strategy: str, symbol: str, start: str, end: str, config: str, output_di
         click.echo(f"Generated {len(bars)} mock bars for {symbol}")
     else:
         data_cfg = DataConfig(
-            symbol=symbol,
-            start=start,
-            end=end,
-            data_dir=cfg.data.get("data_dir", "./data") if isinstance(cfg.data, dict) else cfg.data.data_dir if hasattr(cfg.data, 'data_dir') else "./data",
+            symbol=cfg.data.symbol,
+            freq=cfg.data.freq,
+            start=cfg.data.start,
+            end=cfg.data.end,
+            data_dir=cfg.data.data_dir,
         )
         try:
             bars = load_bars(data_cfg)
@@ -181,20 +229,20 @@ def list_runs(output_dir: str):
         click.echo(f"{run['run_id']:<40} {run['strategy_name']:<20} {run['created_at']:<20}")
 
 
-@cli.command()
+@cli.command("web")
 @click.option("--run-id", "-r", help="直接打开指定回测结果")
 @click.option("--port", "-p", default=8000, help="服务端口")
 @click.option("--host", default="0.0.0.0", help="服务地址")
 @click.option("--output-dir", default="./runs", help="回测结果目录")
-def serve(run_id: str, port: int, host: str, output_dir: str):
+def report(run_id: str, port: int, host: str, output_dir: str):
     """启动可视化报告服务"""
     import uvicorn
-    from ..server.main import create_app, set_output_dir
+    from ..visualization.web.main import create_app, set_output_dir
 
     # 设置 output_dir
     set_output_dir(output_dir)
 
-    click.echo(f"Starting server at http://{host}:{port}")
+    click.echo(f"Starting visualization report server at http://{host}:{port}")
     click.echo(f"Output directory: {output_dir}")
 
     if run_id:
@@ -206,6 +254,75 @@ def serve(run_id: str, port: int, host: str, output_dir: str):
     # 创建 app 并启动
     app = create_app()
     uvicorn.run(app, host=host, port=port, log_level="info")
+
+
+@cli.command("optimize")
+@click.option("--symbol", default="TEST", help="股票代码")
+@click.option("--freq", default="1d", help="K线频率")
+@click.option("--start", default="2024-01-01", help="开始日期")
+@click.option("--end", default="2024-12-31", help="结束日期")
+@click.option("--output-dir", default="./runs", help="输出目录")
+@click.option("--workers", default=4, help="并行工作线程数")
+@click.option("--top-n", default=10, help="返回前N个最优结果")
+@click.option("--mock", is_flag=True, help="使用模拟数据")
+def optimize(symbol: str, freq: str, start: str, end: str, output_dir: str, workers: int, top_n: int, mock: bool):
+    """运行蔡森策略参数优化（网格搜索）"""
+    from ..strategy.caisen_optimizer import grid_search, GridSearchConfig, generate_optimized_config
+    from ..data import DataConfig, load_bars
+
+    # 加载数据
+    if mock:
+        bars = generate_mock_bars(symbol, 250)
+    else:
+        data_cfg = DataConfig(
+            symbol=symbol,
+            freq=freq,
+            start=start,
+            end=end,
+            data_dir="/home/user/data",
+        )
+        try:
+            bars = load_bars(data_cfg)
+        except DataNotFoundError:
+            click.echo("No data found. Use --mock flag to generate test data.")
+            sys.exit(1)
+
+    if not bars:
+        click.echo("No data loaded")
+        sys.exit(1)
+
+    click.echo(f"Loaded {len(bars)} bars for {symbol}")
+
+    # 运行优化
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # 使用较小的搜索空间（快速模式）
+    config = GridSearchConfig()
+    # 缩减搜索空间加快速度
+    config.stop_loss_factors = [0.95, 0.96, 0.97]
+    config.min_profit_pcts = [0.02, 0.03]
+    config.trailing_stop_pcts = [0.05]
+    config.platform_min_bars_list = [10, 12]
+    config.volume_thresholds = [1.5]
+    config.pattern_configs = [
+        {"w_bottom": True, "head_and_shoulders_bottom": True, "cup_handle": False,
+         "rounding_bottom": False, "triangle": False, "flag": False,
+         "rectangle": False, "breakout_pullback": False, "m_top": False,
+         "head_and_shoulders_top": False},
+        {"w_bottom": True, "head_and_shoulders_bottom": True, "cup_handle": True,
+         "rounding_bottom": False, "triangle": False, "flag": False,
+         "rectangle": False, "breakout_pullback": False, "m_top": False,
+         "head_and_shoulders_top": False},
+    ]
+
+    results = grid_search(bars, config, output_dir, workers, top_n)
+
+    if results:
+        # 生成最优配置的配置文件
+        best = results[0]
+        config_path = Path(output_dir) / f"caisen_optimized_{timestamp}.yaml"
+        generate_optimized_config(best, str(config_path))
+        click.echo(f"\n最优配置已保存到: {config_path}")
 
 
 def main():

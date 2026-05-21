@@ -97,9 +97,11 @@ def test_breakout_second_buy_signal():
     strategy.on_bar(make_bar(6, breakdown_price, platform_lower * 1.02, breakdown_price * 0.995, platform_lower * 1.01, volume=2500))
     assert strategy.position == 1
     
-    # 4. 突破平台上沿（第二买点）
-    breakout_price = platform_upper * 1.02
-    bar_breakout = make_bar(7, platform_lower * 1.01, breakout_price * 1.01, platform_upper * 0.995, breakout_price, volume=3000)
+    # 4. 突破平台上沿（第二买点）- 注意high不能超过目标价
+    # 目标价 = upper + (lower - breakdown_low) = 101 + (99 - 97.81) = 102.19
+    # 所以high必须 < 102.19
+    breakout_price = platform_upper * 1.01  # 102.01
+    bar_breakout = make_bar(7, platform_lower * 1.01, 102.0, platform_upper * 0.995, breakout_price, volume=3000)
     order = strategy.on_bar(bar_breakout)
     
     assert order is not None

@@ -1,0 +1,34 @@
+# 蔡森策略优化配置 - 自动生成
+# 生成时间: 2026-05-21 12:35:11
+# 评分: 0.4300
+
+params:
+  platform_min_bars: 12
+  platform_max_amplitude: 0.05
+  platform_volume_decline: true
+  volume_threshold: 1.2
+
+  breakdown_max_pct: 0.02
+  breakdown_max_bars: 2
+  pullback_max_bars: 3
+  volume_confirm: true
+
+  first_position_pct: 0.3
+  second_position_pct: 0.5
+
+  stop_loss_factor: 0.94
+  min_profit_pct: 0.04
+  trailing_stop_pct: 0.03
+  trailing_stop_enabled: false
+
+patterns:
+  W_BOTTOM: true
+  M_TOP: false
+  HEAD_AND_SHOULDERS_BOTTOM: true
+  HEAD_AND_SHOULDERS_TOP: false
+  TRIANGLE: false
+  FLAG: false
+  RECTANGLE: false
+  ROUNDING_BOTTOM: false
+  CUP_HANDLE: false
+  BREAKOUT_PULLBACK: false

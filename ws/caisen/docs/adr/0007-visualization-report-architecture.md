@@ -28,14 +28,51 @@ Accepted
    - 前端完全控制渲染
    - 便于前后端独立迭代
 
+4. **前端架构**
+   - SPA vs MPA：选择 MPA，两个独立 HTML 文件
+   - JS 模块化：保持现有 10 个模块划分
+   - CSS 组织：拆分为独立文件
+   - 构建工具：使用 Vite
+   - ECharts：通过 npm 安装，Vite 打包
+
 ## Decision
 
 ### 1. 目录结构
 
-回测结果保存到 `./runs/{run_id}/` 目录：
+#### 前端子目录（frontend/）
 
 ```
-runs/{run_id}/
+frontend/
+├── index.html                    # 主页（runs 列表）
+├── report.html                   # 详情页（K线图）
+├── package.json                  # npm 依赖
+├── vite.config.js                # Vite 配置
+├── src/
+│   ├── js/                       # JS 模块
+│   │   ├── constants.js          # 主题颜色、间距常量
+│   │   ├── app-state.js          # 全局状态
+│   │   ├── utils.js              # 纯工具函数
+│   │   ├── data-loader.js        # API 数据加载
+│   │   ├── chart-builder.js      # ECharts 配置构建
+│   │   ├── annotation-renderer.js # 标注渲染
+│   │   ├── chart-renderer.js     # 图表渲染
+│   │   ├── components.js         # UI 组件
+│   │   ├── runs-list.js          # runs 列表逻辑
+│   │   └── main.js               # 入口点
+│   └── css/                      # CSS 文件
+│       ├── variables.css         # CSS 变量
+│       ├── reset.css             # 样式重置
+│       ├── layout.css            # 布局
+│       ├── components.css        # 组件样式
+│       └── pages.css            # 页面特定样式
+├── e2e/                          # Playwright E2E 测试
+└── tests/js/                     # Vitest 单元测试
+```
+
+#### 回测结果目录
+
+```
+./runs/{run_id}/
 ├── meta.json          # 元数据（策略名、时间等）
 ├── equity.parquet     # 净值曲线（Parquet 格式，高效存储）
 ├── trades.parquet     # 交易记录（Parquet 格式）
@@ -47,12 +84,11 @@ runs/{run_id}/
 
 ### 2. 可视化报告生成
 
-使用 `caisen report <run_id>` 命令生成可视化报告：
+使用 `caisen web <run_id>` 命令启动可视化服务：
 
 ```
-runs/{run_id}/
+./runs/{run_id}/
 ├── data.json          # 可视化专用综合数据文件
-├── index.html         # 前端渲染器（从 src/caisen/visualization/ 复制）
 └── [其他回测数据文件]
 ```
 
@@ -92,17 +128,34 @@ runs/{run_id}/
 #### CLI 命令
 
 ```bash
-# 生成可视化报告
-caisen report <run_id> --output-dir ./runs
+# 启动可视化 Web 服务（浏览器访问）
+caisen web --port 8000
 
-# 启动可视化服务（浏览器访问）
-caisen serve --port 8000 --output-dir ./runs
+# 绑定所有网卡（局域网访问）
+caisen web --host 0.0.0.0 --port 8000
 
 # 直接打开指定回测结果
-caisen serve --run-id MACrossStrategy_20260518_1 --port 8000
+caisen web --run-id MACrossStrategy_20260518_1 --port 8000
 ```
 
-### 3. Web 服务架构
+### 3. 源码目录结构
+
+```
+src/caisen/
+├── frontend/                    # 前端（HTML, CSS, JS, Vite）
+│   ├── index.html
+│   ├── report.html
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── js/
+│       └── css/
+├── web/                         # FastAPI 服务
+│   └── main.py
+└── ...                          # 其他后端模块
+```
+
+### 4. Web 服务架构
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
@@ -115,19 +168,43 @@ caisen serve --run-id MACrossStrategy_20260518_1 --port 8000
 
 | 端点 | 说明 |
 |------|------|
-| `GET /` | 前端入口页面 |
-| `GET /api/runs` | 列出所有回测结果 |
+| `GET /` | 前端入口页面（index.html） |
+| `GET /report.html` | 回测详情页面 |
+| `GET /api/runs` | 列出所有回测结果（含摘要 metrics） |
 | `GET /api/runs/{run_id}` | 获取回测详情 |
 | `GET /api/runs/{run_id}/visualization` | 获取可视化数据 |
 | `GET /api/runs/{run_id}/data.json` | 直接获取 data.json |
 | `GET /health` | 健康检查 |
 
+#### /api/runs 返回结构
+
+```json
+{
+  "runs": [
+    {
+      "run_id": "MACrossStrategy_20260518_1",
+      "strategy_name": "MACrossStrategy",
+      "symbol": "ag",
+      "start_date": "2026-01-01",
+      "end_date": "2026-05-15",
+      "freq": "60m",
+      "created_at": "2026-05-18T10:30:00",
+      "metrics": {
+        "total_return": 0.0844,
+        "max_drawdown": 0.3002
+      }
+    }
+  ],
+  "total": 26
+}
+```
+
 #### 前端访问模式
 
-1. **API 模式**：`http://host:port/?run_id={run_id}` → 前端从 `/api/runs/{run_id}/visualization` 获取数据
-2. **文件模式**：直接打开 `index.html?data=./data.json`（离线使用）
+1. **API 模式**：`http://host:port/report.html?run_id={run_id}` → 前端从 `/api/runs/{run_id}/visualization` 获取数据
+2. **文件模式**：直接打开 `report.html`（离线使用），从相对路径 `./data.json` 加载数据
 
-### 4. Annotation 接口约定
+### 5. Annotation 接口约定
 
 #### 通用字段
 - `type`: AnnotationType 枚举值
@@ -175,13 +252,15 @@ caisen serve --run-id MACrossStrategy_20260518_1 --port 8000
 }
 ```
 
-### 4. 技术栈
+### 6. 技术栈
 
-- **图表库**: ECharts（轻量、功能丰富）
-- **前端**: 纯 HTML + CSS + JS，无框架
-- **Python**: 生成 JSON 数据
+- **图表库**: ECharts 5.x（通过 npm 安装，Vite 打包）
+- **构建工具**: Vite
+- **前端**: HTML + CSS + JS（纯 JavaScript，无 TypeScript）
+- **测试**: Vitest（单元测试）+ Playwright（E2E 测试）
+- **Python**: FastAPI 服务，生成 JSON 数据
 
-### 5. 渲染规则
+### 7. 渲染规则
 
 前端按 `annotation.type` 查找 renderMap，决定渲染方式：
 
@@ -195,17 +274,29 @@ const renderMap = {
 };
 ```
 
+### 8. 测试策略
+
+- **单元测试**（Vitest）：覆盖纯函数逻辑（utils.js, annotation-renderer.js, chart-config.js）
+- **E2E 测试**（Playwright）：测试页面加载、API 调用、图表渲染
+- **本地验证**：手动验证，无 GitHub Actions CI
+
 ## Consequences
 
 ### Positive
 - 前后端解耦，可独立迭代
 - JSON 格式便于调试和扩展
 - 轻量 HTML 文件，易于分享
+- Vite 提供快速开发和优化构建
+- E2E 测试保证页面功能正常
+- 离线模式支持直接打开 HTML 文件
 
 ### Negative
-- 前端需要单独开发
+- 前端需要单独管理 npm 依赖
 - 需要维护渲染规则映射表
+- 两个 HTML 文件需要同步更新基础样式
 
 ## References
 - Annotation 类型定义: `src/caisen/strategy/base.py`
 - BacktestResult 数据结构: `src/caisen/core/engine.py`
+- 前端代码: `src/caisen/frontend/`
+- Web 服务: `src/caisen/web/`

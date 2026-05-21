@@ -1,7 +1,7 @@
 """Data loading module for caisen backtesting system."""
 
-from .loader import DataLoader
-from .local import LocalDataLoader
+from .source import DataSource
+from .local_source import LocalDataSource
 from .registry import load_datasource, register_datasource
 from .exceptions import (
     DataLoadError,
@@ -13,9 +13,11 @@ from .config import DataConfig
 
 __all__ = [
     # Core interface
+    "DataSource",
+    # Backward compatibility
     "DataLoader",
     # Implementations
-    "LocalDataLoader",
+    "LocalDataSource",
     # Registry
     "load_datasource",
     "register_datasource",

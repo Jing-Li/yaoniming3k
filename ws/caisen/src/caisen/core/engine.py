@@ -10,6 +10,9 @@ from .position import Position
 from .config import BacktestConfig
 from ..strategy.base import Strategy, Annotation
 
+# Re-export BacktestResult for backward compatibility
+from ..result.types import BacktestResult
+
 
 class BacktestEngine:
     """回测引擎核心"""
@@ -25,7 +28,7 @@ class BacktestEngine:
         self.annotations: List[Annotation] = []
         self.strategy: Optional[Strategy] = None
 
-    def run(self, strategy: Strategy, bars: List[Bar]) -> "BacktestResult":
+    def run(self, strategy: Strategy, bars: List[Bar]):
         """运行回测"""
         self.strategy = strategy
 
@@ -58,6 +61,9 @@ class BacktestEngine:
         # 返回结果
         last_bar = bars[-1]
         final_equity = self.portfolio.get_equity_with_prices({last_bar.symbol: last_bar.close})
+        
+        # 延迟导入避免循环依赖
+        from ..result.types import BacktestResult
         return BacktestResult(
             strategy_name=type(strategy).__name__,
             bars=bars,
@@ -185,120 +191,3 @@ class BacktestEngine:
             "cash": self.portfolio.cash,
             "positions": {k: v.quantity for k, v in self.portfolio.positions.items()},
         })
-
-
-@dataclass
-class BacktestResult:
-    """回测结果"""
-    strategy_name: str
-    bars: List[Bar]
-    trades: List[Trade]
-    equity_curve: List[dict]
-    annotations: List[Annotation]
-    initial_capital: float
-    final_equity: float
-
-    @property
-    def total_return(self) -> float:
-        """总收益率"""
-        return (self.final_equity - self.initial_capital) / self.initial_capital
-
-    @property
-    def max_drawdown(self) -> float:
-        """最大回撤 (从峰值到谷底的最大跌幅)"""
-        if not self.equity_curve:
-            return 0.0
-
-        peak = 0.0
-        max_dd = 0.0
-
-        for entry in self.equity_curve:
-            equity = entry.get("equity", 0)
-            if equity > peak:
-                peak = equity
-            dd = (peak - equity) / peak if peak > 0 else 0
-            if dd > max_dd:
-                max_dd = dd
-
-        return max_dd
-
-    @property
-    def sharpe_ratio(self) -> float:
-        """夏普比率 (假设无风险利率为0，年化)"""
-        if len(self.equity_curve) < 2:
-            return 0.0
-
-        # 计算每日收益率
-        returns = []
-        for i in range(1, len(self.equity_curve)):
-            prev_equity = self.equity_curve[i - 1].get("equity", 0)
-            curr_equity = self.equity_curve[i].get("equity", 0)
-            if prev_equity > 0:
-                returns.append((curr_equity - prev_equity) / prev_equity)
-
-        if not returns or len(returns) < 2:
-            return 0.0
-
-        # 平均收益率
-        avg_return = sum(returns) / len(returns)
-
-        # 标准差
-        variance = sum((r - avg_return) ** 2 for r in returns) / len(returns)
-        std = variance ** 0.5
-
-        if std == 0:
-            return 0.0
-
-        # 年化 (假设252交易日)
-        return (avg_return / std) * (252 ** 0.5)
-
-    @property
-    def win_rate(self) -> float:
-        """胜率 (盈利交易数 / 总交易数)"""
-        if not self.trades:
-            return 0.0
-
-        # 配对交易：按时间顺序匹配 BUY/SELL
-        position = None
-        profits = []
-
-        for trade in sorted(self.trades, key=lambda t: t.timestamp):
-            if trade.side == Side.BUY:
-                position = {"price": trade.price, "qty": trade.quantity}
-            elif trade.side == Side.SELL and position:
-                profit = (trade.price - position["price"]) * position["qty"]
-                profits.append(profit)
-                position = None
-
-        if not profits:
-            return 0.0
-
-        wins = sum(1 for p in profits if p > 0)
-        return wins / len(profits)
-
-    @property
-    def profit_factor(self) -> float:
-        """盈亏比 (总盈利 / 总亏损)"""
-        if not self.trades:
-            return 0.0
-
-        # 配对交易
-        position = None
-        gross_profit = 0.0
-        gross_loss = 0.0
-
-        for trade in sorted(self.trades, key=lambda t: t.timestamp):
-            if trade.side == Side.BUY:
-                position = {"price": trade.price, "qty": trade.quantity}
-            elif trade.side == Side.SELL and position:
-                profit = (trade.price - position["price"]) * position["qty"]
-                if profit > 0:
-                    gross_profit += profit
-                else:
-                    gross_loss += abs(profit)
-                position = None
-
-        if gross_loss == 0:
-            return 0.0 if gross_profit == 0 else float('inf')
-
-        return gross_profit / gross_loss

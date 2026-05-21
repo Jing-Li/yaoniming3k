@@ -1,0 +1,123 @@
+# CaiSenStrategy V2 配置
+# 用于形态检测器组合和权重配置
+
+# ===== 策略基本参数 =====
+strategy:
+  # 综合评分阈值 (0~1)
+  # 只有总分 >= threshold 时才下单
+  threshold: 0.6
+
+# ===== 形态权重 =====
+# 每个形态的权重，影响最终评分
+# 权重越高，该形态对评分的贡献越大
+# 可以通过回测优化这些权重
+weights:
+  # 底部反转形态 (看涨)
+  w_bottom: 0.30              # W底
+  head_and_shoulders_bottom: 0.25  # 头肩底
+  rounding_bottom: 0.20       # 圆弧底
+  cup_handle: 0.15             # 杯柄
+  breakout_pullback: 0.10     # 过前高
+
+  # 顶部反转形态 (看跌)
+  m_top: 0.30                 # M头
+  head_and_shoulders_top: 0.25  # 头肩顶
+
+  # 整理形态 (双向)
+  triangle: 0.25              # 对称三角
+  flag: 0.20                  # 旗形
+  rectangle: 0.20             # 矩形
+
+# ===== 风控参数 =====
+risk:
+  # 止损系数：止损 = 形态低点 × factor
+  # 0.93 表示给 7% 的止损空间
+  stop_loss_factor: 0.93
+
+  # 最小盈利目标 (%)
+  # 只有预期盈利 >= min_profit_pct 时才下单
+  min_profit_pct: 0.03
+
+  # 是否启用移动止损
+  trailing_stop_enabled: false
+
+  # 移动止损回撤百分比
+  trailing_stop_pct: 0.05
+
+# ===== 形态启用开关 =====
+# 设置为 true 启用，false 禁用
+enabled_patterns:
+  # 底部反转
+  w_bottom: true
+  head_and_shoulders_bottom: true
+  rounding_bottom: true
+  cup_handle: true
+  breakout_pullback: true
+
+  # 顶部反转
+  m_top: true
+  head_and_shoulders_top: true
+
+  # 整理形态
+  triangle: true
+  flag: true
+  rectangle: true
+
+# ===== 检测器专用参数 =====
+detectors:
+  # W底参数
+  w_bottom:
+    tolerance: 0.05          # 双底容差 (±5%)
+    min_neckline_height: 0.02  # 颈线最小高度 (2%)
+
+  # M头参数
+  m_top:
+    tolerance: 0.05          # 双顶容差
+    min_neckline_depth: 0.02  # 颈线最小深度
+
+  # 头肩参数
+  head_and_shoulders:
+    shoulder_tolerance: 0.05
+    shoulder_height_min: 0.02
+    shoulder_height_max: 0.10
+
+  # 三角参数
+  triangle:
+    min_bars: 11
+    min_highs: 3
+    min_lows: 3
+
+  # 旗形参数
+  flag:
+    min_bars: 8
+    max_bars: 20
+
+  # 矩形参数
+  rectangle:
+    min_bars: 10
+    max_amplitude: 0.05
+
+  # 圆弧底参数
+  rounding_bottom:
+    min_bars: 15
+
+  # 杯柄参数
+  cup_handle:
+    min_bars: 20
+
+  # 过前高参数
+  breakout_pullback:
+    lookback_period: 30
+
+# ===== 置信度因子权重 =====
+# 用于计算每个形态的置信度
+confidence_factors:
+  # 各因子权重
+  weights:
+    completion: 0.4   # 形态完成度
+    volume: 0.3       # 成交量因子
+    trend: 0.2       # 趋势共振
+    momentum: 0.1   # 动量因子
+
+  # 成交量阈值
+  volume_threshold: 1.5  # 放量倍数阈值
