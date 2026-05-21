@@ -297,7 +297,7 @@ class CaiSenStrategy(Strategy):
         2. 计算综合评分
         3. 决策是否下单
         """
-        from ...core.order import Order, Side
+        from ..core.order import Order, Side
 
         self.bars.append(bar)
 

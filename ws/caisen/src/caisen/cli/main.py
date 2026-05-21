@@ -5,7 +5,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from ..core.config import Config, BacktestConfig, RunDataConfig
+from ..core.config import Config, BacktestConfig
+from ..data.config import DataConfig
 from ..core.bar import Bar
 from ..core.engine import BacktestEngine
 from ..strategy.base import Strategy
@@ -84,7 +85,7 @@ def run(strategy: str, symbol: str, freq: str, start: str, end: str, config: str
     else:
         cfg = Config(
             backtest=BacktestConfig(),
-            data=RunDataConfig(
+            data=DataConfig(
                 symbol=symbol,
                 freq=freq,
                 start=start,
@@ -107,8 +108,8 @@ def run(strategy: str, symbol: str, freq: str, start: str, end: str, config: str
         # 如果指定了策略配置文件，且策略是蔡森策略
         if strategy_config and strategy in ("CaiSenStrategy", "CaiSenStrategyOptimized"):
             try:
-                from ..strategy.cai_sen import CaiSenStrategy
-                strat = CaiSenStrategy.from_config_file(strategy_config)
+                from ..strategy.cai_sen_v2 import CaiSenStrategy
+                strat = CaiSenStrategy.from_config(strategy_config)
                 click.echo(f"Loaded CaiSenStrategy from config: {strategy_config}")
             except Exception as e:
                 click.echo(f"Failed to load strategy config: {e}")

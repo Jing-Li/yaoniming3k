@@ -5,7 +5,7 @@ from typing import Optional
 
 
 # 模块级常量
-SUPPORTED_FREQS = ("1d", "1h", "30m", "15m", "5m", "1m")
+SUPPORTED_FREQS = ("1d", "1h", "30m", "15m", "5m", "1m", "60m")
 
 
 @dataclass
@@ -20,7 +20,7 @@ class DataConfig:
         data_dir: Directory containing parquet files
     """
 
-    symbol: str
+    symbol: str = ""
     freq: str = "1d"
     start: Optional[str] = None
     end: Optional[str] = None
@@ -28,9 +28,7 @@ class DataConfig:
 
     def __post_init__(self):
         """Validate configuration."""
-        if not self.symbol:
-            raise ValueError("symbol is required")
-        if self.freq not in SUPPORTED_FREQS:
+        if self.symbol and self.freq not in SUPPORTED_FREQS:
             raise ValueError(
                 f"Unsupported freq '{self.freq}'. "
                 f"Supported: {', '.join(SUPPORTED_FREQS)}"

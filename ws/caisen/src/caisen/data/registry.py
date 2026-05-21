@@ -27,7 +27,7 @@ def register_datasource(name: str, source_class: Type[DataSource]) -> None:
         source_class: Class implementing DataSource protocol
     """
     with _registry_lock:
-        _datasources[name] = loader_class
+        _datasources[name] = source_class
 
 
 def set_active_datasource(name: str) -> None:
@@ -46,14 +46,14 @@ def set_active_datasource(name: str) -> None:
         _active_datasource = name
 
 
-def get_datasource(name: str) -> DataLoader:
+def get_datasource(name: str) -> DataSource:
     """Get a datasource instance.
 
     Args:
         name: Name of the datasource
 
     Returns:
-        DataLoader instance
+        DataSource instance
 
     Raises:
         DataSourceNotAvailableError: Unknown datasource
@@ -64,14 +64,14 @@ def get_datasource(name: str) -> DataLoader:
         return _datasources[name]()
 
 
-def load_datasource(name: Optional[str] = None) -> DataLoader:
+def load_datasource(name: Optional[str] = None) -> DataSource:
     """Load the active or specified datasource.
 
     Args:
         name: Optional datasource name. If None, uses active datasource.
 
     Returns:
-        DataLoader instance
+        DataSource instance
 
     Raises:
         DataSourceNotAvailableError: No suitable datasource found

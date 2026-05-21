@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 
+from ..data.config import DataConfig
+
 
 @dataclass
 class BacktestConfig:
@@ -22,23 +24,26 @@ class StrategyConfig:
 
 
 @dataclass
-class RunDataConfig:
-    """数据配置（用于一次回测运行）"""
-    symbol: str = ""
-    freq: str = "1d"
-    start: str = ""
-    end: str = ""
-    data_dir: str = "./data"
-
-
-@dataclass
 class LLMStrategyConfig:
-    """LLM 策略配置"""
-    provider: str = "openai"
-    model: str = "gpt-4"
-    prompt: str = ""
+    """LLM 策略配置
+
+    基于离线预计算架构：
+    - 一次性分析历史数据
+    - 结果缓存后逐帧回放
+    """
+    provider: str = "openai"  # openai / anthropic / 本地模型
+    api_key: str = ""  # API Key，支持环境变量 ${VAR}
+    base_url: str = ""  # 自定义端点，如 http://localhost:8080/v1
+    model: str = "gpt-4o"  # 模型名称
+    temperature: float = 0.3  # 温度参数
+
+    # Prompt 配置
+    rules: str = ""  # 规则框架
+    examples: int = 2  # Few-shot 示例数量
+
+    # 缓存配置
     cache_enabled: bool = True
-    cache_max_size: int = 10000
+    cache_dir: str = "./cache"  # 缓存目录
 
 
 @dataclass
@@ -46,7 +51,7 @@ class Config:
     """完整配置"""
     backtest: BacktestConfig = field(default_factory=BacktestConfig)
     strategy: StrategyConfig = field(default_factory=StrategyConfig)
-    data: RunDataConfig = field(default_factory=RunDataConfig)
+    data: DataConfig = field(default_factory=DataConfig)
     llm: Optional[LLMStrategyConfig] = None
     mode: str = "code"  # code 或 llm
     output_dir: str = "./runs"
@@ -64,7 +69,7 @@ class Config:
         """从字典创建"""
         backtest = BacktestConfig(**data.get("backtest", {}))
         strategy = StrategyConfig(**data.get("strategy", {}))
-        data_cfg = RunDataConfig(**data.get("data", {}))
+        data_cfg = DataConfig(**data.get("data", {}))
         llm = None
         if "llm" in data:
             llm = LLMStrategyConfig(**data["llm"])
@@ -82,7 +87,7 @@ class Config:
         return {
             "backtest": self.backtest.__dict__,
             "strategy": self.strategy.__dict__,
-            "data": self.data.__dict__,
+            "data": self.data.to_dict(),
             "llm": self.llm.__dict__ if self.llm else None,
             "mode": self.mode,
             "output_dir": self.output_dir,
