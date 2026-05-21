@@ -214,7 +214,7 @@ class WBottomDetector(PatternDetector):
         breakout_pct = (bar.close - neckline) / neckline
         momentum = min(1.0, breakout_pct / 0.02)  # 2%以上算强突破
 
-        return self._calculate_confidence(
+        return super()._calculate_confidence(
             completion=completion,
             volume=volume,
             trend=trend,

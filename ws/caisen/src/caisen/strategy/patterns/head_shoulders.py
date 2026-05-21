@@ -140,7 +140,7 @@ class HeadAndShouldersBottomDetector(PatternDetector):
         breakout_pct = (bar.close - neckline) / neckline
         momentum = min(1.0, breakout_pct / 0.02)
 
-        return self._calculate_confidence(
+        return super()._calculate_confidence(
             completion=completion, volume=volume, trend=trend, momentum=momentum
         )
 
@@ -268,6 +268,6 @@ class HeadAndShouldersTopDetector(PatternDetector):
         breakdown_pct = (neckline - bar.close) / neckline
         momentum = min(1.0, breakdown_pct / 0.02)
 
-        return self._calculate_confidence(
+        return super()._calculate_confidence(
             completion=completion, volume=volume, trend=trend, momentum=momentum
         )

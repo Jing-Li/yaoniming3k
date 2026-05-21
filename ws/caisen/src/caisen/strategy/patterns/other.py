@@ -215,7 +215,7 @@ class RectangleDetector(PatternDetector):
         else:
             trend = 0.7 if self._is_trend_down(20) else 0.3
 
-        return self._calculate_confidence(completion=completion, volume=volume, trend=trend, momentum=0.5)
+        return super()._calculate_confidence(completion=completion, volume=volume, trend=trend, momentum=0.5)
 
 
 class RoundingBottomDetector(PatternDetector):
