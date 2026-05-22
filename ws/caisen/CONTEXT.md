@@ -119,8 +119,16 @@ _参见_: `ResultPersister`（`src/caisen/result/persistence.py`）
 **Trade（交易记录）**:
 一次成交的记录，包含成交时间、标的、方向、数量、成交价、手续费、滑点成本等。
 
-**Pattern（形态）**:
-价格与支撑/阻力位的结构性互动关系，如整理平台、破底翻、假突破等。蔡森十二形态描述的是主力在关键位置的操盘意图，而非单根K线的形状。
+**PatternDetector（形态检测器）**:
+基于策略与检测器分离架构的形态识别组件。策略只做决策，检测器只做检测。多检测器通过加权投票产生综合信号。
+
+**PatternSignal（形态信号）**:
+检测器返回的信号，包含置信度、止损价、目标价等。策略根据信号做下单决策。
+
+**加权投票（Weighted Voting）**:
+多检测器信号的综合方式。根据各检测器权重和置信度计算加权平均，达到阈值时触发交易。
+
+_参见_: `PatternDetector`（`src/caisen/strategy/algorithm/detector.py`）
 
 **Platform（整理平台）**:
 价格在一段时间内在某个区间内来回波动，既不创新高也不创新低。是多空力量暂时均衡的区域，也是所有大行情启动前的必经阶段。
@@ -134,6 +142,9 @@ _Avoid_: 盘整区间、横盘
 
 **Neckline（颈线）**:
 整理平台的上沿（阻力位）和下沿（支撑位）。价格突破或跌破颈线意味着整理结束，趋势启动。
+
+**Pattern（形态）**:
+价格与支撑/阻力位的结构性互动关系，如整理平台、破底翻、假突破等。蔡森十二形态描述的是主力在关键位置的操盘意图，而非单根K线的形状。
 
 **Equity Curve（净值曲线）**:
 回测过程中账户净值随时间变化的序列数据。按每根 K 线采样。
@@ -163,6 +174,7 @@ _参见_: ADR-0007 可视化报告架构
 - 一个 **Strategy** 在一个 **Session** 中被调用多次（每根 K 线一次）
 - 一个 **Strategy** 管理一个 **Portfolio**，Portfolio 包含多个 **Position**
 - **Strategy** 分为 **Code Strategy** 和 **LLM Strategy** 两种实现
+- **Code Strategy**（如 CaiSenStrategy）使用 **PatternDetector** 进行形态检测，多检测器通过 **加权投票** 产生信号
 - **LLM Strategy** 调用 **LLM Provider** 获取决策，响应缓存在 **LLM Cache** 中
 - **LLM Strategy** 的决策可能包含 **Annotation**，用于回测报告可视化
 - **Code Strategy** 和 **LLM Strategy** 可通过 **Compare Mode** 对比
@@ -186,22 +198,51 @@ _参见_: ADR-0007 可视化报告架构
 
 ```
 src/caisen/
-├── core/          # 回测引擎核心（Engine、Config、Bar、Order）
-├── strategy/      # 策略实现
-│   ├── base.py    # 策略基类
-│   ├── patterns/  # 形态检测器（W底、M头、三角等）
-│   └── llm/       # LLM 策略实现
-├── data/          # 数据加载模块
-│   ├── source.py  # DataSource 接口
-│   └── local_source.py  # 本地数据源实现
-├── result/        # 回测结果处理
-│   ├── types.py   # 数据类型（BacktestResult）
-│   ├── metrics.py # 绩效指标计算
-│   └── persistence.py  # 结果持久化
-├── visualization/ # 可视化模块
-│   ├── web/       # Python Web 服务
-│   └── frontend/  # 前端代码（Vite 项目）
-└── cli/           # 命令行工具
+├── core/              # 回测引擎核心（Engine、Config、Bar、Order、Portfolio）
+├── strategy/          # 策略实现
+│   ├── base.py        # 策略基类 (Strategy)
+│   ├── algorithm/     # 算法策略
+│   │   ├── cai_sen.py      # 蔡森策略
+│   │   ├── detector.py     # 形态检测器基类 (PatternDetector)
+│   │   ├── patterns/      # 形态检测器实现
+│   │   │   ├── w_bottom.py      # W底检测器
+│   │   │   ├── m_top.py         # M头检测器
+│   │   │   ├── head_shoulders.py  # 头肩形态
+│   │   │   ├── triangle.py       # 三角形态
+│   │   │   └── other.py          # 其他形态（旗型、矩形等）
+│   │   └── caisen_components/   # 蔡森组件（聚合器、工厂等）
+│   └── llm/           # LLM 策略实现
+│       ├── strategy.py    # LLMStrategy
+│       ├── client.py      # LLMClient 基类
+│       ├── provider.py    # OpenAIProvider
+│       ├── cache.py       # LLM 缓存
+│       ├── evolver.py     # Prompt 演化
+│       └── prompts/       # Prompt 模板
+├── data/              # 数据加载模块
+│   ├── source.py      # DataSource 接口
+│   ├── local_source.py # 本地数据源实现
+│   ├── registry.py    # 数据源注册
+│   └── config.py      # 数据配置
+├── result/            # 回测结果处理
+│   ├── types.py       # 数据类型（BacktestResult）
+│   ├── metrics.py     # 绩效指标计算
+│   ├── calculator.py  # 结果计算器
+│   └── persistence.py # 结果持久化
+├── web/               # Web 服务（回测报告查看）
+├── frontend/          # 前端代码（Vite 项目）
+│   ├── src/           # 前端源码
+│   ├── dist/          # 构建输出
+│   └── tests/         # 前端测试
+├── cli/               # 命令行工具
+└── lint_structure.py  # 目录结构检查
+
+根目录结构：
+├── configs/           # 配置文件（YAML）
+├── scripts/           # 脚本（回测、测试等）
+├── tests/             # Python 测试
+├── docs/              # 文档和 ADR
+├── data/              # K线数据
+└── runs/              # 回测结果
 ```
 
 **命名规范**：
