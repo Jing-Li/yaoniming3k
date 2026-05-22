@@ -9,20 +9,7 @@ if TYPE_CHECKING:
     from caisen.core.bar import Bar
     from caisen.core.order import Order
     from caisen.core.config import BacktestConfig, LLMStrategyConfig
-
-
-class PromptBuilderClient:
-    """包装 LLMClient，应用 PromptBuilder"""
-
-    def __init__(self, llm_client, prompt_builder):
-        self.llm_client = llm_client
-        self.prompt_builder = prompt_builder
-
-    def analyze(self, bars):
-        """构建 Prompt 并调用 LLM"""
-        prompt = self.prompt_builder.build(bars)
-        response = self.llm_client.call_llm(prompt)
-        return self.llm_client.parse_response(response)
+    from caisen.data.source import DataSource
 
 
 class LLMStrategy(Strategy):
@@ -32,25 +19,48 @@ class LLMStrategy(Strategy):
     1. on_init 时一次性获取所有数据，调用 LLM 分析
     2. 缓存 signals 和 annotations
     3. on_bar 逐帧回放，查缓存返回 Order
+
+    组件组合（简化后）：
+    - PromptBuilder: 构建 prompt
+    - LLMClient: 调用 LLM API
+    - ResponseParser: 解析响应
+    - DataSource: 数据加载（通过依赖注入）
     """
 
-    def __init__(self, llm_client=None, config: "LLMStrategyConfig" = None):
+    def __init__(
+        self,
+        llm_client=None,
+        config: "LLMStrategyConfig" = None,
+        prompt_builder=None,
+        response_parser=None,
+        data_source: "DataSource" = None
+    ):
         """初始化
 
         Args:
-            llm_client: LLM 客户端，需实现 analyze(bars) -> Result
+            llm_client: LLM 客户端，需实现 call(prompt) -> str
             config: LLM 策略配置
+            prompt_builder: Prompt 构建器（可选）
+            response_parser: 响应解析器（可选）
+            data_source: 数据源（可选，用于注入自定义数据源）
         """
         from .cache import SignalCache
-        from .client import LLMClient, LLMResult
-        from .provider import OpenAIProvider
+        from .prompt import PromptBuilder
+        from .response import ResponseParser
 
         self.llm_client = llm_client
         self.config = config
+        self.prompt_builder = prompt_builder
+        self.response_parser = response_parser or ResponseParser()
+        self.data_source = data_source
 
         # 如果没有提供 client，根据配置创建
         if self.llm_client is None and config is not None:
             self.llm_client = self._create_client_from_config(config)
+
+        # 如果没有提供 prompt_builder，根据配置创建
+        if self.prompt_builder is None and config is not None:
+            self.prompt_builder = self._create_prompt_builder_from_config(config)
 
         self.position = 0  # 0=空仓, 1=持仓
         self._bars = []  # 保存所有 bar 用于后续处理
@@ -58,26 +68,16 @@ class LLMStrategy(Strategy):
         self._annotations_returned = False  # 跟踪是否已返回标注
 
     def _create_client_from_config(self, config: "LLMStrategyConfig"):
-        """根据配置创建 LLM 客户端
-
-        Args:
-            config: LLMStrategyConfig
-
-        Returns:
-            LLMClient 实例
-        """
+        """根据配置创建 LLM 客户端"""
         from .provider import OpenAIProvider
-        from .prompt import PromptBuilder
 
-        # 解析 API Key（支持环境变量）
         api_key = config.api_key
         if api_key.startswith("${") and api_key.endswith("}"):
             env_var = api_key[2:-1]
             api_key = os.environ.get(env_var, "")
 
-        # 创建 Provider
         if config.provider == "openai":
-            client = OpenAIProvider(
+            return OpenAIProvider(
                 api_key=api_key,
                 model=config.model,
                 temperature=config.temperature,
@@ -86,14 +86,32 @@ class LLMStrategy(Strategy):
         else:
             raise ValueError(f"Unsupported LLM provider: {config.provider}")
 
-        # 设置 PromptBuilder
-        prompt_builder = PromptBuilder(
+    def _create_prompt_builder_from_config(self, config: "LLMStrategyConfig"):
+        """根据配置创建 PromptBuilder"""
+        from .prompt import PromptBuilder
+
+        return PromptBuilder(
             rules=config.rules,
             examples_count=config.examples
         )
 
-        # 包装 client，应用 prompt_builder
-        return PromptBuilderClient(client, prompt_builder)
+    def analyze(self, bars) -> "LLMResult":
+        """分析 K 线数据（组合三个组件）
+
+        Args:
+            bars: K 线数据列表
+
+        Returns:
+            LLMResult: 包含 signals 和 annotations
+        """
+        if self.prompt_builder is None:
+            raise ValueError("prompt_builder is required")
+        if self.llm_client is None:
+            raise ValueError("llm_client is required")
+
+        prompt = self.prompt_builder.build(bars)
+        response = self.llm_client.call(prompt)
+        return self.response_parser.parse(response)
 
     def on_init(self, config: "BacktestConfig") -> None:
         """回测开始前调用
@@ -105,8 +123,18 @@ class LLMStrategy(Strategy):
         """
         # 如果没有缓存的 bars，从数据源加载
         if not self._bars:
-            # 检查 config 是否有 data 相关属性
-            if hasattr(config, 'data_dir') and hasattr(config, 'symbol'):
+            # 优先使用注入的数据源
+            if self.data_source is not None:
+                from caisen.data.config import DataConfig
+                data_config = DataConfig(
+                    symbol=config.symbol if hasattr(config, 'symbol') else "UNKNOWN",
+                    freq=config.freq if hasattr(config, 'freq') else "1d",
+                    start=config.start if hasattr(config, 'start') else "",
+                    end=config.end if hasattr(config, 'end') else "",
+                    data_dir=getattr(config, 'data_dir', '')
+                )
+                self._bars = self.data_source.load(data_config)
+            elif hasattr(config, 'data_dir') and hasattr(config, 'symbol'):
                 from caisen.data.local_source import LocalDataSource
                 from caisen.data.config import DataConfig
 
@@ -128,7 +156,7 @@ class LLMStrategy(Strategy):
             return
 
         # 调用 LLM 分析
-        result = self.llm_client.analyze(self._bars)
+        result = self.analyze(self._bars)
 
         # 缓存 signals
         self.cache.index_signals(result.signals)

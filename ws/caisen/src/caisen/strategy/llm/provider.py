@@ -1,7 +1,5 @@
 """OpenAI LLM Provider"""
 
-from typing import List, Dict, Any, Optional
-
 from .client import LLMClient, LLMResult
 
 
@@ -17,7 +15,6 @@ class OpenAIProvider(LLMClient):
         model: str = "gpt-4o",
         temperature: float = 0.3,
         base_url: str = "https://api.openai.com/v1",
-        **config
     ):
         """初始化
 
@@ -27,13 +24,12 @@ class OpenAIProvider(LLMClient):
             temperature: 温度参数，控制随机性
             base_url: API 端点，默认 OpenAI，可自定义（如 http://localhost:8080/v1）
         """
-        super().__init__(provider_name="openai", **config)
         self.api_key = api_key
         self.model = model
         self.temperature = temperature
         self.base_url = base_url
 
-    def call_llm(self, prompt: str) -> str:
+    def call(self, prompt: str) -> str:
         """调用 OpenAI API（或兼容 API）"""
         try:
             from openai import OpenAI
@@ -48,7 +44,6 @@ class OpenAIProvider(LLMClient):
         response = client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "你是一个量化交易策略分析师。"},
                 {"role": "user", "content": prompt}
             ],
             temperature=self.temperature

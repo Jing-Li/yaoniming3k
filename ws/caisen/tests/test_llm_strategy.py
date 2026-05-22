@@ -1,5 +1,6 @@
 """测试 LLM Strategy（离线预计算架构）"""
 
+import json
 from datetime import datetime
 import pytest
 
@@ -7,25 +8,24 @@ from caisen.core.bar import Bar
 from caisen.core.order import Order, Side
 from caisen.strategy.llm.strategy import LLMStrategy
 from caisen.strategy.llm.cache import SignalCache
+from caisen.strategy.llm.prompt import PromptBuilder
+from caisen.strategy.llm.response import ResponseParser
 
 
 class MockLLMClient:
-    """模拟 LLM 客户端"""
+    """模拟 LLM 客户端，实现 call(prompt) -> str"""
 
     def __init__(self, signals_data, annotations_data=None):
         self.signals_data = signals_data
         self.annotations_data = annotations_data or []
 
-    def analyze(self, bars):
-        return MockResult(self.signals_data, self.annotations_data)
-
-
-class MockResult:
-    """模拟 LLM 返回结果"""
-
-    def __init__(self, signals, annotations):
-        self.signals = signals
-        self.annotations = annotations
+    def call(self, prompt):
+        """返回模拟的 JSON 响应"""
+        response = json.dumps({
+            "signals": self.signals_data,
+            "annotations": self.annotations_data
+        })
+        return response
 
 
 class TestSignalCache:
@@ -72,7 +72,11 @@ class TestLLMStrategyOnBar:
         """测试 on_bar 对 buy 信号返回 BUY 订单"""
         signals = [{"timestamp": "2024-01-01", "action": "buy"}]
         client = MockLLMClient(signals)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
 
         # 模拟 on_init 已完成
         strategy.cache.index_signals(signals)
@@ -96,7 +100,11 @@ class TestLLMStrategyOnBar:
         """测试有持仓时 sell 信号返回 SELL 订单"""
         signals = [{"timestamp": "2024-01-01", "action": "sell"}]
         client = MockLLMClient(signals)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.position = 1  # 有持仓
 
         strategy.cache.index_signals(signals)
@@ -115,7 +123,11 @@ class TestLLMStrategyOnBar:
         """测试无持仓时 sell 信号返回 None"""
         signals = [{"timestamp": "2024-01-01", "action": "sell"}]
         client = MockLLMClient(signals)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.position = 0  # 无持仓
 
         strategy.cache.index_signals(signals)
@@ -134,7 +146,11 @@ class TestLLMStrategyOnBar:
         """测试 hold 信号返回 None"""
         signals = [{"timestamp": "2024-01-01", "action": "hold"}]
         client = MockLLMClient(signals)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.position = 0  # 无持仓
 
         strategy.cache.index_signals(signals)
@@ -151,7 +167,11 @@ class TestLLMStrategyOnBar:
     def test_on_bar_returns_none_when_no_signal(self):
         """测试无信号时返回 None"""
         client = MockLLMClient([])
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.position = 0
 
         bar = Bar(
@@ -168,7 +188,11 @@ class TestLLMStrategyOnBar:
         """测试订单使用收盘价"""
         signals = [{"timestamp": "2024-01-01", "action": "buy"}]
         client = MockLLMClient(signals)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.cache.index_signals(signals)
 
         bar = Bar(
@@ -196,7 +220,11 @@ class TestLLMStrategyAnnotations:
             {"timestamp": "2024-01-01", "type": "buy_signal", "data": {"price": 100, "label": "买入"}}
         ]
         client = MockLLMClient(signals, annotations)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
 
         strategy.cache.index_signals(signals)
         strategy.cache.set_annotations(annotations)
@@ -207,7 +235,36 @@ class TestLLMStrategyAnnotations:
     def test_get_annotations_empty_when_no_annotations(self):
         """测试无标注时返回空列表"""
         client = MockLLMClient([])
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
 
         result = strategy.get_annotations()
         assert result == []
+
+
+class TestLLMStrategyAnalyze:
+    """LLMStrategy.analyze 测试"""
+
+    def test_analyze_combines_components(self):
+        """测试 analyze 方法组合三个组件"""
+        signals = [{"timestamp": "2024-01-01", "action": "buy"}]
+        annotations = [{"timestamp": "2024-01-01", "type": "buy_signal", "data": {}}]
+        client = MockLLMClient(signals, annotations)
+        prompt_builder = PromptBuilder()
+        response_parser = ResponseParser()
+
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=prompt_builder,
+            response_parser=response_parser
+        )
+
+        bars = [{"timestamp": "2024-01-01", "open": 100, "close": 103}]
+        result = strategy.analyze(bars)
+
+        assert len(result.signals) == 1
+        assert len(result.annotations) == 1
+        assert result.signals[0]["action"] == "buy"

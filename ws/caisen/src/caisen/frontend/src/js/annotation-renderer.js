@@ -4,6 +4,7 @@
  */
 
 import { findBarByTimestamp, isValidCoord, isFiniteNum } from './utils.js';
+import { ANNOTATION_TYPES, ANNOTATION_CONFIG } from './annotation-schema.js';
 
 /**
  * Process annotations into markPoints and markLines
@@ -41,18 +42,18 @@ export function processAnnotations(annotations, bars) {
  */
 export function getAnnotationRenderer(type) {
     const renderers = {
-        buy_signal: renderBuySignal,
-        sell_signal: renderSellSignal,
-        neutral_signal: renderNeutralSignal,
-        horizontal_line: renderHorizontalLine,
-        trend_line: renderTrendLine,
-        pattern_mark: renderPatternMark,
-        support_zone: renderSupportZone,
-        resistance_zone: renderResistanceZone,
-        volume_spike: renderVolumeSpike,
-        text_label: renderTextLabel,
-        rectangle: renderRectangle,
-        polygon: renderPolygon
+        [ANNOTATION_TYPES.BUY_SIGNAL]: renderBuySignal,
+        [ANNOTATION_TYPES.SELL_SIGNAL]: renderSellSignal,
+        [ANNOTATION_TYPES.NEUTRAL_SIGNAL]: renderNeutralSignal,
+        [ANNOTATION_TYPES.HORIZONTAL_LINE]: renderHorizontalLine,
+        [ANNOTATION_TYPES.TREND_LINE]: renderTrendLine,
+        [ANNOTATION_TYPES.PATTERN_MARK]: renderPatternMark,
+        [ANNOTATION_TYPES.SUPPORT_ZONE]: renderSupportZone,
+        [ANNOTATION_TYPES.RESISTANCE_ZONE]: renderResistanceZone,
+        [ANNOTATION_TYPES.VOLUME_SPIKE]: renderVolumeSpike,
+        [ANNOTATION_TYPES.TEXT_LABEL]: renderTextLabel,
+        [ANNOTATION_TYPES.RECTANGLE]: renderRectangle,
+        [ANNOTATION_TYPES.POLYGON]: renderPolygon
     };
     return renderers[type] || null;
 }
@@ -62,20 +63,7 @@ export function getAnnotationRenderer(type) {
  * @returns {string[]} Array of supported annotation types
  */
 export function getSupportedAnnotationTypes() {
-    return [
-        'buy_signal',
-        'sell_signal',
-        'neutral_signal',
-        'horizontal_line',
-        'trend_line',
-        'pattern_mark',
-        'support_zone',
-        'resistance_zone',
-        'volume_spike',
-        'text_label',
-        'rectangle',
-        'polygon'
-    ];
+    return Object.values(ANNOTATION_TYPES);
 }
 
 // ============ Annotation Renderer Functions ============
@@ -91,12 +79,13 @@ export function renderBuySignal(ctx, annotation, bars) {
     if (bar) {
         const idx = bars.indexOf(bar);
         if (idx >= 0 && bar.close !== undefined && isFinite(bar.close)) {
-            const color = annotation.data.color || '#48bb78';
+            const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.BUY_SIGNAL];
+            const color = annotation.data.color || config.color;
             const mp = {
                 coord: [idx, bar.close],
-                value: annotation.data.label || '买入',
-                symbol: 'triangle',
-                symbolSize: 14,
+                value: annotation.data.label || config.defaultLabel,
+                symbol: config.symbol,
+                symbolSize: config.symbolSize,
                 itemStyle: { color: color, borderColor: '#fff', borderWidth: 1 }
             };
             ctx.markPoints.push(mp);
@@ -115,13 +104,14 @@ export function renderSellSignal(ctx, annotation, bars) {
     if (bar) {
         const idx = bars.indexOf(bar);
         if (idx >= 0 && bar.close !== undefined && isFinite(bar.close)) {
-            const color = annotation.data.color || '#fc8181';
+            const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.SELL_SIGNAL];
+            const color = annotation.data.color || config.color;
             const mp = {
                 coord: [idx, bar.close],
-                value: annotation.data.label || '卖出',
-                symbol: 'triangle',
-                symbolSize: 14,
-                symbolRotate: 180,
+                value: annotation.data.label || config.defaultLabel,
+                symbol: config.symbol,
+                symbolSize: config.symbolSize,
+                symbolRotate: config.symbolRotate,
                 itemStyle: { color: color, borderColor: '#fff', borderWidth: 1 }
             };
             ctx.markPoints.push(mp);
@@ -140,12 +130,13 @@ export function renderNeutralSignal(ctx, annotation, bars) {
     if (bar) {
         const idx = bars.indexOf(bar);
         if (idx >= 0 && bar.close !== undefined && isFinite(bar.close)) {
+            const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.NEUTRAL_SIGNAL];
             const mp = {
                 coord: [idx, bar.close],
-                value: annotation.data.label || '中性',
-                symbol: 'diamond',
-                symbolSize: 12,
-                itemStyle: { color: '#a0aec0', borderColor: '#fff', borderWidth: 1 }
+                value: annotation.data.label || config.defaultLabel,
+                symbol: config.symbol,
+                symbolSize: config.symbolSize,
+                itemStyle: { color: config.color, borderColor: '#fff', borderWidth: 1 }
             };
             ctx.markPoints.push(mp);
         }
@@ -164,12 +155,13 @@ export function renderHorizontalLine(ctx, annotation, bars) {
         return;
     }
 
+    const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.HORIZONTAL_LINE];
     const ml = {
         yAxis: price,
         lineStyle: {
-            color: annotation.data.color || '#60a5fa',
-            type: 'dashed',
-            width: 1
+            color: annotation.data.color || config.color,
+            type: config.lineStyle,
+            width: config.lineWidth
         },
         label: {
             formatter: annotation.data.label || '',
@@ -196,14 +188,15 @@ export function renderTrendLine(ctx, annotation, bars) {
         const startIdx = bars.indexOf(startBar);
         const endIdx = bars.indexOf(endBar);
         if (startIdx >= 0 && endIdx >= 0 && isFinite(startBar.close) && isFinite(endBar.close)) {
+            const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.TREND_LINE];
             const ml = {
                 coords: [
                     [startIdx, startBar.close],
                     [endIdx, endBar.close]
                 ],
                 lineStyle: {
-                    color: annotation.data.color || '#ed8936',
-                    width: 2
+                    color: annotation.data.color || config.color,
+                    width: config.lineWidth
                 },
                 label: { formatter: annotation.data.label || '', position: 'middle' }
             };
@@ -221,7 +214,8 @@ export function renderTrendLine(ctx, annotation, bars) {
 export function renderPatternMark(ctx, annotation, bars) {
     const points = annotation.data.points || [];
     const pattern = annotation.data.pattern;
-    const color = annotation.data.color || '#9f7aea';
+    const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.PATTERN_MARK];
+    const color = annotation.data.color || config.color;
     const label = annotation.data.label || pattern;
 
     const coords = [];
@@ -241,7 +235,7 @@ export function renderPatternMark(ctx, annotation, bars) {
             coords: coords,
             lineStyle: {
                 color: color,
-                width: 2,
+                width: config.lineWidth,
                 type: 'solid'
             },
             label: { formatter: label, position: 'middle', color: color }
@@ -301,14 +295,15 @@ export function renderSupportZone(ctx, annotation, bars) {
     if (typeof price !== 'number' || !isFinite(price)) {
         return;
     }
+    const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.SUPPORT_ZONE];
     const ml = {
         yAxis: price,
         lineStyle: {
-            color: '#48bb78',
-            width: 2,
-            type: 'dashed'
+            color: annotation.data.color || config.color,
+            width: config.lineWidth,
+            type: config.lineStyle
         },
-        label: { formatter: annotation.data.label || '支撑', position: 'end' }
+        label: { formatter: annotation.data.label || config.defaultLabel, position: 'end' }
     };
     ctx.markLines.push(ml);
 }
@@ -324,14 +319,15 @@ export function renderResistanceZone(ctx, annotation, bars) {
     if (typeof price !== 'number' || !isFinite(price)) {
         return;
     }
+    const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.RESISTANCE_ZONE];
     const ml = {
         yAxis: price,
         lineStyle: {
-            color: '#fc8181',
-            width: 2,
-            type: 'dashed'
+            color: annotation.data.color || config.color,
+            width: config.lineWidth,
+            type: config.lineStyle
         },
-        label: { formatter: annotation.data.label || '阻力', position: 'end' }
+        label: { formatter: annotation.data.label || config.defaultLabel, position: 'end' }
     };
     ctx.markLines.push(ml);
 }
@@ -358,6 +354,7 @@ export function renderTextLabel(ctx, annotation, bars) {
         const idx = bars.indexOf(bar);
         const price = annotation.data.price || bar.close;
         if (idx >= 0 && isFinite(idx) && isFinite(price)) {
+            const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.TEXT_LABEL];
             const mp = {
                 coord: [idx, price],
                 value: annotation.data.text || '',
@@ -365,9 +362,9 @@ export function renderTextLabel(ctx, annotation, bars) {
                 label: {
                     show: true,
                     formatter: annotation.data.text || '',
-                    color: annotation.data.color || '#fff',
-                    fontSize: 12,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    color: annotation.data.color || config.color,
+                    fontSize: config.fontSize,
+                    backgroundColor: config.backgroundColor,
                     padding: [4, 8],
                     borderRadius: 4
                 }
@@ -390,14 +387,15 @@ export function renderRectangle(ctx, annotation, bars) {
         const startIdx = bars.indexOf(startBar);
         const endIdx = bars.indexOf(endBar);
         if (startIdx >= 0 && endIdx >= 0 && isFinite(startBar.close) && isFinite(endBar.close)) {
+            const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.RECTANGLE];
             const ml = {
                 coords: [
                     [startIdx, startBar.close],
                     [endIdx, endBar.close]
                 ],
                 lineStyle: {
-                    color: annotation.data.color || '#f6ad55',
-                    width: 2
+                    color: annotation.data.color || config.color,
+                    width: config.lineWidth
                 }
             };
             ctx.markLines.push(ml);
@@ -425,11 +423,12 @@ export function renderPolygon(ctx, annotation, bars) {
     });
 
     if (coords.length >= 2) {
+        const config = ANNOTATION_CONFIG[ANNOTATION_TYPES.POLYGON];
         const ml = {
             coords: coords,
             lineStyle: {
-                color: annotation.data.color || '#b794f4',
-                width: 2
+                color: annotation.data.color || config.color,
+                width: config.lineWidth
             },
             label: { formatter: annotation.data.label || '', position: 'middle' }
         };

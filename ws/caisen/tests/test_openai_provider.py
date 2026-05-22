@@ -30,14 +30,30 @@ class TestOpenAIProvider:
         assert provider.model == "gpt-4o-mini"
         assert provider.temperature == 0.7
 
-    def test_call_llm_not_implemented(self):
-        """测试 call_llm 基类抛出 NotImplementedError"""
+    def test_call_is_abstract(self):
+        """测试 call 方法是抽象的"""
+        from caisen.strategy.llm.client import LLMClient
+        from caisen.strategy.llm.provider import OpenAIProvider
+
+        # OpenAIProvider 实现了 call 方法，所以不会抛异常
+        provider = OpenAIProvider(api_key="test")
+        assert hasattr(provider, 'call')
+
+        # 验证 LLMClient.call 是抽象方法
+        assert hasattr(LLMClient, 'call')
+        assert getattr(LLMClient, 'call').__isabstractmethod__
+
+
+class TestLLMClientInterface:
+    """LLMClient 接口测试"""
+
+    def test_call_method_exists(self):
+        """测试 call 方法存在于 LLMClient 接口"""
         from caisen.strategy.llm.client import LLMClient
 
-        # 直接测试基类的 call_llm
-        client = LLMClient(provider_name="test")
-        with pytest.raises(NotImplementedError):
-            client.call_llm("test prompt")
+        # 检查 call 方法是抽象方法
+        assert hasattr(LLMClient, 'call')
+        assert getattr(LLMClient, 'call').__isabstractmethod__
 
 
 class TestOpenAIProviderIntegration:
@@ -61,7 +77,7 @@ class TestOpenAIProviderIntegration:
 
         # 简单测试
         prompt = "Output JSON: {\"signals\": [], \"annotations\": []}"
-        result = provider.call_llm(prompt)
+        result = provider.call(prompt)
 
         assert isinstance(result, str)
         assert "signals" in result

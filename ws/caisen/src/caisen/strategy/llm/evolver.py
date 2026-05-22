@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .prompt import PromptBuilder
 from .client import LLMClient, LLMResult
+from .response import ResponseParser
 
 
 @dataclass
@@ -35,7 +36,8 @@ class PromptEvolver:
         llm_client: LLMClient,
         bars: List[Dict],
         max_iterations: int = 5,
-        target_score: float = 0.0
+        target_score: float = 0.0,
+        response_parser: ResponseParser = None
     ):
         """初始化
 
@@ -44,11 +46,13 @@ class PromptEvolver:
             bars: K 线数据
             max_iterations: 最大迭代次数
             target_score: 目标评分（达到后停止）
+            response_parser: 响应解析器
         """
         self.llm_client = llm_client
         self.bars = bars
         self.max_iterations = max_iterations
         self.target_score = target_score
+        self.response_parser = response_parser or ResponseParser()
 
         self.history: List[EvolutionResult] = []
         self.best_result: Optional[EvolutionResult] = None
@@ -78,8 +82,8 @@ class PromptEvolver:
 
             # 调用 LLM
             prompt = prompt_builder.build(self.bars)
-            response = self.llm_client.call_llm(prompt)
-            result = self.llm_client.parse_response(response)
+            response = self.llm_client.call(prompt)
+            result = self.response_parser.parse(response)
 
             # 评估结果
             score, trades = self._evaluate(result.signals)

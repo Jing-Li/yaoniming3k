@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 from caisen.core.bar import Bar
-from caisen.strategy.llm import OpenAIProvider, LLMStrategy
+from caisen.strategy.llm import OpenAIProvider, LLMStrategy, PromptBuilder, ResponseParser
 
 
 def test_local_llm():
@@ -37,8 +37,6 @@ def test_local_llm():
     # 2. 测试 Prompt 构建
     print("\n[2] 测试 Prompt 构建...")
 
-    from caisen.strategy.llm import PromptBuilder
-
     prompt_builder = PromptBuilder(rules="支撑位买入，阻力位卖出")
     prompt = prompt_builder.build(bars)
 
@@ -49,7 +47,7 @@ def test_local_llm():
     print("\n[3] 测试 LLM 调用...")
 
     try:
-        response = client.call_llm(prompt)
+        response = client.call(prompt)
         print(f"   响应长度: {len(response)} 字符")
         print(f"   响应预览: {response[:200]}...")
     except Exception as e:
@@ -60,7 +58,8 @@ def test_local_llm():
     print("\n[4] 测试响应解析...")
 
     try:
-        result = client.parse_response(response)
+        parser = ResponseParser()
+        result = parser.parse(response)
         print(f"   Signals: {len(result.signals)}")
         print(f"   Annotations: {len(result.annotations)}")
         if result.signals:
@@ -69,13 +68,14 @@ def test_local_llm():
         print(f"   ❌ 解析失败: {e}")
         print(f"   原始响应: {response}")
 
-    # 5. 测试完整流程
+    # 5. 测试完整策略流程
     print("\n[5] 测试完整策略流程...")
 
-    from caisen.strategy.llm.strategy import PromptBuilderClient
-
-    wrapped_client = PromptBuilderClient(client, prompt_builder)
-    strategy = LLMStrategy(llm_client=wrapped_client)
+    strategy = LLMStrategy(
+        llm_client=client,
+        prompt_builder=prompt_builder,
+        response_parser=parser
+    )
 
     # 模拟 on_init
     strategy.cache.index_signals(result.signals)

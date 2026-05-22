@@ -1,5 +1,6 @@
 """LLM 策略集成测试"""
 
+import json
 import pytest
 from datetime import datetime
 from unittest.mock import Mock
@@ -9,20 +10,24 @@ from caisen.core.order import Side
 from caisen.strategy.llm.strategy import LLMStrategy
 from caisen.strategy.llm.cache import SignalCache
 from caisen.strategy.llm.client import LLMResult
+from caisen.strategy.llm.prompt import PromptBuilder
+from caisen.strategy.llm.response import ResponseParser
 
 
 class MockLLMClient:
-    """模拟 LLM 客户端，返回预定义的信号"""
+    """模拟 LLM 客户端，实现 call(prompt) -> str"""
 
     def __init__(self, signals_data, annotations_data=None):
         self.signals_data = signals_data
         self.annotations_data = annotations_data or []
 
-    def analyze(self, bars):
-        return LLMResult(
-            signals=self.signals_data,
-            annotations=self.annotations_data
-        )
+    def call(self, prompt):
+        """返回模拟的 JSON 响应"""
+        response = json.dumps({
+            "signals": self.signals_data,
+            "annotations": self.annotations_data
+        })
+        return response
 
 
 class TestLLMStrategyIntegration:
@@ -52,7 +57,11 @@ class TestLLMStrategyIntegration:
         ]
 
         client = MockLLMClient(signals, annotations)
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
 
         # 模拟 on_init 缓存数据
         strategy.cache.index_signals(signals)
@@ -81,7 +90,11 @@ class TestLLMStrategyIntegration:
         ]
 
         client = MockLLMClient([])  # 无信号
-        strategy = LLMStrategy(client)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
 
         # 模拟 on_init
         strategy.cache.index_signals([])
@@ -101,7 +114,12 @@ class TestLLMStrategyIntegration:
             {"timestamp": "2024-01-03", "type": "horizontal_line", "data": {"price": 105}},
         ]
 
-        strategy = LLMStrategy(MockLLMClient([]))
+        client = MockLLMClient([], annotations)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.cache.set_annotations(annotations)
 
         result = strategy.get_annotations()
@@ -173,7 +191,12 @@ class TestEndToEndScenario:
             {"timestamp": "2024-01-04", "action": "sell"},
         ]
 
-        strategy = LLMStrategy(MockLLMClient(signals))
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.cache.index_signals(signals)
 
         orders = []
@@ -199,7 +222,12 @@ class TestEndToEndScenario:
             {"timestamp": "2024-01-03", "action": "sell"},
         ]
 
-        strategy = LLMStrategy(MockLLMClient(signals))
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
         strategy.cache.index_signals(signals)
 
         orders = []

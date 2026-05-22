@@ -1,14 +1,16 @@
 """测试 Prompt 进化器"""
 
+import json
 import pytest
 from unittest.mock import Mock
 
 from caisen.strategy.llm.evolver import PromptEvolver, quick_evolution, EvolutionResult
-from caisen.strategy.llm.client import LLMResult
+from caisen.strategy.llm.prompt import PromptBuilder
+from caisen.strategy.llm.response import ResponseParser
 
 
 class MockLLMClient:
-    """模拟 LLM 客户端"""
+    """模拟 LLM 客户端，实现 call(prompt) -> str"""
 
     def __init__(self, responses=None):
         self.responses = responses or [
@@ -16,18 +18,10 @@ class MockLLMClient:
         ]
         self.call_count = 0
 
-    def call_llm(self, prompt: str) -> str:
+    def call(self, prompt: str) -> str:
         response = self.responses[self.call_count % len(self.responses)]
         self.call_count += 1
         return response
-
-    def parse_response(self, response: str):
-        import json
-        data = json.loads(response)
-        return LLMResult(
-            signals=data.get('signals', []),
-            annotations=data.get('annotations', [])
-        )
 
 
 class TestPromptEvolver:
