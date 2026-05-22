@@ -346,7 +346,7 @@ export function getAnnotationRenderer(type) {
 
 // Annotation renderer functions
 function renderBuySignal(ctx, annotation, bars) {
-    const bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
+    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
     if (!bar) {
         bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
     }
@@ -367,7 +367,7 @@ function renderBuySignal(ctx, annotation, bars) {
 }
 
 function renderSellSignal(ctx, annotation, bars) {
-    const bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
+    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
     if (!bar) {
         bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
     }
@@ -389,7 +389,7 @@ function renderSellSignal(ctx, annotation, bars) {
 }
 
 function renderNeutralSignal(ctx, annotation, bars) {
-    const bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
+    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
     if (!bar) {
         bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
     }
@@ -571,7 +571,7 @@ function renderVolumeSpike(ctx, annotation, bars) {
 }
 
 function renderTextLabel(ctx, annotation, bars) {
-    const bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
+    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
     if (!bar) {
         bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
     }

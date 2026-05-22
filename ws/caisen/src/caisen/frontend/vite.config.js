@@ -23,6 +23,12 @@ export default defineConfig({
       },
     },
   },
+  resolve: {
+    alias: {
+      '/js': resolve(__dirname, 'src/js'),
+      '/src': resolve(__dirname, 'src'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
