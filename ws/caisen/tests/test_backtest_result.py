@@ -1,8 +1,9 @@
-"""Tests for BacktestResult performance metrics"""
+"""Tests for MetricsCalculator"""
 
 import pytest
 from datetime import datetime
-from caisen.core.engine import BacktestResult
+from caisen.result.types import BacktestResult
+from caisen.result.calculator import MetricsCalculator
 from caisen.core.trade import Trade
 from caisen.core.order import Side
 
@@ -23,7 +24,7 @@ def sample_equity_curve():
 
 
 class TestMaxDrawdown:
-    """Tests for max_drawdown property."""
+    """Tests for max_drawdown calculation."""
 
     def test_max_drawdown_basic(self, sample_equity_curve):
         """Test basic max drawdown calculation."""
@@ -37,10 +38,12 @@ class TestMaxDrawdown:
             final_equity=120000,
         )
 
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
         # Peak is 115000, trough is 100000
         # Max drawdown = (115000 - 100000) / 115000 = 13.04%
-        max_dd = result.max_drawdown
-        assert abs(max_dd - 0.1304) < 0.01
+        assert abs(metrics.max_drawdown + 0.1304) < 0.01  # max_drawdown 为负值
 
     def test_max_drawdown_empty_curve(self):
         """Test with empty equity curve."""
@@ -54,7 +57,10 @@ class TestMaxDrawdown:
             final_equity=100000,
         )
 
-        assert result.max_drawdown == 0.0
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        assert metrics.max_drawdown == 0.0
 
     def test_max_drawdown_no_drawdown(self):
         """Test when equity only goes up."""
@@ -72,11 +78,14 @@ class TestMaxDrawdown:
             final_equity=110000,
         )
 
-        assert result.max_drawdown == 0.0
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        assert metrics.max_drawdown == 0.0
 
 
 class TestSharpeRatio:
-    """Tests for sharpe_ratio property."""
+    """Tests for sharpe_ratio calculation."""
 
     def test_sharpe_ratio_empty_curve(self):
         """Test with empty equity curve."""
@@ -90,7 +99,10 @@ class TestSharpeRatio:
             final_equity=100000,
         )
 
-        assert result.sharpe_ratio == 0.0
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        assert metrics.sharpe_ratio == 0.0
 
     def test_sharpe_ratio_no_volatility(self):
         """Test when equity is flat (no volatility)."""
@@ -108,11 +120,14 @@ class TestSharpeRatio:
             final_equity=100000,
         )
 
-        assert result.sharpe_ratio == 0.0
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        assert metrics.sharpe_ratio == 0.0
 
 
 class TestWinRateAndProfitFactor:
-    """Tests for win_rate and profit_factor properties."""
+    """Tests for win_rate and profit_factor calculations."""
 
     def test_win_rate_empty_trades(self):
         """Test with no trades."""
@@ -126,8 +141,11 @@ class TestWinRateAndProfitFactor:
             final_equity=100000,
         )
 
-        assert result.win_rate == 0.0
-        assert result.profit_factor == 0.0
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        assert metrics.win_rate == 0.0
+        assert metrics.profit_factor == 0.0
 
     def test_win_rate_mixed_trades(self):
         """Test with winning and losing trades."""
@@ -151,23 +169,65 @@ class TestWinRateAndProfitFactor:
             final_equity=99000,
         )
 
-        assert result.win_rate == 0.5  # 1 win out of 2
-        assert result.profit_factor == 1.0  # 1000 / 1000
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
 
-    def test_sharpe_ratio_no_volatility(self):
-        """Test when equity is flat (no volatility)."""
+        assert metrics.win_rate == 0.5  # 1 win out of 2
+        assert abs(metrics.profit_factor - 1.0) < 0.01  # 约等于 1.0 (考虑手续费)
+
+
+class TestTotalReturn:
+    """Tests for total_return calculation."""
+
+    def test_total_return_basic(self):
+        """Test total return calculation."""
         result = BacktestResult(
             strategy_name="Test",
             bars=[],
             trades=[],
+            equity_curve=[],
+            annotations=[],
+            initial_capital=100000,
+            final_equity=120000,
+        )
+
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        assert metrics.total_return == 0.2  # 20% return
+
+
+class TestCalculatorIntegration:
+    """Integration tests for MetricsCalculator."""
+
+    def test_full_metrics_calculation(self):
+        """Test full metrics calculation."""
+        result = BacktestResult(
+            strategy_name="Test",
+            bars=[],
+            trades=[
+                Trade(timestamp=datetime(2024, 1, 1), symbol="AAPL", side=Side.BUY, quantity=100, price=100, commission=1, slippage=0.1, order_id="1"),
+                Trade(timestamp=datetime(2024, 1, 2), symbol="AAPL", side=Side.SELL, quantity=100, price=110, commission=1, slippage=0.1, order_id="2"),
+            ],
             equity_curve=[
                 {"timestamp": "2024-01-01", "equity": 100000, "cash": 100000, "positions": {}},
-                {"timestamp": "2024-01-02", "equity": 100000, "cash": 100000, "positions": {}},
-                {"timestamp": "2024-01-03", "equity": 100000, "cash": 100000, "positions": {}},
+                {"timestamp": "2024-01-02", "equity": 109999, "cash": 109999, "positions": {}},
             ],
             annotations=[],
             initial_capital=100000,
-            final_equity=100000,
+            final_equity=109999,
         )
 
-        assert result.sharpe_ratio == 0.0
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
+        # Verify all fields are present
+        assert metrics.total_return is not None
+        assert metrics.annual_return is not None
+        assert metrics.max_drawdown is not None
+        assert metrics.sharpe_ratio is not None
+        assert metrics.win_rate is not None
+        assert metrics.total_trades is not None
+        assert metrics.profit_factor is not None
+        assert metrics.avg_win is not None
+        assert metrics.avg_loss is not None

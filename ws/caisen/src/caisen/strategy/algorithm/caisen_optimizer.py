@@ -156,9 +156,10 @@ def _run_single_backtest(params: Dict[str, Any], bars: List, run_id: str) -> Opt
     """运行单次回测（延迟导入避免循环依赖）"""
     try:
         # 延迟导入避免循环依赖
-        from .cai_sen_v2 import CaiSenStrategy
+        from .cai_sen import CaiSenStrategy
         from ..core.engine import BacktestEngine
         from ..core.config import BacktestConfig
+        from ...result.calculator import MetricsCalculator
 
         # 创建策略
         strategy = CaiSenStrategy(**params)
@@ -167,14 +168,18 @@ def _run_single_backtest(params: Dict[str, Any], bars: List, run_id: str) -> Opt
         engine = BacktestEngine(BacktestConfig())
         result = engine.run(strategy, bars)
 
+        # 计算指标
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
+
         return OptimizationResult(
             params=params,
-            annual_return=result.total_return,
-            max_drawdown=result.max_drawdown,
-            sharpe_ratio=result.sharpe_ratio,
-            win_rate=result.win_rate,
-            total_trades=len(result.trades),
-            profit_factor=result.profit_factor,
+            annual_return=metrics.annual_return,
+            max_drawdown=metrics.max_drawdown,
+            sharpe_ratio=metrics.sharpe_ratio,
+            win_rate=metrics.win_rate,
+            total_trades=metrics.total_trades,
+            profit_factor=metrics.profit_factor,
             run_id=run_id,
         )
     except Exception as e:

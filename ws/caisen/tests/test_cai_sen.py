@@ -112,8 +112,8 @@ class TestCaiSenStrategyV2:
         for bar in bars:
             strategy.on_bar(bar)
 
-        # M头检测器能检测到形态
-        signal = detector.detect()
+        # M头检测器能检测到形态（纯函数接口：直接传入 bars）
+        signal = detector.detect(bars)
         assert signal is not None, "应检测到M头信号"
         assert signal.pattern == "m_top"
 
@@ -170,7 +170,7 @@ class TestPatternDetectors:
     """PatternDetector 单元测试"""
 
     def test_w_bottom_detector(self):
-        """测试W底检测器"""
+        """测试W底检测器（纯函数接口）"""
         from caisen.strategy.algorithm.patterns import WBottomDetector
 
         detector = WBottomDetector()
@@ -189,9 +189,7 @@ class TestPatternDetectors:
             make_bar(9, 96, 105, 95, 104, volume=2000),  # 突破颈线
         ]
 
-        for bar in bars:
-            detector.update(bar)
-
-        signal = detector.detect()
+        # 纯函数接口：直接传入 bars，无需 update
+        signal = detector.detect(bars)
         assert signal is not None, "应检测到W底信号"
         assert signal.pattern == "w_bottom"

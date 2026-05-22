@@ -1,38 +1,28 @@
-"""CaiSenStrategy - 组合形态检测器
+"""CaiSenStrategy - 组合形态检测器（组件化版本）
 
-基于 PatternDetector 架构的蔡森策略实现。
-策略只做决策，检测器只做检测。
+基于 ADR-0011 的组件拆分：
+- DetectorFactory: 检测器创建
+- SignalAggregator: 信号聚合评分
+- PositionManager: 仓位管理
 
-配置可通过 YAML 文件或参数传入。
+策略只做决策，组件各司其职。
 """
 
 import os
 from typing import List, Optional, Dict, Any, TYPE_CHECKING
+
 from ..base import Strategy, Annotation, AnnotationType
 from .detector import PatternDetector, PatternSignal
-from .patterns import (
-    WBottomDetector, MTopDetector,
-    HeadAndShouldersBottomDetector, HeadAndShouldersTopDetector,
-    TriangleDetector,
-    FlagDetector, RectangleDetector, RoundingBottomDetector,
-    CupHandleDetector, BreakoutPullbackDetector,
-)
+from .caisen_components import DetectorFactory, SignalAggregator, PositionManager
 
 if TYPE_CHECKING:
     from caisen.core.bar import Bar
-    from ..core.order import Order
-    from ..core.config import BacktestConfig
+    from caisen.core.order import Order
+    from caisen.core.config import BacktestConfig
 
 
 def load_config_from_yaml(config_path: str) -> Dict[str, Any]:
-    """从 YAML 文件加载配置
-
-    Args:
-        config_path: 配置文件路径
-
-    Returns:
-        配置字典
-    """
+    """从 YAML 文件加载配置"""
     try:
         import yaml
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -44,47 +34,39 @@ def load_config_from_yaml(config_path: str) -> Dict[str, Any]:
 
 
 class CaiSenStrategy(Strategy):
-    """蔡森策略 V2 - 组合形态检测器
+    """蔡森策略 V2 - 组件化架构
 
-    新架构：策略只做决策，检测器只做检测。
+    组件职责：
+    - DetectorFactory: 创建检测器
+    - SignalAggregator: 聚合信号计算评分
+    - PositionManager: 管理持仓和风控
+
+    策略只负责流程编排和决策。
 
     Args:
         detectors: 形态检测器列表
-        weights: 各检测器权重 dict，如 {"w_bottom": 0.3}
+        weights: 各检测器权重，如 {"w_bottom": 0.3}
         threshold: 综合评分阈值 (0~1)
         stop_loss_factor: 止损系数
-        min_profit_pct: 最小盈利目标百分比
-        enabled_patterns: 启用的形态列表，如 ["w_bottom", "m_top"]
+        min_profit_pct: 最小盈利目标
+        enabled_patterns: 启用的形态列表
     """
 
     @classmethod
     def from_config(cls, config_path: str = None, config_dict: Dict = None) -> "CaiSenStrategy":
-        """从配置文件创建策略
-
-        Args:
-            config_path: YAML 配置文件路径
-            config_dict: 配置字典（直接传入）
-
-        Returns:
-            CaiSenStrategy 实例
-        """
+        """从配置文件创建策略"""
         if config_dict is None:
             if config_path is None:
-                # 默认配置文件在项目根目录的 configs/ 下
-                # strategy/cai_sen_v2.py -> caisen -> src -> 项目根 -> configs/
-                import os
                 _base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
                 config_path = os.path.join(_base, "configs", "cai_sen_v2.yaml")
             config_dict = load_config_from_yaml(config_path)
 
-        # 解析配置
         strategy_cfg = config_dict.get("strategy", {})
         weights = config_dict.get("weights", {})
         risk_cfg = config_dict.get("risk", {})
         enabled = config_dict.get("enabled_patterns", {})
         detector_cfg = config_dict.get("detectors", {})
 
-        # 构建 enabled_patterns 列表
         enabled_patterns = [k for k, v in enabled.items() if v]
 
         return cls(
@@ -106,8 +88,6 @@ class CaiSenStrategy(Strategy):
         enabled_patterns: List[str] = None,
         detector_config: Dict[str, Any] = None,
         # ===== 向下兼容参数 =====
-        platform_min_bars: int = 10,
-        platform_max_amplitude: float = 0.05,
         w_bottom_enabled: bool = True,
         m_top_enabled: bool = True,
         head_and_shoulders_bottom_enabled: bool = True,
@@ -122,11 +102,8 @@ class CaiSenStrategy(Strategy):
         min_profit_pct_legacy: float = 0.03,
         **kwargs,
     ):
-        self.detector_config = detector_config or {}
-
-        # 如果没有传入检测器，使用默认检测器
+        # 如果没有传入检测器，使用 DetectorFactory 创建
         if detectors is None:
-            # 构建启用的形态列表
             if enabled_patterns is None:
                 enabled_patterns = self._get_enabled_patterns(
                     w_bottom_enabled, m_top_enabled,
@@ -135,12 +112,11 @@ class CaiSenStrategy(Strategy):
                     rounding_bottom_enabled, cup_handle_enabled, breakout_pullback_enabled,
                 )
 
-            detectors = self._create_default_detectors(
-                stop_loss_factor=stop_loss_factor_legacy,
-                min_profit_pct=min_profit_pct_legacy,
-                enabled_patterns=enabled_patterns,
-                detector_config=self.detector_config,
+            factory = DetectorFactory(
+                default_stop_loss=stop_loss_factor_legacy,
+                default_profit_pct=min_profit_pct_legacy,
             )
+            detectors = factory.create(enabled_patterns, detector_config or {})
 
         self.detectors = detectors
         self.weights = weights or {d.name: 1.0 / len(detectors) for d in detectors}
@@ -148,12 +124,13 @@ class CaiSenStrategy(Strategy):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
+        # 组件
+        self._aggregator = SignalAggregator()
+        self._position_mgr = PositionManager()
+
         # 状态
         self.bars: List["Bar"] = []
         self.annotations: List[Annotation] = []
-        self.position = 0
-        self.entry_price = 0.0
-        self.current_stop_loss = 0.0
 
     @staticmethod
     def _get_enabled_patterns(
@@ -187,110 +164,6 @@ class CaiSenStrategy(Strategy):
             patterns.append("breakout_pullback")
         return patterns
 
-    @staticmethod
-    def _create_default_detectors(
-        stop_loss_factor: float,
-        min_profit_pct: float,
-        enabled_patterns: List[str],
-        detector_config: Dict[str, Any] = None,
-    ) -> List[PatternDetector]:
-        """创建默认检测器列表
-
-        Args:
-            stop_loss_factor: 默认止损系数
-            min_profit_pct: 默认最小盈利目标
-            enabled_patterns: 启用的形态列表
-            detector_config: 检测器专用配置
-        """
-        detectors = []
-        detector_config = detector_config or {}
-
-        if "w_bottom" in enabled_patterns:
-            cfg = detector_config.get("w_bottom", {})
-            detectors.append(WBottomDetector(
-                tolerance=cfg.get("tolerance", 0.05),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "m_top" in enabled_patterns:
-            cfg = detector_config.get("m_top", {})
-            detectors.append(MTopDetector(
-                tolerance=cfg.get("tolerance", 0.05),
-                stop_loss_factor=cfg.get("stop_loss_factor", 1.02),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "head_and_shoulders_bottom" in enabled_patterns:
-            cfg = detector_config.get("head_and_shoulders", {})
-            detectors.append(HeadAndShouldersBottomDetector(
-                shoulder_tolerance=cfg.get("shoulder_tolerance", 0.05),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "head_and_shoulders_top" in enabled_patterns:
-            cfg = detector_config.get("head_and_shoulders", {})
-            detectors.append(HeadAndShouldersTopDetector(
-                shoulder_tolerance=cfg.get("shoulder_tolerance", 0.05),
-                stop_loss_factor=cfg.get("stop_loss_factor", 1.02),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "triangle" in enabled_patterns:
-            cfg = detector_config.get("triangle", {})
-            detectors.append(TriangleDetector(
-                min_bars=cfg.get("min_bars", 11),
-                min_highs=cfg.get("min_highs", 3),
-                min_lows=cfg.get("min_lows", 3),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "flag" in enabled_patterns:
-            cfg = detector_config.get("flag", {})
-            detectors.append(FlagDetector(
-                min_bars=cfg.get("min_bars", 8),
-                max_bars=cfg.get("max_bars", 20),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "rectangle" in enabled_patterns:
-            cfg = detector_config.get("rectangle", {})
-            detectors.append(RectangleDetector(
-                min_bars=cfg.get("min_bars", 10),
-                max_amplitude=cfg.get("max_amplitude", 0.05),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "rounding_bottom" in enabled_patterns:
-            cfg = detector_config.get("rounding_bottom", {})
-            detectors.append(RoundingBottomDetector(
-                min_bars=cfg.get("min_bars", 15),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "cup_handle" in enabled_patterns:
-            cfg = detector_config.get("cup_handle", {})
-            detectors.append(CupHandleDetector(
-                min_bars=cfg.get("min_bars", 20),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        if "breakout_pullback" in enabled_patterns:
-            cfg = detector_config.get("breakout_pullback", {})
-            detectors.append(BreakoutPullbackDetector(
-                lookback_period=cfg.get("lookback_period", 30),
-                stop_loss_factor=cfg.get("stop_loss_factor", stop_loss_factor),
-                min_profit_pct=cfg.get("min_profit_pct", min_profit_pct),
-            ))
-
-        return detectors
-
     def on_init(self, config: "BacktestConfig") -> None:
         """回测初始化"""
         pass
@@ -298,69 +171,44 @@ class CaiSenStrategy(Strategy):
     def on_bar(self, bar: "Bar") -> Optional["Order"]:
         """每根K线调用
 
-        流程：
-        1. 更新所有检测器
-        2. 计算综合评分
-        3. 决策是否下单
+        流程（ADR-0011）：
+        1. 更新 K 线列表
+        2. 检测器检测形态
+        3. SignalAggregator 聚合评分
+        4. 决策：入场 / 止损 / 止盈
         """
         from caisen.core.order import Order, Side
 
         self.bars.append(bar)
 
-        # 更新所有检测器
-        for detector in self.detectors:
-            detector.update(bar)
+        # 1. 检测信号
+        signals = [detector.detect(self.bars) for detector in self.detectors]
 
-        # 计算综合评分
-        total_score = 0.0
-        best_signal: Optional[PatternSignal] = None
-        signals: List[PatternSignal] = []
+        # 2. 聚合评分
+        result = self._aggregator.aggregate(signals, self.weights)
 
-        for detector in self.detectors:
-            signal = detector.detect()
-            if signal:
-                weight = self.weights.get(detector.name, 0)
-                total_score += signal.confidence * weight
-                signals.append(signal)
-                if not best_signal or signal.confidence > best_signal.confidence:
-                    best_signal = signal
-
-        # 达到阈值，下单
-        if total_score >= self.threshold and best_signal and self.position == 0:
-            # 添加可视化标注
-            self._add_pattern_annotation(best_signal)
-
-            self.position = 1
-            self.entry_price = bar.close
-            self.current_stop_loss = best_signal.stop_loss
-
+        # 3. 决策
+        # 入场
+        if result.total_score >= self.threshold and result.best_signal and not self._position_mgr.has_position:
+            self._add_pattern_annotation(result.best_signal)
+            self._position_mgr.open(result.best_signal, bar)
             return Order(
                 side=Side.BUY,
                 symbol=bar.symbol,
-                quantity=0,  # 全仓
-                stop_loss=best_signal.stop_loss,
-                target=best_signal.target,
+                quantity=0,
+                stop_loss=result.best_signal.stop_loss,
+                target=result.best_signal.target,
             )
 
         # 止损检查
-        if self.position > 0 and bar.low < self.current_stop_loss:
-            self.position = 0
-            return Order(
-                side=Side.SELL,
-                symbol=bar.symbol,
-                quantity=0,  # 全仓
-            )
+        if self._position_mgr.check_stop_loss(bar):
+            self._position_mgr.close()
+            return Order(side=Side.SELL, symbol=bar.symbol, quantity=0)
 
         # 止盈检查
-        if self.position > 0 and best_signal:
-            target = best_signal.target
-            if bar.high >= target:
-                self.position = 0
-                return Order(
-                    side=Side.SELL,
-                    symbol=bar.symbol,
-                    quantity=0,
-                )
+        if self._position_mgr.check_take_profit(bar):
+            self._position_mgr.close()
+            return Order(side=Side.SELL, symbol=bar.symbol, quantity=0)
 
         return None
 
@@ -392,8 +240,4 @@ class CaiSenStrategy(Strategy):
         """重置策略状态"""
         self.bars = []
         self.annotations = []
-        self.position = 0
-        self.entry_price = 0.0
-        self.current_stop_loss = 0.0
-        for detector in self.detectors:
-            detector.reset()
+        self._position_mgr.reset()

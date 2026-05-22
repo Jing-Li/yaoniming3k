@@ -1,4 +1,4 @@
-"""M头形态检测器"""
+"""M头形态检测器 - Pure Function Implementation"""
 
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
@@ -46,25 +46,23 @@ class MTopDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-        # 形态数据
-        self._first_high_bar = None
-        self._second_high_bar = None
-        self._neckline = 0.0
-
-    def detect(self) -> Optional[PatternSignal]:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
         """检测M头形态
+
+        Args:
+            bars: K线列表，至少10根
 
         Returns:
             如果检测到M头跌破，返回 PatternSignal（空头）
             否则返回 None
         """
-        if len(self._bars) < 10:
+        if len(bars) < 10:
             return None
 
-        current_bar = self._bars[-1]
+        current_bar = bars[-1]
 
         # 找M头
-        result = self._find_m_top()
+        result = self._find_m_top(bars)
         if result is None:
             return None
 
@@ -73,19 +71,22 @@ class MTopDetector(PatternDetector):
         # 检查是否跌破颈线
         if current_bar.close < neckline:
             return self._create_breakdown_signal(
-                current_bar, first_high_bar, first_high,
+                bars, current_bar, first_high_bar, first_high,
                 second_high_bar, second_high, neckline
             )
 
         return None
 
-    def _find_m_top(self) -> Optional[Tuple]:
+    def _find_m_top(self, bars: List["Bar"]) -> Optional[Tuple]:
         """寻找M头形态
+
+        Args:
+            bars: K线列表
 
         Returns:
             (first_high_bar, first_high, second_high_bar, second_high, neckline) 或 None
         """
-        recent = self._bars[-10:]
+        recent = bars[-10:]
         highs = [b.high for b in recent]
 
         if len(recent) < 10:
@@ -126,6 +127,7 @@ class MTopDetector(PatternDetector):
 
     def _create_breakdown_signal(
         self,
+        bars: List["Bar"],
         bar: "Bar",
         first_high_bar: "Bar",
         first_high: float,
@@ -136,6 +138,7 @@ class MTopDetector(PatternDetector):
         """创建跌破信号
 
         Args:
+            bars: K线列表
             bar: 当前K线
             first_high_bar: 第一个高点K线
             first_high: 第一个高点价格
@@ -146,8 +149,8 @@ class MTopDetector(PatternDetector):
         Returns:
             PatternSignal (空头信号)
         """
-        confidence = self._calculate_confidence(
-            first_high, second_high, neckline, bar
+        confidence = self._calculate_m_confidence(
+            bars, first_high, second_high, neckline, bar
         )
 
         # 计算止损和目标
@@ -170,11 +173,12 @@ class MTopDetector(PatternDetector):
             ],
             neckline=neckline,
             amplitude=amplitude,
-            direction="short",  # 标记为空头信号
+            direction="short",
         )
 
-    def _calculate_confidence(
+    def _calculate_m_confidence(
         self,
+        bars: List["Bar"],
         first_high: float,
         second_high: float,
         neckline: float,
@@ -189,6 +193,7 @@ class MTopDetector(PatternDetector):
         - 动量：跌破力度影响置信度
 
         Args:
+            bars: K线列表
             first_high: 第一个高点价格
             second_high: 第二个高点价格
             neckline: 颈线价格
@@ -202,26 +207,20 @@ class MTopDetector(PatternDetector):
         completion = 1.0 - min(1.0, high_diff / self.tolerance)
 
         # 成交量因子
-        volume_ratio = self._volume_ratio()
+        volume_ratio = self._volume_ratio(bars)
         volume = min(1.0, volume_ratio / 2.0)
 
         # 趋势因子：下降趋势中更可信
-        is_downtrend = self._is_trend_down(period=20)
+        is_downtrend = self._is_trend_down(bars, period=20)
         trend = 0.7 if is_downtrend else 0.3
 
         # 动量因子：跌破力度
         breakdown_pct = (neckline - bar.close) / neckline
         momentum = min(1.0, breakdown_pct / 0.02)
 
-        return super()._calculate_confidence(
+        return self._calculate_confidence(
             completion=completion,
             volume=volume,
             trend=trend,
             momentum=momentum,
         )
-
-    def _on_reset(self) -> None:
-        """重置检测器状态"""
-        self._first_high_bar = None
-        self._second_high_bar = None
-        self._neckline = 0.0

@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime
-from caisen.result.metrics import calculate_metrics, PerformanceMetrics
+from caisen.result.calculator import MetricsCalculator, PerformanceMetrics
 from caisen.result.types import BacktestResult
 from caisen.core.order import Side, Order
 from caisen.core.trade import Trade
@@ -31,12 +31,13 @@ def create_test_result(
 
 
 class TestCalculateMetrics:
-    """Tests for calculate_metrics function"""
+    """Tests for MetricsCalculator.calculate()"""
 
     def test_calculate_metrics_no_trades(self):
         """Test metrics when there are no trades"""
         result = create_test_result(trades=[], equity_curve=[])
-        metrics = calculate_metrics(result)
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
 
         assert isinstance(metrics, PerformanceMetrics)
         assert metrics.total_trades == 0
@@ -67,7 +68,8 @@ class TestCalculateMetrics:
             ),
         ]
         result = create_test_result(trades=trades)
-        metrics = calculate_metrics(result)
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
 
         # total_trades counts all trades
         assert metrics.total_trades == 2
@@ -100,7 +102,8 @@ class TestCalculateMetrics:
             ),
         ]
         result = create_test_result(trades=trades)
-        metrics = calculate_metrics(result)
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
 
         # total_trades counts all trades
         assert metrics.total_trades == 2
@@ -118,7 +121,8 @@ class TestCalculateMetrics:
             Trade(timestamp=datetime(2024, 1, 4), symbol="TEST", side=Side.SELL, quantity=100, price=8.0, commission=1.0, slippage=0.0, order_id="4"),
         ]
         result = create_test_result(trades=trades)
-        metrics = calculate_metrics(result)
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
 
         # total_trades counts all trades
         assert metrics.total_trades == 4
@@ -136,7 +140,8 @@ class TestCalculateMetrics:
             Trade(timestamp=datetime(2024, 1, 4), symbol="TEST", side=Side.SELL, quantity=100, price=9.0, commission=0.0, slippage=0.0, order_id="4"),
         ]
         result = create_test_result(trades=trades)
-        metrics = calculate_metrics(result)
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
 
         # Profit factor = gross_profit / gross_loss = 200 / 100 = 2.0
         assert metrics.profit_factor == 2.0

@@ -1,4 +1,4 @@
-"""W底形态检测器"""
+"""W底形态检测器 - Pure Function Implementation"""
 
 from typing import List, Optional, TYPE_CHECKING
 
@@ -46,26 +46,24 @@ class WBottomDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-        # 形态数据
-        self._first_low_bar: Optional["Bar"] = None
-        self._second_low_bar: Optional["Bar"] = None
-        self._neckline: float = 0.0
-
-    def detect(self) -> Optional[PatternSignal]:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
         """检测W底形态
+
+        Args:
+            bars: K线列表，至少10根
 
         Returns:
             如果检测到W底突破，返回 PatternSignal
             否则返回 None
         """
-        if len(self._bars) < 10:
+        if len(bars) < 10:
             return None
 
-        # 获取当前K线（假设已经通过update添加）
-        current_bar = self._bars[-1]
+        # 获取当前K线
+        current_bar = bars[-1]
 
         # 找W底
-        result = self._find_w_bottom()
+        result = self._find_w_bottom(bars)
         if result is None:
             return None
 
@@ -74,25 +72,28 @@ class WBottomDetector(PatternDetector):
         # 检查是否突破颈线
         if current_bar.close > neckline:
             return self._create_breakout_signal(
-                current_bar, first_low_bar, first_low,
+                bars, current_bar, first_low_bar, first_low,
                 second_low_bar, second_low, neckline
             )
 
         return None
 
-    def _find_w_bottom(self) -> Optional[tuple]:
+    def _find_w_bottom(self, bars: List["Bar"]) -> Optional[tuple]:
         """寻找W底形态
+
+        Args:
+            bars: K线列表
 
         Returns:
             (first_low_bar, first_low, second_low_bar, second_low, neckline) 或 None
         """
-        recent = self._bars[-10:]
+        recent = bars[-10:]
         lows = [b.low for b in recent]
 
-        # 找第一个低点（前5根）
         if len(lows) < 10:
             return None
 
+        # 找第一个低点（前5根）
         first_5_lows = lows[:5]
         first_low_idx = first_5_lows.index(min(first_5_lows))
         first_low = first_5_lows[first_low_idx]
@@ -127,6 +128,7 @@ class WBottomDetector(PatternDetector):
 
     def _create_breakout_signal(
         self,
+        bars: List["Bar"],
         bar: "Bar",
         first_low_bar: "Bar",
         first_low: float,
@@ -137,6 +139,7 @@ class WBottomDetector(PatternDetector):
         """创建突破信号
 
         Args:
+            bars: K线列表
             bar: 当前K线
             first_low_bar: 第一个低点K线
             first_low: 第一个低点价格
@@ -148,8 +151,8 @@ class WBottomDetector(PatternDetector):
             PatternSignal
         """
         # 计算置信度
-        confidence = self._calculate_confidence(
-            first_low, second_low, neckline, bar
+        confidence = self._calculate_w_confidence(
+            bars, first_low, second_low, neckline, bar
         )
 
         # 计算止损和目标
@@ -174,8 +177,9 @@ class WBottomDetector(PatternDetector):
             amplitude=amplitude,
         )
 
-    def _calculate_confidence(
+    def _calculate_w_confidence(
         self,
+        bars: List["Bar"],
         first_low: float,
         second_low: float,
         neckline: float,
@@ -190,6 +194,7 @@ class WBottomDetector(PatternDetector):
         - 动量：突破力度影响置信度
 
         Args:
+            bars: K线列表
             first_low: 第一个低点价格
             second_low: 第二个低点价格
             neckline: 颈线价格
@@ -203,26 +208,20 @@ class WBottomDetector(PatternDetector):
         completion = 1.0 - min(1.0, low_diff / self.tolerance)
 
         # 成交量因子
-        volume_ratio = self._volume_ratio()
+        volume_ratio = self._volume_ratio(bars)
         volume = min(1.0, volume_ratio / 2.0)  # 归一化到0~1
 
         # 趋势因子：上升趋势中更可信
-        is_uptrend = self._is_trend_up(period=20)
+        is_uptrend = self._is_trend_up(bars, period=20)
         trend = 0.7 if is_uptrend else 0.3
 
         # 动量因子：突破力度
         breakout_pct = (bar.close - neckline) / neckline
         momentum = min(1.0, breakout_pct / 0.02)  # 2%以上算强突破
 
-        return super()._calculate_confidence(
+        return self._calculate_confidence(
             completion=completion,
             volume=volume,
             trend=trend,
             momentum=momentum,
         )
-
-    def _on_reset(self) -> None:
-        """重置检测器状态"""
-        self._first_low_bar = None
-        self._second_low_bar = None
-        self._neckline = 0.0

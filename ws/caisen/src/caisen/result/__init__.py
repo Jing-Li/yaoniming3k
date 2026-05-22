@@ -1,7 +1,7 @@
 """Result 模块"""
 
 from .persistence import ResultPersister
-from .metrics import PerformanceMetrics, calculate_metrics
+from .calculator import PerformanceMetrics, MetricsCalculator
 from .types import BacktestResult
 
-__all__ = ["ResultPersister", "PerformanceMetrics", "calculate_metrics", "BacktestResult"]
+__all__ = ["ResultPersister", "PerformanceMetrics", "MetricsCalculator", "BacktestResult"]

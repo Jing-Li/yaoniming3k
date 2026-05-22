@@ -1,4 +1,4 @@
-"""三角整理形态检测器"""
+"""三角整理形态检测器 - Pure Function Implementation"""
 
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
@@ -36,45 +36,51 @@ class TriangleDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-        self._upper_trendline = 0.0
-        self._lower_trendline = 0.0
-        self._breakout_direction = None
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
+        """检测三角形形态
 
-    def detect(self) -> Optional[PatternSignal]:
-        if len(self._bars) < self.min_bars:
+        Args:
+            bars: K线列表，至少min_bars根
+
+        Returns:
+            如果检测到突破，返回 PatternSignal
+            否则返回 None
+        """
+        if len(bars) < self.min_bars:
             return None
 
-        current_bar = self._bars[-1]
-        result = self._find_triangle()
+        current_bar = bars[-1]
+        result = self._find_triangle(bars)
 
         if result is None:
             return None
 
         upper_trendline, lower_trendline, high_points, low_points, direction = result
-        self._upper_trendline = upper_trendline
-        self._lower_trendline = lower_trendline
 
         # 检查突破
         if direction == "up" and current_bar.close > upper_trendline:
             return self._create_breakout_signal(
-                current_bar, upper_trendline, lower_trendline,
+                bars, current_bar, upper_trendline, lower_trendline,
                 high_points, low_points, "long"
             )
         elif direction == "down" and current_bar.close < lower_trendline:
             return self._create_breakout_signal(
-                current_bar, upper_trendline, lower_trendline,
+                bars, current_bar, upper_trendline, lower_trendline,
                 high_points, low_points, "short"
             )
 
         return None
 
-    def _find_triangle(self) -> Optional[Tuple]:
+    def _find_triangle(self, bars: List["Bar"]) -> Optional[Tuple]:
         """寻找对称三角形
+
+        Args:
+            bars: K线列表
 
         Returns:
             (upper_trendline, lower_trendline, high_points, low_points, direction) 或 None
         """
-        recent = self._bars[-self.min_bars:-1]  # 不包括当前K线
+        recent = bars[-self.min_bars:-1]  # 不包括当前K线
 
         # 找高点（下降趋势）
         highs = [(i, b.high) for i, b in enumerate(recent)]
@@ -137,11 +143,26 @@ class TriangleDetector(PatternDetector):
         return (upper_trendline, lower_trendline, high_points, low_points, direction)
 
     def _create_breakout_signal(
-        self, bar: "Bar", upper_trendline: float, lower_trendline: float,
+        self, bars: List["Bar"], bar: "Bar",
+        upper_trendline: float, lower_trendline: float,
         high_points: List, low_points: List, direction: str
     ) -> PatternSignal:
-        confidence = self._calculate_confidence(
-            upper_trendline, lower_trendline, direction, bar
+        """创建突破信号
+
+        Args:
+            bars: K线列表
+            bar: 当前K线
+            upper_trendline: 上趋势线价格
+            lower_trendline: 下趋势线价格
+            high_points: 高点列表
+            low_points: 低点列表
+            direction: 突破方向 ("long" or "short")
+
+        Returns:
+            PatternSignal
+        """
+        confidence = self._calculate_triangle_confidence(
+            bars, upper_trendline, lower_trendline, direction, bar
         )
 
         amplitude = upper_trendline - lower_trendline
@@ -168,10 +189,23 @@ class TriangleDetector(PatternDetector):
             amplitude=amplitude,
         )
 
-    def _calculate_confidence(
-        self, upper_trendline: float, lower_trendline: float,
+    def _calculate_triangle_confidence(
+        self, bars: List["Bar"],
+        upper_trendline: float, lower_trendline: float,
         direction: str, bar: "Bar"
     ) -> float:
+        """计算三角形置信度
+
+        Args:
+            bars: K线列表
+            upper_trendline: 上趋势线价格
+            lower_trendline: 下趋势线价格
+            direction: 突破方向
+            bar: 当前K线
+
+        Returns:
+            置信度 0~1
+        """
         # 完成度：收敛越紧密越好
         amplitude = upper_trendline - lower_trendline
         # 振幅越小，形态越紧凑，置信度越高
@@ -179,14 +213,14 @@ class TriangleDetector(PatternDetector):
         completion = 1.0 - min(1.0, amplitude / avg_price)
 
         # 成交量
-        volume = min(1.0, self._volume_ratio() / 2.0)
+        volume = min(1.0, self._volume_ratio(bars) / 2.0)
 
         # 趋势
         if direction == "long":
-            is_uptrend = self._is_trend_up(period=20)
+            is_uptrend = self._is_trend_up(bars, period=20)
             trend = 0.7 if is_uptrend else 0.3
         else:
-            is_downtrend = self._is_trend_down(period=20)
+            is_downtrend = self._is_trend_down(bars, period=20)
             trend = 0.7 if is_downtrend else 0.3
 
         # 动量
@@ -196,11 +230,6 @@ class TriangleDetector(PatternDetector):
             breakout_pct = (lower_trendline - bar.close) / lower_trendline
         momentum = min(1.0, breakout_pct / 0.02)
 
-        return super()._calculate_confidence(
+        return self._calculate_confidence(
             completion=completion, volume=volume, trend=trend, momentum=momentum
         )
-
-    def _on_reset(self) -> None:
-        self._upper_trendline = 0.0
-        self._lower_trendline = 0.0
-        self._breakout_direction = None

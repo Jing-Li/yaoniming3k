@@ -7,7 +7,7 @@ from typing import Optional, TYPE_CHECKING
 
 import pandas as pd
 
-from .metrics import calculate_metrics
+from .calculator import MetricsCalculator
 
 if TYPE_CHECKING:
     from ..core.engine import BacktestResult
@@ -90,7 +90,7 @@ class ResultPersister:
             **bars_meta,
             "initial_capital": result.initial_capital,
             "final_equity": result.final_equity,
-            "total_return": result.total_return,
+            "total_return": (result.final_equity - result.initial_capital) / result.initial_capital if result.initial_capital > 0 else 0,
             "total_trades": len(result.trades),
             "created_at": datetime.now().isoformat(),
         }
@@ -119,7 +119,8 @@ class ResultPersister:
                 json.dump(annotations_data, f, ensure_ascii=False)
 
         # 计算并保存绩效指标
-        metrics = calculate_metrics(result)
+        calculator = MetricsCalculator()
+        metrics = calculator.calculate(result)
         with open(run_dir / "metrics.json", "w", encoding="utf-8") as f:
             json.dump(metrics.__dict__, f, indent=2, ensure_ascii=False)
 

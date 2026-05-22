@@ -1,4 +1,10 @@
-"""Pattern Detector (形态检测器) 基类"""
+"""Pattern Detector (形态检测器) - Pure Function Interface
+
+Issue #5: PatternDetector 改造为纯函数接口
+- 移除内部状态管理
+- detect(bars) 接收完整 K 线列表，返回信号
+- 简化接口，提升可测试性
+"""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -72,15 +78,20 @@ class ConfidenceFactors:
 
 
 class PatternDetector(ABC):
-    """形态检测器基类
+    """形态检测器基类 (纯函数接口)
 
-    检测器负责在每根 K 线更新时检测特定形态，
-    只负责"看"，不做交易决策。
+    检测器负责检测特定形态，只负责"看"，不做交易决策。
 
-    接口设计：
-    - update(bar): 接收新 K 线，更新内部状态
-    - detect(): 检测形态，返回信号或 None
-    - reset(): 重置状态
+    纯函数接口设计：
+    - detect(bars): 接收完整 K 线列表，返回信号或 None
+    - 无内部状态，无副作用，可重复调用
+    - 便于并行测试和策略回测
+
+    Example:
+        detector = WBottomDetector(tolerance=0.05)
+        signal = detector.detect(bars)
+        if signal:
+            print(f"Detected: {signal.pattern}, confidence: {signal.confidence}")
     """
 
     def __init__(self, name: str = None):
@@ -90,63 +101,19 @@ class PatternDetector(ABC):
             name: 检测器名称，用于配置和日志
         """
         self.name = name or self.__class__.__name__
-        self._bars: List["Bar"] = []
-        self._last_signal: Optional[PatternSignal] = None
-
-    @property
-    def bars(self) -> List["Bar"]:
-        """获取已接收的 K 线"""
-        return self._bars
-
-    def update(self, bar: "Bar") -> None:
-        """接收新 K 线
-
-        Args:
-            bar: 新的 K 线数据
-        """
-        self._bars.append(bar)
-        self._on_update(bar)
-
-    def _on_update(self, bar: "Bar") -> None:
-        """K 线更新时的钩子方法
-
-        子类可重写此方法执行额外的状态更新。
-
-        Args:
-            bar: 新的 K 线数据
-        """
-        pass
 
     @abstractmethod
-    def detect(self) -> Optional[PatternSignal]:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
         """检测形态
+
+        Args:
+            bars: 完整 K 线列表，至少包含检测所需的最小数量
 
         Returns:
             如果检测到形态，返回 PatternSignal
             否则返回 None
         """
         pass
-
-    def reset(self) -> None:
-        """重置检测器状态
-
-        清空历史 K 线数据和中间状态。
-        """
-        self._bars = []
-        self._last_signal = None
-        self._on_reset()
-
-    def _on_reset(self) -> None:
-        """重置时的钩子方法
-
-        子类可重写此方法执行额外的清理工作。
-        """
-        pass
-
-    @property
-    def last_signal(self) -> Optional[PatternSignal]:
-        """获取上一次检测到的信号"""
-        return self._last_signal
 
     def _calculate_confidence(
         self,
@@ -196,7 +163,7 @@ class PatternDetector(ABC):
         Returns:
             PatternSignal 实例
         """
-        signal = PatternSignal(
+        return PatternSignal(
             pattern=pattern,
             confidence=confidence,
             stop_loss=stop_loss,
@@ -204,63 +171,65 @@ class PatternDetector(ABC):
             points=points or [],
             data=kwargs,
         )
-        self._last_signal = signal
-        return signal
 
-    def _get_recent_bars(self, count: int) -> List["Bar"]:
+    def _get_recent_bars(self, bars: List["Bar"], count: int) -> List["Bar"]:
         """获取最近的 K 线
 
         Args:
+            bars: K 线列表
             count: 获取数量
 
         Returns:
             最近的 K 线列表
         """
-        return self._bars[-count:] if len(self._bars) >= count else self._bars
+        return bars[-count:] if len(bars) >= count else bars
 
-    def _is_trend_up(self, period: int = 20) -> bool:
+    def _is_trend_up(self, bars: List["Bar"], period: int = 20) -> bool:
         """判断当前趋势是否向上
 
         Args:
+            bars: K 线列表
             period: 判断周期
 
         Returns:
             True if trend is up
         """
-        bars = self._get_recent_bars(period)
-        if len(bars) < 2:
+        recent = self._get_recent_bars(bars, period)
+        if len(recent) < 2:
             return False
-        return bars[-1].close > bars[0].close
+        return recent[-1].close > recent[0].close
 
-    def _is_trend_down(self, period: int = 20) -> bool:
+    def _is_trend_down(self, bars: List["Bar"], period: int = 20) -> bool:
         """判断当前趋势是否向下
 
         Args:
+            bars: K 线列表
             period: 判断周期
 
         Returns:
             True if trend is down
         """
-        bars = self._get_recent_bars(period)
-        if len(bars) < 2:
+        recent = self._get_recent_bars(bars, period)
+        if len(recent) < 2:
             return False
-        return bars[-1].close < bars[0].close
+        return recent[-1].close < recent[0].close
 
-    def _volume_ratio(self, period: int = 20) -> float:
+    def _volume_ratio(self, bars: List["Bar"], period: int = 20) -> float:
         """计算成交量放大倍数
 
         Args:
+            bars: K 线列表
             period: 对比周期
 
         Returns:
             成交量倍数 (>1 表示放量)
         """
-        bars = self._get_recent_bars(period)
-        if len(bars) < period:
+        recent = self._get_recent_bars(bars, period)
+        if len(recent) < period:
             return 1.0
 
-        recent_avg = sum(b.volume for b in bars[-5:]) / 5
-        historical_avg = sum(b.volume for b in bars[:-5]) / max(1, len(bars) - 5)
+        recent_avg = sum(b.volume for b in recent[-5:]) / 5
+        historical_avg = sum(b.volume for b in recent[:-5]) / max(1, len(recent) - 5)
 
         if historical_avg == 0:
             return 1.0

@@ -1,4 +1,4 @@
-"""旗形/矩形/圆弧底/杯柄/过前高 检测器"""
+"""旗形/矩形/圆弧底/杯柄/过前高 检测器 - Pure Function Implementation"""
 
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
@@ -29,21 +29,30 @@ class FlagDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-    def detect(self) -> Optional[PatternSignal]:
-        if len(self._bars) < self.min_bars:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
+        """检测旗形形态
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            如果检测到突破，返回 PatternSignal
+            否则返回 None
+        """
+        if len(bars) < self.min_bars:
             return None
 
-        current_bar = self._bars[-1]
+        current_bar = bars[-1]
 
         # 找旗杆（最近的大幅涨跌）
-        result = self._find_flag_pole()
+        result = self._find_flag_pole(bars)
         if result is None:
             return None
 
         pole_start_idx, pole_direction, pole_height, pole_avg = result
 
         # 找旗面（整理区间）
-        flag_result = self._find_flag_surface(pole_start_idx, pole_direction, pole_avg)
+        flag_result = self._find_flag_surface(bars, pole_start_idx, pole_direction, pole_avg)
         if flag_result is None:
             return None
 
@@ -63,9 +72,16 @@ class FlagDetector(PatternDetector):
 
         return None
 
-    def _find_flag_pole(self) -> Optional[Tuple]:
-        """寻找旗杆"""
-        recent = self._bars[-self.max_bars:-1]
+    def _find_flag_pole(self, bars: List["Bar"]) -> Optional[Tuple]:
+        """寻找旗杆
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            (pole_start_idx, pole_direction, pole_height, pole_avg) 或 None
+        """
+        recent = bars[-self.max_bars:-1]
 
         if len(recent) < 5:
             return None
@@ -88,9 +104,19 @@ class FlagDetector(PatternDetector):
 
         return (0, direction, amplitude, avg_price)
 
-    def _find_flag_surface(self, pole_start_idx: int, direction: str, avg_price: float) -> Optional[Tuple]:
-        """寻找旗面（整理区间）"""
-        recent = self._bars[-10:-1]
+    def _find_flag_surface(self, bars: List["Bar"], pole_start_idx: int, direction: str, avg_price: float) -> Optional[Tuple]:
+        """寻找旗面（整理区间）
+
+        Args:
+            bars: K线列表
+            pole_start_idx: 旗杆起始索引
+            direction: 旗杆方向
+            avg_price: 平均价格
+
+        Returns:
+            (upper_line, lower_line) 或 None
+        """
+        recent = bars[-10:-1]
 
         if len(recent) < 3:
             return None
@@ -113,6 +139,18 @@ class FlagDetector(PatternDetector):
     def _create_breakout_signal(
         self, bar: "Bar", upper: float, lower: float, pole_height: float, direction: str
     ) -> PatternSignal:
+        """创建突破信号
+
+        Args:
+            bar: 当前K线
+            upper: 上边界
+            lower: 下边界
+            pole_height: 旗杆高度
+            direction: 方向
+
+        Returns:
+            PatternSignal
+        """
         confidence = 0.6  # 简化实现，固定置信度
 
         if direction == "long":
@@ -130,9 +168,6 @@ class FlagDetector(PatternDetector):
             points=[],
             direction=direction,
         )
-
-    def _on_reset(self) -> None:
-        pass
 
 
 class RectangleDetector(PatternDetector):
@@ -156,12 +191,21 @@ class RectangleDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-    def detect(self) -> Optional[PatternSignal]:
-        if len(self._bars) < self.min_bars:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
+        """检测矩形形态
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            如果检测到突破，返回 PatternSignal
+            否则返回 None
+        """
+        if len(bars) < self.min_bars:
             return None
 
-        current_bar = self._bars[-1]
-        recent = self._bars[-self.min_bars:-1]
+        current_bar = bars[-1]
+        recent = bars[-self.min_bars:-1]
 
         upper = max(b.high for b in recent)
         lower = min(b.low for b in recent)
@@ -174,8 +218,8 @@ class RectangleDetector(PatternDetector):
 
         # 检查突破
         if current_bar.close > upper:
-            confidence = self._calculate_confidence(amplitude, avg_price, "up")
-            target = bar.close + amplitude
+            confidence = self._calculate_rect_confidence(bars, amplitude, avg_price, "up")
+            target = current_bar.close + amplitude
             stop_loss = lower * self.stop_loss_factor
 
             return self._create_signal(
@@ -189,8 +233,8 @@ class RectangleDetector(PatternDetector):
                 direction="long",
             )
         elif current_bar.close < lower:
-            confidence = self._calculate_confidence(amplitude, avg_price, "down")
-            target = bar.close - amplitude
+            confidence = self._calculate_rect_confidence(bars, amplitude, avg_price, "down")
+            target = current_bar.close - amplitude
             stop_loss = upper * 1.02
 
             return self._create_signal(
@@ -206,16 +250,27 @@ class RectangleDetector(PatternDetector):
 
         return None
 
-    def _calculate_confidence(self, amplitude: float, avg_price: float, direction: str) -> float:
+    def _calculate_rect_confidence(self, bars: List["Bar"], amplitude: float, avg_price: float, direction: str) -> float:
+        """计算矩形置信度
+
+        Args:
+            bars: K线列表
+            amplitude: 振幅
+            avg_price: 平均价格
+            direction: 方向
+
+        Returns:
+            置信度 0~1
+        """
         completion = 1.0 - min(1.0, amplitude / avg_price / self.max_amplitude)
-        volume = min(1.0, self._volume_ratio() / 2.0)
+        volume = min(1.0, self._volume_ratio(bars) / 2.0)
 
         if direction == "long":
-            trend = 0.7 if self._is_trend_up(20) else 0.3
+            trend = 0.7 if self._is_trend_up(bars, 20) else 0.3
         else:
-            trend = 0.7 if self._is_trend_down(20) else 0.3
+            trend = 0.7 if self._is_trend_down(bars, 20) else 0.3
 
-        return super()._calculate_confidence(completion=completion, volume=volume, trend=trend, momentum=0.5)
+        return self._calculate_confidence(completion=completion, volume=volume, trend=trend, momentum=0.5)
 
 
 class RoundingBottomDetector(PatternDetector):
@@ -237,12 +292,21 @@ class RoundingBottomDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-    def detect(self) -> Optional[PatternSignal]:
-        if len(self._bars) < self.min_bars:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
+        """检测圆弧底形态
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            如果检测到突破，返回 PatternSignal
+            否则返回 None
+        """
+        if len(bars) < self.min_bars:
             return None
 
-        current_bar = self._bars[-1]
-        result = self._find_rounding_bottom()
+        current_bar = bars[-1]
+        result = self._find_rounding_bottom(bars)
 
         if result is None:
             return None
@@ -251,9 +315,9 @@ class RoundingBottomDetector(PatternDetector):
 
         if current_bar.close > neckline:
             confidence = 0.7  # 简化实现
-            amplitude = neckline - self._bars[low_idx].low
+            amplitude = neckline - bars[-self.min_bars + low_idx].low
             target = neckline + amplitude
-            stop_loss = self._bars[low_idx].low * self.stop_loss_factor
+            stop_loss = bars[-self.min_bars + low_idx].low * self.stop_loss_factor
 
             return self._create_signal(
                 pattern="rounding_bottom",
@@ -267,9 +331,16 @@ class RoundingBottomDetector(PatternDetector):
 
         return None
 
-    def _find_rounding_bottom(self) -> Optional[Tuple]:
-        """寻找圆弧底"""
-        recent = self._bars[-self.min_bars:-1]
+    def _find_rounding_bottom(self, bars: List["Bar"]) -> Optional[Tuple]:
+        """寻找圆弧底
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            (low_idx, neckline) 或 None
+        """
+        recent = bars[-self.min_bars:-1]
 
         if len(recent) < 10:
             return None
@@ -289,9 +360,6 @@ class RoundingBottomDetector(PatternDetector):
         neckline = max(left_highs)
 
         return (low_idx, neckline)
-
-    def _on_reset(self) -> None:
-        pass
 
 
 class CupHandleDetector(PatternDetector):
@@ -314,12 +382,21 @@ class CupHandleDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-    def detect(self) -> Optional[PatternSignal]:
-        if len(self._bars) < self.min_bars:
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
+        """检测杯柄形态
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            如果检测到突破，返回 PatternSignal
+            否则返回 None
+        """
+        if len(bars) < self.min_bars:
             return None
 
-        current_bar = self._bars[-1]
-        result = self._find_cup_handle()
+        current_bar = bars[-1]
+        result = self._find_cup_handle(bars)
 
         if result is None:
             return None
@@ -345,9 +422,16 @@ class CupHandleDetector(PatternDetector):
 
         return None
 
-    def _find_cup_handle(self) -> Optional[Tuple]:
-        """寻找杯柄形态"""
-        recent = self._bars[-self.min_bars:-1]
+    def _find_cup_handle(self, bars: List["Bar"]) -> Optional[Tuple]:
+        """寻找杯柄形态
+
+        Args:
+            bars: K线列表
+
+        Returns:
+            (handle_high, cup_bottom, cup_high) 或 None
+        """
+        recent = bars[-self.min_bars:-1]
 
         if len(recent) < 15:
             return None
@@ -374,9 +458,6 @@ class CupHandleDetector(PatternDetector):
 
         return (handle_high, min_before_max, max(highs))
 
-    def _on_reset(self) -> None:
-        pass
-
 
 class BreakoutPullbackDetector(PatternDetector):
     """过前高检测器
@@ -397,33 +478,33 @@ class BreakoutPullbackDetector(PatternDetector):
         self.stop_loss_factor = stop_loss_factor
         self.min_profit_pct = min_profit_pct
 
-        self._breakout_high = 0.0
-        self._in_pullback = False
+    def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:
+        """检测过前高形态
 
-    def detect(self) -> Optional[PatternSignal]:
-        if len(self._bars) < self.lookback_period:
+        Args:
+            bars: K线列表
+
+        Returns:
+            如果检测到信号，返回 PatternSignal
+            否则返回 None
+        """
+        if len(bars) < self.lookback_period + 1:
             return None
 
-        current_bar = self._bars[-1]
-        previous = self._bars[-2] if len(self._bars) > 1 else None
+        current_bar = bars[-1]
+        previous = bars[-2]
 
         # 找前高
-        lookback = self._bars[-self.lookback_period:-1]
+        lookback = bars[-self.lookback_period:-1]
         previous_high = max(b.high for b in lookback)
 
-        # 检查突破
-        if previous and previous.close > previous_high and self._breakout_high == 0:
-            self._breakout_high = previous_high
-            self._in_pullback = True
-
-        # 检查回踩后上涨
-        if self._in_pullback and current_bar.close > self._breakout_high:
-            confidence = 0.7  # 简化实现
-            amplitude = current_bar.close - self._breakout_high
+        # 检查突破前高后的回踩再涨
+        # 简化实现：当前价格突破前高
+        if current_bar.close > previous_high:
+            confidence = 0.7
+            amplitude = current_bar.close - previous_high
             target = current_bar.close + amplitude
-            stop_loss = self._breakout_high * self.stop_loss_factor
-
-            self._in_pullback = False
+            stop_loss = previous_high * self.stop_loss_factor
 
             return self._create_signal(
                 pattern="breakout_pullback",
@@ -431,16 +512,8 @@ class BreakoutPullbackDetector(PatternDetector):
                 stop_loss=stop_loss,
                 target=target,
                 points=[],
-                breakout_high=self._breakout_high,
+                breakout_high=previous_high,
                 direction="long",
             )
 
-        # 如果回调太深，重置
-        if self._in_pullback and current_bar.low < self._breakout_high * 0.95:
-            self._in_pullback = False
-
         return None
-
-    def _on_reset(self) -> None:
-        self._breakout_high = 0.0
-        self._in_pullback = False

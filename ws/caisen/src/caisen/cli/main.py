@@ -101,14 +101,14 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
     else:
         # 尝试从内置策略加载
         builtin_strategies = {
-            "MACrossStrategy": "caisen.strategy.ma_cross",
-            "CaiSenStrategy": "caisen.strategy.cai_sen",
+            "MACrossStrategy": "caisen.strategy.algorithm.ma_cross",
+            "CaiSenStrategy": "caisen.strategy.algorithm.cai_sen",
         }
 
         # 如果指定了策略配置文件，且策略是蔡森策略
         if strategy_config and strategy in ("CaiSenStrategy", "CaiSenStrategyOptimized"):
             try:
-                from ..strategy.cai_sen_v2 import CaiSenStrategy
+                from caisen.strategy.algorithm.cai_sen import CaiSenStrategy
                 strat = CaiSenStrategy.from_config(strategy_config)
                 click.echo(f"Loaded CaiSenStrategy from config: {strategy_config}")
             except Exception as e:
@@ -185,7 +185,8 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
     click.echo(f"Run ID: {run_id}")
     click.echo(f"Total Trades: {len(result.trades)}")
     click.echo(f"Final Equity: {result.final_equity:.2f}")
-    click.echo(f"Total Return: {result.total_return * 100:.2f}%")
+    total_return = (result.final_equity - result.initial_capital) / result.initial_capital if result.initial_capital > 0 else 0
+    click.echo(f"Total Return: {total_return * 100:.2f}%")
 
 
 @cli.command()

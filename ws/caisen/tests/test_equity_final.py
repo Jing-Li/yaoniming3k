@@ -82,6 +82,8 @@ def test_final_equity_matches_last_equity_curve_point():
 
 def test_total_return_reflects_market_value():
     """总收益率应该反映市场价计算的真实收益"""
+    from caisen.result.calculator import MetricsCalculator
+
     engine = BacktestEngine(BacktestConfig(initial_capital=100000))
 
     bars = [
@@ -93,9 +95,13 @@ def test_total_return_reflects_market_value():
     strategy = BuyAndHoldStrategy()
     result = engine.run(strategy, bars)
 
+    # 使用 MetricsCalculator 计算指标
+    calculator = MetricsCalculator()
+    metrics = calculator.calculate(result)
+
     # 如果没有交易，总收益应该为 0
     # 如果有交易，收益基于最终市场价
     expected_return = (result.final_equity - result.initial_capital) / result.initial_capital
-    assert abs(result.total_return - expected_return) < 0.0001, (
-        f"total_return ({result.total_return}) 应该等于 (final_equity - initial_capital) / initial_capital"
+    assert abs(metrics.total_return - expected_return) < 0.0001, (
+        f"total_return ({metrics.total_return}) 应该等于 (final_equity - initial_capital) / initial_capital"
     )
