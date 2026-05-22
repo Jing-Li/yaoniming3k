@@ -233,29 +233,64 @@ def list_runs(output_dir: str):
 
 @cli.command("web")
 @click.option("--run-id", "-r", help="直接打开指定回测结果")
-@click.option("--port", "-p", default=8000, help="服务端口")
+@click.option("--port", "-p", default=8000, help="前端端口（Vite）")
 @click.option("--host", default="0.0.0.0", help="服务地址")
 @click.option("--output-dir", default="./runs", help="回测结果目录")
-def report(run_id: str, port: int, host: str, output_dir: str):
-    """启动可视化报告服务"""
+@click.option("--backend-port", default=8001, help="后端 API 端口")
+def report(run_id: str, port: int, host: str, output_dir: str, backend_port: int):
+    """启动可视化报告服务（前端 + 后端）"""
+    import threading
     import uvicorn
+    import subprocess
+    import time
+    import sys
     from ..web.main import create_app, set_output_dir
 
     # 设置 output_dir
     set_output_dir(output_dir)
 
-    click.echo(f"Starting visualization report server at http://{host}:{port}")
-    click.echo(f"Output directory: {output_dir}")
+    click.echo(f"Starting visualization report server...")
+    click.echo(f"  Frontend:    http://{host}:{port}")
+    click.echo(f"  Backend API:  http://{host}:{backend_port}")
+    click.echo(f"  Output dir:  {output_dir}")
 
     if run_id:
-        click.echo(f"Direct open run: {run_id}")
-        click.echo(f"URL: http://{host}:{port}/?run_id={run_id}")
+        click.echo(f"  Direct open: http://localhost:{port}/?run_id={run_id}")
+
+    # 启动后端 (先启动，避免前端找不到 API)
+    def run_backend():
+        app = create_app()
+        uvicorn.run(app, host=host, port=backend_port, log_level="info")
+
+    backend_thread = threading.Thread(target=run_backend, daemon=True)
+    backend_thread.start()
+
+    # 等待后端启动
+    time.sleep(1)
+
+    # 启动前端 (Vite dev server)
+    frontend_dir = Path(__file__).parent.parent / "frontend"
+    vite_env = {
+        **__import__('os').environ,
+        'VITE_API_PROXY': f'http://localhost:{backend_port}',
+    }
+    vite_process = subprocess.Popen(
+        [sys.executable, "-m", "npm", "run", "dev", "--", "--port", str(port)],
+        cwd=str(frontend_dir),
+        env=vite_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
     click.echo("\nPress Ctrl+C to stop")
 
-    # 创建 app 并启动
-    app = create_app()
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        click.echo("\nStopping servers...")
+        vite_process.terminate()
+        sys.exit(0)
 
 
 @cli.command("optimize")
