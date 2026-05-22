@@ -76,8 +76,10 @@ frontend/
 ├── meta.json          # 元数据（策略名、时间等）
 ├── equity.parquet     # 净值曲线（Parquet 格式，高效存储）
 ├── trades.parquet     # 交易记录（Parquet 格式）
+├── bars.parquet       # K线数据（用于可视化）
 ├── annotations.json   # 可视化标注
-└── metrics.json       # 绩效指标
+├── metrics.json       # 绩效指标
+└── data.json          # 前端可视化综合文件
 ```
 
 前端可视化需要 `data.json`（包含 bars + equity_curve + trades + annotations + metrics），由后端命令生成。

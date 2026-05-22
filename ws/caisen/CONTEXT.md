@@ -100,6 +100,22 @@ YAML 格式的回测参数文件。包含初始资金、手续费率、策略参
 **Run ID（运行ID）**:
 一次 Run 的唯一标识符，格式为 `{策略名}_{YYYYMMDD}_{序号}`，如 `MACrossStrategy_20260518_1`。序号从 1 开始，同一策略同日多次运行自动递增。用于关联结果文件和后续查询。
 
+**Run Directory（结果目录）**:
+`./runs/{run_id}/` 下的目录结构，保存一次回测的所有输出文件。
+
+```
+./runs/{run_id}/
+├── meta.json          # 元数据（策略名、时间、初始资金等）
+├── metrics.json       # 绩效指标（年化收益率、夏普比率等）
+├── equity.parquet     # 净值曲线（Parquet 格式）
+├── trades.parquet     # 交易记录（Parquet 格式）
+├── bars.parquet       # K线数据（用于可视化）
+├── annotations.json   # 可视化标注（买卖点、形态标记）
+└── data.json          # 前端可视化综合文件（JSON）
+```
+
+_参见_: `ResultPersister`（`src/caisen/result/persistence.py`）
+
 **Trade（交易记录）**:
 一次成交的记录，包含成交时间、标的、方向、数量、成交价、手续费、滑点成本等。
 
