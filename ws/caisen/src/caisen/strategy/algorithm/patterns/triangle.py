@@ -80,7 +80,7 @@ class TriangleDetector(PatternDetector):
         Returns:
             (upper_trendline, lower_trendline, high_points, low_points, direction) 或 None
         """
-        recent = bars[-self.min_bars:-1]  # 不包括当前K线
+        recent = bars[-self.min_bars-1:-1]  # 不包括当前K线
 
         # 找高点（下降趋势）
         highs = [(i, b.high) for i, b in enumerate(recent)]
@@ -180,8 +180,11 @@ class TriangleDetector(PatternDetector):
             stop_loss=stop_loss,
             target=target,
             points=[
-                {"timestamp": ts, "price": price, "label": label}
-                for ts, price in high_points + low_points
+                {"timestamp": ts, "price": price, "label": "上轨点"}
+                for ts, price in high_points
+            ] + [
+                {"timestamp": ts, "price": price, "label": "下轨点"}
+                for ts, price in low_points
             ],
             upper_trendline=upper_trendline,
             lower_trendline=lower_trendline,

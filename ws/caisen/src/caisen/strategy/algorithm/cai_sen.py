@@ -188,8 +188,8 @@ class CaiSenStrategy(Strategy):
         result = self._aggregator.aggregate(signals, self.weights)
 
         # 3. 决策
-        # 入场
-        if result.total_score >= self.threshold and result.best_signal and not self._position_mgr.has_position:
+        # 入场 - 使用最佳信号的 confidence 而非 total_score
+        if result.best_signal and result.best_signal.confidence >= self.threshold and not self._position_mgr.has_position:
             self._add_pattern_annotation(result.best_signal)
             self._position_mgr.open(result.best_signal, bar)
             return Order(

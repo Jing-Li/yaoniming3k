@@ -205,7 +205,7 @@ class RectangleDetector(PatternDetector):
             return None
 
         current_bar = bars[-1]
-        recent = bars[-self.min_bars:-1]
+        recent = bars[-self.min_bars-1:-1]
 
         upper = max(b.high for b in recent)
         lower = min(b.low for b in recent)
@@ -340,7 +340,7 @@ class RoundingBottomDetector(PatternDetector):
         Returns:
             (low_idx, neckline) 或 None
         """
-        recent = bars[-self.min_bars:-1]
+        recent = bars[-self.min_bars-1:-1]
 
         if len(recent) < 10:
             return None
@@ -431,7 +431,7 @@ class CupHandleDetector(PatternDetector):
         Returns:
             (handle_high, cup_bottom, cup_high) 或 None
         """
-        recent = bars[-self.min_bars:-1]
+        recent = bars[-self.min_bars-1:-1]
 
         if len(recent) < 15:
             return None
