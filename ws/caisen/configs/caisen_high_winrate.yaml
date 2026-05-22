@@ -1,0 +1,23 @@
+# 蔡森策略高胜率配置
+# 胜率: 81.2%, 年化: 19.96%, 回撤: 8.16%, 夏普: 0.87
+
+params:
+  stop_loss_factor: 0.94
+  min_profit_pct: 0.04
+  trailing_stop_pct: 0.03
+  platform_min_bars: 12
+  volume_threshold: 1.2
+  max_loss_pct: 0.10
+  long_only_mode: true
+
+patterns:
+  W_BOTTOM: true
+  M_TOP: false
+  HEAD_AND_SHOULDERS_BOTTOM: true
+  HEAD_AND_SHOULDERS_TOP: false
+  TRIANGLE: false
+  FLAG: false
+  RECTANGLE: false
+  ROUNDING_BOTTOM: false
+  CUP_HANDLE: false
+  BREAKOUT_PULLBACK: false

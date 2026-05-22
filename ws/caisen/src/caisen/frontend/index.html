@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caisen 回测可视化</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/css/main.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="hero">
+            <h1>Caisen 回测可视化</h1>
+            <p>量化策略回测分析平台，查看交易记录、性能指标与策略表现</p>
+            <div class="hero-stats" id="hero-stats">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+
+        <!-- Main Content: Runs List -->
+        <main id="runs-container">
+            <!-- Loading State -->
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>加载回测记录...</p>
+            </div>
+        </main>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="action-btn" onclick="refreshRuns()">
+                <span>🔄</span> 刷新列表
+            </button>
+            <button class="action-btn" onclick="location.href='/?demo=true'">
+                <span>📊</span> 查看示例
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { loadRunsList, refreshRuns } from '/js/runs-list.js';
+
+        // Make functions available globally
+        window.refreshRuns = refreshRuns;
+
+        // Initialize on DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRunsList();
+        });
+    </script>
+</body>
+</html>

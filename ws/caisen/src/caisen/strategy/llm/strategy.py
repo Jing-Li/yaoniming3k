@@ -43,7 +43,7 @@ class LLMStrategy(Strategy):
         """
         from .cache import SignalCache
         from .client import LLMClient, LLMResult
-        from .openai import OpenAIProvider
+        from .provider import OpenAIProvider
 
         self.llm_client = llm_client
         self.config = config
@@ -66,7 +66,7 @@ class LLMStrategy(Strategy):
         Returns:
             LLMClient 实例
         """
-        from .openai import OpenAIProvider
+        from .provider import OpenAIProvider
         from .prompt import PromptBuilder
 
         # 解析 API Key（支持环境变量）

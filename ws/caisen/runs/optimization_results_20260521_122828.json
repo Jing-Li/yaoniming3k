@@ -1,0 +1,118 @@
+{
+  "timestamp": "20260521_122828",
+  "total_combinations": 4,
+  "successful_runs": 4,
+  "top_results": [
+    {
+      "rank": 1,
+      "score": 0.3684215775309879,
+      "params": {
+        "stop_loss_factor": 0.95,
+        "min_profit_pct": 0.03,
+        "trailing_stop_pct": 0.05,
+        "platform_min_bars": 10,
+        "volume_threshold": 1.5,
+        "w_bottom_enabled": true,
+        "head_and_shoulders_bottom_enabled": true,
+        "cup_handle_enabled": false,
+        "rounding_bottom_enabled": false,
+        "triangle_enabled": false,
+        "flag_enabled": false,
+        "rectangle_enabled": false,
+        "breakout_pullback_enabled": false,
+        "m_top_enabled": false,
+        "head_and_shoulders_top_enabled": false,
+        "platform_max_amplitude": 0.05,
+        "breakdown_max_pct": 0.02,
+        "pullback_max_bars": 3,
+        "breakdown_max_bars": 2,
+        "first_position_pct": 0.3,
+        "second_position_pct": 0.5,
+        "volume_confirm": true,
+        "platform_volume_decline": true
+      },
+      "metrics": {
+        "annual_return": 0.14056725998277397,
+        "max_drawdown": 0.08770894638102747,
+        "sharpe_ratio": 0.683790737097838,
+        "win_rate": 0.7894736842105263,
+        "total_trades": 78,
+        "profit_factor": 1.7378004159686866
+      }
+    },
+    {
+      "rank": 2,
+      "score": 0.3497071233037924,
+      "params": {
+        "stop_loss_factor": 0.96,
+        "min_profit_pct": 0.03,
+        "trailing_stop_pct": 0.05,
+        "platform_min_bars": 10,
+        "volume_threshold": 1.5,
+        "w_bottom_enabled": true,
+        "head_and_shoulders_bottom_enabled": true,
+        "cup_handle_enabled": false,
+        "rounding_bottom_enabled": false,
+        "triangle_enabled": false,
+        "flag_enabled": false,
+        "rectangle_enabled": false,
+        "breakout_pullback_enabled": false,
+        "m_top_enabled": false,
+        "head_and_shoulders_top_enabled": false,
+        "platform_max_amplitude": 0.05,
+        "breakdown_max_pct": 0.02,
+        "pullback_max_bars": 3,
+        "breakdown_max_bars": 2,
+        "first_position_pct": 0.3,
+        "second_position_pct": 0.5,
+        "volume_confirm": true,
+        "platform_volume_decline": true
+      },
+      "metrics": {
+        "annual_return": 0.1312650206980678,
+        "max_drawdown": 0.06703572455358535,
+        "sharpe_ratio": 0.657065088664479,
+        "win_rate": 0.7619047619047619,
+        "total_trades": 86,
+        "profit_factor": 1.6356103352498594
+      }
+    },
+    {
+      "rank": 3,
+      "score": 0.2631142595885714,
+      "params": {
+        "stop_loss_factor": 0.95,
+        "min_profit_pct": 0.02,
+        "trailing_stop_pct": 0.05,
+        "platform_min_bars": 10,
+        "volume_threshold": 1.5,
+        "w_bottom_enabled": true,
+        "head_and_shoulders_bottom_enabled": true,
+        "cup_handle_enabled": false,
+        "rounding_bottom_enabled": false,
+        "triangle_enabled": false,
+        "flag_enabled": false,
+        "rectangle_enabled": false,
+        "breakout_pullback_enabled": false,
+        "m_top_enabled": false,
+        "head_and_shoulders_top_enabled": false,
+        "platform_max_amplitude": 0.05,
+        "breakdown_max_pct": 0.02,
+        "pullback_max_bars": 3,
+        "breakdown_max_bars": 2,
+        "first_position_pct": 0.3,
+        "second_position_pct": 0.5,
+        "volume_confirm": true,
+        "platform_volume_decline": true
+      },
+      "metrics": {
+        "annual_return": 0.060309285013720945,
+        "max_drawdown": 0.10859390530960736,
+        "sharpe_ratio": 0.30587101772775876,
+        "win_rate": 0.7804878048780488,
+        "total_trades": 84,
+        "profit_factor": 1.300627744877406
+      }
+    }
+  ]
+}

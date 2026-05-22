@@ -22,7 +22,34 @@ caisen-data fetch --symbol 000001.SZ --start 2023-01-01 --end 2024-12-31 --freq 
 
 # 指定频率（日线/5分钟/15分钟/30分钟/60分钟）
 caisen-data fetch --symbol ag --start 2023-01-01 --end 2024-12-31 --freq 5m
+
+# 强制更新（重新下载，覆盖已有文件）
+caisen-data fetch --symbol ag --start 2023-01-01 --end 2024-12-31 --force
 ```
+
+### 增量抓取
+
+数据默认保存到 `/home/user/data`（可通过 `--output-dir` 修改）。
+
+**增量行为**:
+- 文件存在则跳过（假设历史数据不变）
+- 新数据与已有数据自动合并
+- 多文件合并为单个文件
+
+**示例**:
+```bash
+# 第一次下载
+caisen-data fetch --symbol ag --start 2024-01-01 --end 2024-06-30
+# 生成: data/ag/1d/20240101_20240630.parquet
+
+# 扩展范围（自动增量）
+caisen-data fetch --symbol ag --start 2024-01-01 --end 2024-12-31
+# 合并为: data/ag/1d/20240101_20241231.parquet
+```
+
+### 文件清理
+
+下载新数据后，被合并的旧文件会自动删除，保持目录整洁。
 
 **列出可用标的**:
 ```bash

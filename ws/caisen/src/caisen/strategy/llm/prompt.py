@@ -3,6 +3,14 @@
 import json
 from typing import List, Dict, Any, Optional
 
+from .prompts.default import (
+    DEFAULT_TEMPLATE,
+    SYSTEM_PROMPT,
+    RULES_FRAMEWORK,
+    OUTPUT_FORMAT,
+    EXAMPLES_TEMPLATE,
+)
+
 
 class PromptBuilder:
     """构建 LLM Prompt
@@ -11,39 +19,30 @@ class PromptBuilder:
     - 规则框架
     - Few-shot 示例
     - K 线数据
+
+    默认使用 prompts/default.py 中的模板，支持自定义覆盖。
     """
-
-    DEFAULT_SYSTEM_PROMPT = """你是一个量化交易策略分析师。根据 K 线数据分析并输出交易信号和标注。
-
-规则框架：
-- 支撑位买入（价格触及支撑后反弹）
-- 阻力位卖出（价格触及阻力后回落）
-- 趋势确认后跟进
-
-输出格式要求：
-- 只输出 JSON，不要其他内容
-- signals 数组包含每个时间点的交易信号
-- annotations 数组包含可视化标注
-
-"""
 
     def __init__(
         self,
         system_prompt: str = None,
         rules: str = None,
         examples: List[Dict[str, Any]] = None,
-        examples_count: int = 0
+        examples_count: int = 0,
+        output_format: str = None,
     ):
         """初始化
 
         Args:
-            system_prompt: 系统提示，自定义指令
-            rules: 规则框架字符串
-            examples: Few-shot 示例列表
+            system_prompt: 系统提示，默认使用模板中的
+            rules: 规则框架字符串，默认使用模板中的
+            examples: Few-shot 示例列表（运行时注入）
             examples_count: 示例数量（如果 examples 未提供则生成占位符）
+            output_format: 输出格式说明，默认使用模板中的
         """
-        self.system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
-        self.rules = rules
+        self.system_prompt = system_prompt or SYSTEM_PROMPT
+        self.rules = rules or RULES_FRAMEWORK
+        self.output_format = output_format or OUTPUT_FORMAT
         self.examples = examples or []
         self.examples_count = examples_count
 
@@ -62,14 +61,13 @@ class PromptBuilder:
         parts.append(self.system_prompt)
 
         # 规则框架
-        if self.rules:
-            parts.append(f"\n交易规则：\n{self.rules}\n")
+        parts.append(f"\n{self.rules}\n")
 
-        # Few-shot 示例
+        # Few-shot 示例（运行时）
         if self.examples:
-            parts.append("\n示例：\n")
+            parts.append("\n## 示例\n")
             for i, example in enumerate(self.examples, 1):
-                parts.append(f"示例 {i}：")
+                parts.append(f"\n### 示例 {i}")
                 # 处理示例中的 bars
                 example_bars = example.get('bars', [])
                 example_bars_dict = []
@@ -80,11 +78,14 @@ class PromptBuilder:
                         example_bars_dict.append(bar)
                     else:
                         example_bars_dict.append(str(bar))
-                parts.append(f"K线数据：{json.dumps(example_bars_dict, ensure_ascii=False)}")
-                parts.append(f"输出：{json.dumps({'signals': example['signals'], 'annotations': example.get('annotations', [])}, ensure_ascii=False)}")
+                parts.append(f"**K线数据**: {json.dumps(example_bars_dict, ensure_ascii=False)}")
+                parts.append(f"**输出**:\n```json\n{json.dumps({'signals': example['signals'], 'annotations': example.get('annotations', [])}, ensure_ascii=False)}\n```")
                 parts.append("")
         elif self.examples_count > 0:
             parts.append(f"\n[请提供 {self.examples_count} 个交易示例]")
+
+        # 输出格式说明
+        parts.append(f"\n{self.output_format}\n")
 
         # 实际 K 线数据
         bars_dict = []
@@ -103,21 +104,9 @@ class PromptBuilder:
                     "volume": getattr(bar, 'volume', 0),
                 })
 
-        parts.append("\n请分析以下 K 线数据：\n")
-        parts.append(json.dumps(bars_dict, ensure_ascii=False))
-
-        # 输出格式说明
-        parts.append("\n\n输出 JSON 格式：")
-        parts.append("""
-{
-  "signals": [
-    {"timestamp": "YYYY-MM-DD", "action": "buy|sell|hold", "confidence": 0.0-1.0, "reason": "..."}
-  ],
-  "annotations": [
-    {"timestamp": "YYYY-MM-DD", "type": "buy_signal|sell_signal|pattern_mark|horizontal_line|...", "data": {...}}
-  ]
-}
-""")
+        parts.append("\n## 分析任务\n")
+        parts.append("请分析以下 K 线数据，输出交易信号和标注：\n")
+        parts.append(f"```json\n{json.dumps(bars_dict, ensure_ascii=False)}\n```")
 
         return "\n".join(parts)
 
@@ -138,3 +127,22 @@ class PromptBuilder:
     def clear_examples(self) -> None:
         """清空所有示例"""
         self.examples = []
+
+    @classmethod
+    def from_template(cls, template: dict = None, **kwargs) -> "PromptBuilder":
+        """从模板创建 PromptBuilder
+
+        Args:
+            template: 模板字典，包含 system_prompt, rules, output_format, examples
+            **kwargs: 其他参数
+        """
+        if template:
+            return cls(
+                system_prompt=template.get("system_prompt"),
+                rules=template.get("rules"),
+                output_format=template.get("output_format"),
+                examples=template.get("examples"),
+                examples_count=template.get("examples_count", 0),
+                **kwargs,
+            )
+        return cls(**kwargs)

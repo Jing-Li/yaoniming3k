@@ -67,7 +67,7 @@ def cli():
 
 @cli.command()
 @click.option("--strategy", "-s", required=True, help="策略名称或文件路径")
-@click.option("--type", "-t", default="code", type=click.Choice(["code", "llm"]), help="策略类型 [code/llm]")
+@click.option("--strategy-type", "-t", default="code", type=click.Choice(["code", "llm"]), help="策略类型 [code/llm]")
 @click.option("--symbol", default="TEST", help="股票代码")
 @click.option("--freq", default="1d", help="K线频率 [1d/1h/30m/15m/5m]")
 @click.option("--start", default="2024-01-01", help="开始日期")
@@ -76,7 +76,7 @@ def cli():
 @click.option("--output-dir", default="./runs", help="输出目录")
 @click.option("--mock", is_flag=True, help="使用模拟数据运行测试")
 @click.option("--strategy-config", help="策略配置文件路径（YAML）")
-def run(strategy: str, symbol: str, freq: str, start: str, end: str, config: str, output_dir: str, mock: bool, strategy_config: str):
+def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, end: str, config: str, output_dir: str, mock: bool, strategy_config: str):
     """运行回测"""
 
     # 加载配置
@@ -104,7 +104,7 @@ def run(strategy: str, symbol: str, freq: str, start: str, end: str, config: str
             "MACrossStrategy": "caisen.strategy.ma_cross",
             "CaiSenStrategy": "caisen.strategy.cai_sen",
         }
-        
+
         # 如果指定了策略配置文件，且策略是蔡森策略
         if strategy_config and strategy in ("CaiSenStrategy", "CaiSenStrategyOptimized"):
             try:
@@ -238,7 +238,7 @@ def list_runs(output_dir: str):
 def report(run_id: str, port: int, host: str, output_dir: str):
     """启动可视化报告服务"""
     import uvicorn
-    from ..visualization.web.main import create_app, set_output_dir
+    from ..web.main import create_app, set_output_dir
 
     # 设置 output_dir
     set_output_dir(output_dir)

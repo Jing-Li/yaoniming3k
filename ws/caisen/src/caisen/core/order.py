@@ -28,6 +28,9 @@ class Order:
     order_type: str = "MARKET"  # 市价单
     order_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: datetime = None
+    # 止盈止损
+    stop_loss: float = 0  # 止损价
+    target: float = 0  # 目标价
 
     def to_dict(self) -> dict:
         return {

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回测详情 - Caisen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='/'">
+                    ← 返回列表
+                </button>
+                <h1>回测详情</h1>
+            </div>
+            <div class="header-info" id="header-info">
+                <span><span class="label">策略:</span> <span id="strategy-name">-</span></span>
+                <span><span class="label">标的:</span> <span id="symbol">-</span></span>
+                <span><span class="label">周期:</span> <span id="freq">-</span></span>
+                <span><span class="label">时间:</span> <span id="date-range">-</span></span>
+            </div>
+        </div>
+
+        <!-- Metrics Panel -->
+        <div class="metrics-panel" id="metrics-panel">
+            <div class="metric-card">
+                <div class="label">总收益率</div>
+                <div class="value" id="total-return">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">年化收益率</div>
+                <div class="value" id="annual-return">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">最大回撤</div>
+                <div class="value negative" id="max-drawdown">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">夏普比率</div>
+                <div class="value neutral" id="sharpe-ratio">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">胜率</div>
+                <div class="value" id="win-rate">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">盈亏比</div>
+                <div class="value" id="profit-factor">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">交易次数</div>
+                <div class="value neutral" id="total-trades">-</div>
+            </div>
+        </div>
+
+        <!-- K-Line Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>K线走势</h2>
+                <div class="chart-controls">
+                    <div class="date-filter">
+                        <label>从</label>
+                        <input type="date" id="start-date">
+                        <label>到</label>
+                        <input type="date" id="end-date">
+                        <button onclick="applyDateFilter()">筛选</button>
+                    </div>
+                    <button id="btn-zoom" onclick="toggleZoom()">缩放</button>
+                    <button onclick="resetZoom()">重置</button>
+                </div>
+            </div>
+            <div class="chart-wrapper" id="kline-chart"></div>
+            <div class="pattern-legend" id="pattern-legend"></div>
+        </div>
+
+        <!-- Equity Curve -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>净值曲线</h2>
+                <div class="chart-controls">
+                    <button onclick="toggleEquity()">隐藏/显示</button>
+                </div>
+            </div>
+            <div class="chart-wrapper equity-chart" id="equity-chart"></div>
+        </div>
+
+        <!-- Trades Table -->
+        <div class="trades-panel">
+            <h2>交易记录</h2>
+            <table class="trades-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>方向</th>
+                        <th>价格</th>
+                        <th>数量</th>
+                        <th>手续费</th>
+                    </tr>
+                </thead>
+                <tbody id="trades-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import '/js/main.js';
+    </script>
+</body>
+</html>

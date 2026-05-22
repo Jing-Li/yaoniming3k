@@ -129,16 +129,24 @@ frontend/
 
 #### CLI 命令
 
+**重要：启动 Web 服务必须使用 caisen skill**，确保 CLI 与 skill 版本一致：
+
 ```bash
-# 启动可视化 Web 服务（浏览器访问）
-caisen web --port 8000
+# 使用 caisen skill 启动 Web 服务（推荐）
+/caisen web --port 8000
 
-# 绑定所有网卡（局域网访问）
-caisen web --host 0.0.0.0 --port 8000
-
-# 直接打开指定回测结果
-caisen web --run-id MACrossStrategy_20260518_1 --port 8000
+# 或
+skill: caisen web --port 8000
 ```
+
+**架构要求**：
+- 所有 caisen 相关操作必须通过 skill 执行
+- 禁止直接使用 `python3 -m caisen.cli.main web` 启动
+- 如发现 skill 行为异常，应优先更新 skill
+
+**访问地址**：
+- 列表页：http://localhost:8000/
+- 详情页：http://localhost:8000/report.html?run_id={RUN_ID}
 
 ### 3. 源码目录结构
 

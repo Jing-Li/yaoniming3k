@@ -1,12 +1,24 @@
-"""Strategy 模块"""
+"""Strategy 模块
+
+目录结构:
+├── algorithm/          # 算法策略
+│   ├── patterns/       # 形态检测器
+│   ├── cai_sen.py     # 蔡森策略
+│   ├── detector.py    # 形态检测基类
+│   └── ...
+├── llm/               # LLM 策略
+│   ├── ...
+└── base.py           # 策略基类
+"""
 
 from .base import Strategy, Annotation, AnnotationType
-from .cai_sen import CaiSenStrategy  # 保持向后兼容
-from .detector import PatternDetector, PatternSignal
-from .cai_sen_v2 import CaiSenStrategy as CaiSenStrategyV2  # 新架构
+
+# 算法策略
+from .algorithm.cai_sen import CaiSenStrategy
+from .algorithm.detector import PatternDetector, PatternSignal
 
 __all__ = [
     "Strategy", "Annotation", "AnnotationType",
-    "CaiSenStrategy", "CaiSenStrategyV2",
+    "CaiSenStrategy",
     "PatternDetector", "PatternSignal",
 ]

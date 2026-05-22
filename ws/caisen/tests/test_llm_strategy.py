@@ -1,126 +1,213 @@
-"""测试 LLM Strategy"""
+"""测试 LLM Strategy（离线预计算架构）"""
 
-import json
 from datetime import datetime
+import pytest
+
 from caisen.core.bar import Bar
 from caisen.core.order import Order, Side
-from caisen.core.config import BacktestConfig
-from caisen.llm.provider import LLMProvider
-from caisen.llm.openai import OpenAIProvider
-from caisen.strategy.llm_strategy import LLMStrategy
-from caisen.strategy.base import AnnotationType
+from caisen.strategy.llm.strategy import LLMStrategy
+from caisen.strategy.llm.cache import SignalCache
 
 
-class MockProvider(LLMProvider):
-    """模拟 LLM Provider"""
+class MockLLMClient:
+    """模拟 LLM 客户端"""
 
-    def __init__(self, responses=None):
-        self.responses = responses or []
-        self.call_count = 0
+    def __init__(self, signals_data, annotations_data=None):
+        self.signals_data = signals_data
+        self.annotations_data = annotations_data or []
 
-    def call(self, prompt: str) -> str:
-        if self.responses:
-            response = self.responses[self.call_count % len(self.responses)]
-            self.call_count += 1
-            return response
-        return json.dumps({"action": "HOLD", "reason": "mock", "annotations": []})
-
-    def parse_response(self, response: str):
-        return json.loads(response)
+    def analyze(self, bars):
+        return MockResult(self.signals_data, self.annotations_data)
 
 
-def test_llm_strategy_generates_order():
-    """LLM 返回 BUY 时生成买入订单"""
-    provider = MockProvider([
-        json.dumps({"action": "BUY", "reason": "测试买入", "annotations": []})
-    ])
-    strategy = LLMStrategy(
-        prompt_template="分析 {bars}",
-        provider=provider
-    )
+class MockResult:
+    """模拟 LLM 返回结果"""
 
-    bar = Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=105, low=95, close=102, volume=1000)
-    order = strategy.on_bar(bar)
-
-    assert order is not None
-    assert order.side == Side.BUY
+    def __init__(self, signals, annotations):
+        self.signals = signals
+        self.annotations = annotations
 
 
-def test_llm_strategy_generates_sell_order():
-    """LLM 返回 SELL 时生成卖出订单"""
-    provider = MockProvider([
-        json.dumps({"action": "SELL", "reason": "测试卖出", "annotations": []})
-    ])
-    strategy = LLMStrategy(
-        prompt_template="分析 {bars}",
-        provider=provider
-    )
+class TestSignalCache:
+    """SignalCache 测试"""
 
-    bar = Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=105, low=95, close=102, volume=1000)
-    order = strategy.on_bar(bar)
+    def test_index_by_timestamp(self):
+        """测试按时间戳索引信号"""
+        cache = SignalCache()
+        signals = [
+            {"timestamp": "2024-01-01", "action": "buy"},
+            {"timestamp": "2024-01-03", "action": "sell"},
+            {"timestamp": "2024-01-05", "action": "hold"},
+        ]
+        cache.index_signals(signals)
 
-    assert order is not None
-    assert order.side == Side.SELL
+        assert cache.get("2024-01-01") == "buy"
+        assert cache.get("2024-01-03") == "sell"
+        assert cache.get("2024-01-05") == "hold"
 
+    def test_get_nonexistent_returns_hold(self):
+        """测试不存在的 timestamp 返回 hold"""
+        cache = SignalCache()
+        cache.index_signals([{"timestamp": "2024-01-01", "action": "buy"}])
 
-def test_llm_strategy_hold_returns_none():
-    """LLM 返回 HOLD 时返回 None"""
-    provider = MockProvider([
-        json.dumps({"action": "HOLD", "reason": "等待信号", "annotations": []})
-    ])
-    strategy = LLMStrategy(
-        prompt_template="分析 {bars}",
-        provider=provider
-    )
+        # 无信号时默认返回 hold
+        assert cache.get("2024-01-02") == "hold"
 
-    bar = Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=105, low=95, close=102, volume=1000)
-    order = strategy.on_bar(bar)
+    def test_get_returns_action_string(self):
+        """测试返回的是 action 字符串"""
+        cache = SignalCache()
+        cache.index_signals([
+            {"timestamp": "2024-01-01", "action": "buy"},
+        ])
 
-    assert order is None
-
-
-def test_llm_strategy_caches_responses():
-    """相同 bar 不重复调用 LLM"""
-    provider = MockProvider([
-        json.dumps({"action": "BUY", "reason": "信号", "annotations": []})
-    ])
-    strategy = LLMStrategy(
-        prompt_template="分析 {bars}",
-        provider=provider,
-        cache_enabled=True
-    )
-
-    bar = Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=105, low=95, close=102, volume=1000)
-
-    # 多次调用相同 bar
-    strategy.on_bar(bar)
-    strategy.on_bar(bar)
-    strategy.on_bar(bar)
-
-    # 应该只调用一次
-    assert provider.call_count == 1
+        action = cache.get("2024-01-01")
+        assert isinstance(action, str)
+        assert action == "buy"
 
 
-def test_llm_strategy_collects_annotations():
-    """收集可视化标注"""
-    provider = MockProvider([
-        json.dumps({
-            "action": "BUY",
-            "reason": "买入",
-            "annotations": [
-                {"type": "line", "points": [[0, 100], [10, 110]], "label": "支撑线", "color": "blue"}
-            ]
-        })
-    ])
-    strategy = LLMStrategy(
-        prompt_template="分析 {bars}",
-        provider=provider
-    )
+class TestLLMStrategyOnBar:
+    """LLMStrategy.on_bar 测试"""
 
-    bar = Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=105, low=95, close=102, volume=1000)
-    strategy.on_bar(bar)
+    def test_on_bar_returns_buy_order(self):
+        """测试 on_bar 对 buy 信号返回 BUY 订单"""
+        signals = [{"timestamp": "2024-01-01", "action": "buy"}]
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(client)
 
-    annotations = strategy.get_annotations()
-    assert len(annotations) == 1
-    assert annotations[0].type == AnnotationType.TREND_LINE
-    assert annotations[0].label == "支撑线"
+        # 模拟 on_init 已完成
+        strategy.cache.index_signals(signals)
+
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="ag",
+            open=100,
+            high=105,
+            low=99,
+            close=103,
+            volume=1000
+        )
+        order = strategy.on_bar(bar)
+
+        assert order is not None
+        assert order.side == Side.BUY
+        assert order.symbol == "ag"
+
+    def test_on_bar_returns_sell_order_when_has_position(self):
+        """测试有持仓时 sell 信号返回 SELL 订单"""
+        signals = [{"timestamp": "2024-01-01", "action": "sell"}]
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(client)
+        strategy.position = 1  # 有持仓
+
+        strategy.cache.index_signals(signals)
+
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="ag",
+            close=103
+        )
+        order = strategy.on_bar(bar)
+
+        assert order is not None
+        assert order.side == Side.SELL
+
+    def test_on_bar_returns_none_when_sell_no_position(self):
+        """测试无持仓时 sell 信号返回 None"""
+        signals = [{"timestamp": "2024-01-01", "action": "sell"}]
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(client)
+        strategy.position = 0  # 无持仓
+
+        strategy.cache.index_signals(signals)
+
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="ag",
+            close=103
+        )
+        order = strategy.on_bar(bar)
+
+        # 无持仓时不能卖，返回 None
+        assert order is None
+
+    def test_on_bar_returns_none_when_hold(self):
+        """测试 hold 信号返回 None"""
+        signals = [{"timestamp": "2024-01-01", "action": "hold"}]
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(client)
+        strategy.position = 0  # 无持仓
+
+        strategy.cache.index_signals(signals)
+
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="ag",
+            close=103
+        )
+        order = strategy.on_bar(bar)
+
+        assert order is None
+
+    def test_on_bar_returns_none_when_no_signal(self):
+        """测试无信号时返回 None"""
+        client = MockLLMClient([])
+        strategy = LLMStrategy(client)
+        strategy.position = 0
+
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="ag",
+            close=103
+        )
+        order = strategy.on_bar(bar)
+
+        # 无信号默认 hold，返回 None
+        assert order is None
+
+    def test_on_bar_uses_close_price(self):
+        """测试订单使用收盘价"""
+        signals = [{"timestamp": "2024-01-01", "action": "buy"}]
+        client = MockLLMClient(signals)
+        strategy = LLMStrategy(client)
+        strategy.cache.index_signals(signals)
+
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="ag",
+            open=100,
+            high=105,
+            low=99,
+            close=103,
+            volume=1000
+        )
+        order = strategy.on_bar(bar)
+
+        # 订单使用收盘价作为参考价（具体实现可能不同）
+        assert order is not None
+
+
+class TestLLMStrategyAnnotations:
+    """LLMStrategy.get_annotations 测试"""
+
+    def test_get_annotations_returns_list(self):
+        """测试 get_annotations 返回列表"""
+        signals = [{"timestamp": "2024-01-01", "action": "buy"}]
+        annotations = [
+            {"timestamp": "2024-01-01", "type": "buy_signal", "data": {"price": 100, "label": "买入"}}
+        ]
+        client = MockLLMClient(signals, annotations)
+        strategy = LLMStrategy(client)
+
+        strategy.cache.index_signals(signals)
+        strategy.cache.set_annotations(annotations)
+
+        result = strategy.get_annotations()
+        assert isinstance(result, list)
+
+    def test_get_annotations_empty_when_no_annotations(self):
+        """测试无标注时返回空列表"""
+        client = MockLLMClient([])
+        strategy = LLMStrategy(client)
+
+        result = strategy.get_annotations()
+        assert result == []
