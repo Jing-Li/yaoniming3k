@@ -168,8 +168,9 @@ def run_backtest():
         print(f"  收益率: {(final_equity/config.initial_capital - 1)*100:.2f}%")
     
     # 计算并显示绩效指标
-    from caisen.result.metrics import calculate_metrics
-    metrics = calculate_metrics(result)
+    from caisen.result.calculator import MetricsCalculator
+    calculator = MetricsCalculator()
+    metrics = calculator.calculate(result)
     print(f"  最大回撤: {metrics.max_drawdown*100:.2f}%")
     print(f"  夏普比率: {metrics.sharpe_ratio:.2f}")
     print(f"  总交易数: {metrics.total_trades}")

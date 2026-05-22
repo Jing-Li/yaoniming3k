@@ -8,7 +8,8 @@ from .trade import Trade
 from .portfolio import Portfolio
 from .position import Position
 from .config import BacktestConfig
-from ..strategy.base import Strategy, Annotation
+from .annotation import Annotation
+from ..strategy.base import Strategy
 
 # Re-export BacktestResult for backward compatibility
 from ..result.types import BacktestResult

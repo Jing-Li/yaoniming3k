@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from ..strategy.base import Annotation
+from ..core.annotation import Annotation
 
 
 @dataclass

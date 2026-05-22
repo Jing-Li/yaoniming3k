@@ -6,6 +6,7 @@ from .trade import Trade
 from .position import Position
 from .portfolio import Portfolio
 from .config import Config, BacktestConfig
+from .annotation import Annotation, AnnotationType
 
 __all__ = [
     "Bar",
@@ -16,4 +17,6 @@ __all__ = [
     "Portfolio",
     "Config",
     "BacktestConfig",
+    "Annotation",
+    "AnnotationType",
 ]
