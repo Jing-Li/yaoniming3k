@@ -164,6 +164,42 @@ _参见_: ADR-0007 可视化报告架构
 > **Dev:** "回测中断后怎么继续？"
 > **Domain expert:** "引擎会定期保存 **Checkpoint**，包含已处理的 K 线索引和 **Portfolio** 状态。使用 `caisen run --resume <checkpoint_file>` 从断点继续。"
 
+## 目录结构规范
+
+项目使用 **六层目录结构**：
+
+```
+src/caisen/
+├── core/          # 回测引擎核心（Engine、Config、Bar、Order）
+├── strategy/      # 策略实现
+│   ├── base.py    # 策略基类
+│   ├── patterns/  # 形态检测器（W底、M头、三角等）
+│   └── llm/       # LLM 策略实现
+├── data/          # 数据加载模块
+│   ├── source.py  # DataSource 接口
+│   └── local_source.py  # 本地数据源实现
+├── result/        # 回测结果处理
+│   ├── types.py   # 数据类型（BacktestResult）
+│   ├── metrics.py # 绩效指标计算
+│   └── persistence.py  # 结果持久化
+├── visualization/ # 可视化模块
+│   ├── web/       # Python Web 服务
+│   └── frontend/  # 前端代码（Vite 项目）
+└── cli/           # 命令行工具
+```
+
+**命名规范**：
+- 目录名：`snake_case`（全小写 + 下划线）
+- 文件名：`snake_case.py`
+- 类名：`PascalCase`
+- 函数/变量：`snake_case`
+
+**模块创建检查清单**：
+1. 新模块是否属于已有顶层目录？
+2. 新目录是否需要 `__init__.py`？
+3. 新模块是否需要单元测试？
+4. 是否需要更新 `__all__` 导出？
+
 ## Flagged ambiguities
 
 - "account" 曾被用来指代 **Portfolio** 和 **User** — resolved：统一使用 **Portfolio** 表示资金账户，用户与策略分离。

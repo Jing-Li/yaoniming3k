@@ -22,7 +22,32 @@ dev = [
     "pytest",
     "pytest-cov",
     "vitest>=1.0.0",
+    "ruff",
 ]
+
+[tool.ruff]
+# 目录结构检查规则
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]  # __init__.py 允许空的导出
+
+[tool.ruff.lint]
+select = [
+    "F",    # pyflakes
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long
+    "B008",  # do not perform function calls in argument defaults
+]
+
+# 自定义规则：禁止在根目录放置业务代码
+[tool.ruff.lint.custom]
+[dictionary-struct-check]
+init-modules = ["src/caisen/core", "src/caisen/strategy", "src/caisen/data", "src/caisen/result", "src/caisen/visualization", "src/caisen/cli"]
 
 [tool.vitest]
 testDirectory = "tests/js"
