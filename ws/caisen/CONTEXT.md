@@ -257,6 +257,18 @@ src/caisen/
 3. 新模块是否需要单元测试？
 4. 是否需要更新 `__all__` 导出？
 
+## 文档同步检查
+
+代码变更后，检查以下文档是否同步更新：
+
+| 代码变更 | 需检查文档 |
+|----------|-----------|
+| 新增/删除类 | `docs/design.md` 类图和类职责声明 |
+| 新增/删除模块 | `CONTEXT.md` 目录结构规范 |
+| 新增术语/概念 | `CONTEXT.md` Language 章节 |
+| 架构决策变更 | `docs/adr/` 相关 ADR |
+| 接口变更 | `CONTEXT.md` Relationships |
+
 ## Flagged ambiguities
 
 - "account" 曾被用来指代 **Portfolio** 和 **User** — resolved：统一使用 **Portfolio** 表示资金账户，用户与策略分离。
