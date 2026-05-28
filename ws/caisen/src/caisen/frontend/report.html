@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>回测详情 - Caisen</title>
+    <title>回测详情 - 策微 CeWei</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -30,9 +30,10 @@
 
         <!-- Metrics Panel -->
         <div class="metrics-panel" id="metrics-panel">
-            <div class="metric-card">
+            <div class="metric-card metric-card-feature">
                 <div class="label">总收益率</div>
-                <div class="value" id="total-return">-</div>
+                <div class="value metric-value-large" id="total-return">-</div>
+                <div id="sparkline-container" style="width:100%;height:40px;margin-top:var(--spacing-sm,8px);"></div>
             </div>
             <div class="metric-card">
                 <div class="label">年化收益率</div>
@@ -76,6 +77,8 @@
                     <button onclick="resetZoom()">重置</button>
                 </div>
             </div>
+            <!-- Annotation Filter Panel -->
+            <div id="annotation-filter-panel" class="annotation-filter-panel collapsed"></div>
             <div class="chart-wrapper" id="kline-chart"></div>
             <div class="pattern-legend" id="pattern-legend"></div>
         </div>
@@ -91,22 +94,51 @@
             <div class="chart-wrapper equity-chart" id="equity-chart"></div>
         </div>
 
+        <!-- Drawdown Chart -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>回撤分析</h2>
+            </div>
+            <div class="chart-wrapper drawdown-chart" id="drawdown-chart"></div>
+        </div>
+
+        <!-- Monthly Returns Heatmap -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>月度收益</h2>
+            </div>
+            <div class="chart-wrapper heatmap-chart" id="heatmap-chart"></div>
+        </div>
+
+        <!-- Trade Distribution -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h2>盈亏分布</h2>
+            </div>
+            <div class="chart-wrapper trade-distribution-chart" id="trade-distribution-chart"></div>
+        </div>
+
         <!-- Trades Table -->
         <div class="trades-panel">
-            <h2>交易记录</h2>
+            <div class="trades-header" style="display:flex;justify-content:space-between;align-items:center;gap:var(--spacing-md);flex-wrap:wrap;margin-bottom:var(--spacing-md);">
+                <h2 style="margin:0;border:none;padding:0;">交易记录</h2>
+                <div id="trades-summary" class="trades-summary" style="display:flex;gap:var(--spacing-lg);font-size:var(--font-size-xs);color:var(--text-muted);"></div>
+            </div>
             <table class="trades-table">
                 <thead>
-                    <tr>
-                        <th>时间</th>
+                    <tr id="trades-thead-row">
+                        <th class="sortable" data-sort-key="timestamp">时间<span class="sort-icon"></span></th>
                         <th>方向</th>
-                        <th>价格</th>
-                        <th>数量</th>
-                        <th>手续费</th>
+                        <th class="sortable" data-sort-key="price">价格<span class="sort-icon"></span></th>
+                        <th class="sortable" data-sort-key="quantity">数量<span class="sort-icon"></span></th>
+                        <th class="sortable" data-sort-key="commission">手续费<span class="sort-icon"></span></th>
+                        <th>盈亏</th>
                     </tr>
                 </thead>
                 <tbody id="trades-body">
                 </tbody>
             </table>
+            <div class="pagination" id="trades-pagination" style="display:flex;justify-content:center;align-items:center;gap:var(--spacing-xs,4px);margin-top:var(--spacing-md,16px);flex-wrap:wrap;"></div>
         </div>
     </div>
 

@@ -11,7 +11,7 @@
 import os
 from typing import List, Optional, Dict, Any, TYPE_CHECKING
 
-from ..base import Strategy, Annotation, AnnotationType
+from ..base import Strategy, Annotation, AnnotationType, BarResult
 from .detector import PatternDetector, PatternSignal
 from .caisen_components import DetectorFactory, SignalAggregator, PositionManager
 
@@ -98,6 +98,8 @@ class CaiSenStrategy(Strategy):
         rounding_bottom_enabled: bool = True,
         cup_handle_enabled: bool = True,
         breakout_pullback_enabled: bool = True,
+        breakdown_pullback_enabled: bool = True,
+        fake_breakout_enabled: bool = True,
         stop_loss_factor_legacy: float = 0.96,
         min_profit_pct_legacy: float = 0.03,
         **kwargs,
@@ -110,6 +112,7 @@ class CaiSenStrategy(Strategy):
                     head_and_shoulders_bottom_enabled, head_and_shoulders_top_enabled,
                     triangle_enabled, flag_enabled, rectangle_enabled,
                     rounding_bottom_enabled, cup_handle_enabled, breakout_pullback_enabled,
+                    breakdown_pullback_enabled, fake_breakout_enabled,
                 )
 
             factory = DetectorFactory(
@@ -130,7 +133,6 @@ class CaiSenStrategy(Strategy):
 
         # 状态
         self.bars: List["Bar"] = []
-        self.annotations: List[Annotation] = []
 
     @staticmethod
     def _get_enabled_patterns(
@@ -139,6 +141,7 @@ class CaiSenStrategy(Strategy):
         triangle: bool, flag: bool,
         rectangle: bool, rounding: bool,
         cup_handle: bool, breakout: bool,
+        breakdown_pullback: bool, fake_breakout: bool,
     ) -> List[str]:
         """根据开关获取启用的形态列表"""
         patterns = []
@@ -162,14 +165,18 @@ class CaiSenStrategy(Strategy):
             patterns.append("cup_handle")
         if breakout:
             patterns.append("breakout_pullback")
+        if breakdown_pullback:
+            patterns.append("breakdown_pullback")
+        if fake_breakout:
+            patterns.append("fake_breakout")
         return patterns
 
     def on_init(self, config: "BacktestConfig") -> None:
         """回测初始化"""
         pass
 
-    def on_bar(self, bar: "Bar") -> Optional["Order"]:
-        """每根K线调用
+    def on_bar(self, bar: "Bar") -> "BarResult":
+        """每根K线调用，返回 BarResult
 
         流程（ADR-0011）：
         1. 更新 K 线列表
@@ -190,31 +197,32 @@ class CaiSenStrategy(Strategy):
         # 3. 决策
         # 入场 - 使用最佳信号的 confidence 而非 total_score
         if result.best_signal and result.best_signal.confidence >= self.threshold and not self._position_mgr.has_position:
-            self._add_pattern_annotation(result.best_signal)
+            ann = self._make_pattern_annotation(result.best_signal)
             self._position_mgr.open(result.best_signal, bar)
-            return Order(
+            order = Order(
                 side=Side.BUY,
                 symbol=bar.symbol,
                 quantity=0,
                 stop_loss=result.best_signal.stop_loss,
                 target=result.best_signal.target,
             )
+            return BarResult(order=order, annotations=[ann])
 
         # 止损检查
         if self._position_mgr.check_stop_loss(bar):
             self._position_mgr.close()
-            return Order(side=Side.SELL, symbol=bar.symbol, quantity=0)
+            return BarResult(order=Order(side=Side.SELL, symbol=bar.symbol, quantity=0))
 
         # 止盈检查
         if self._position_mgr.check_take_profit(bar):
             self._position_mgr.close()
-            return Order(side=Side.SELL, symbol=bar.symbol, quantity=0)
+            return BarResult(order=Order(side=Side.SELL, symbol=bar.symbol, quantity=0))
 
-        return None
+        return BarResult()
 
-    def _add_pattern_annotation(self, signal: PatternSignal) -> None:
-        """添加形态可视化标注"""
-        ann = Annotation(
+    def _make_pattern_annotation(self, signal: PatternSignal) -> Annotation:
+        """构造形态可视化标注（不再维护内部 list）"""
+        return Annotation(
             type=AnnotationType.PATTERN_MARK,
             timestamp=self.bars[-1].timestamp if self.bars else None,
             data={
@@ -226,18 +234,12 @@ class CaiSenStrategy(Strategy):
                 "label": f"{signal.pattern} ({signal.confidence:.0%})",
             },
         )
-        self.annotations.append(ann)
 
     def on_session_end(self) -> None:
         """回测结束"""
         pass
 
-    def get_annotations(self) -> List[Annotation]:
-        """获取可视化标注"""
-        return self.annotations
-
     def reset(self) -> None:
         """重置策略状态"""
         self.bars = []
-        self.annotations = []
         self._position_mgr.reset()

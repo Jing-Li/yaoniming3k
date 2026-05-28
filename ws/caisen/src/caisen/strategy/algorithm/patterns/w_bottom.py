@@ -67,13 +67,14 @@ class WBottomDetector(PatternDetector):
         if result is None:
             return None
 
-        first_low_bar, first_low, second_low_bar, second_low, neckline = result
+        first_low_bar, first_low, second_low_bar, second_low, neckline, first_low_abs_idx, second_low_abs_idx = result
 
         # 检查是否突破颈线
         if current_bar.close > neckline:
             return self._create_breakout_signal(
                 bars, current_bar, first_low_bar, first_low,
-                second_low_bar, second_low, neckline
+                second_low_bar, second_low, neckline,
+                first_low_abs_idx, second_low_abs_idx
             )
 
         return None
@@ -85,7 +86,7 @@ class WBottomDetector(PatternDetector):
             bars: K线列表
 
         Returns:
-            (first_low_bar, first_low, second_low_bar, second_low, neckline) 或 None
+            (first_low_bar, first_low, second_low_bar, second_low, neckline, first_low_abs_idx, second_low_abs_idx) 或 None
         """
         recent = bars[-10:]
         lows = [b.low for b in recent]
@@ -101,13 +102,13 @@ class WBottomDetector(PatternDetector):
 
         # 找第二个低点（后5根，与第一个相近）
         second_low_candidates = [
-            (b, b.low) for b in recent[5:]
+            (i + 5, b, b.low) for i, b in enumerate(recent[5:])
             if abs(b.low - first_low) / first_low < self.tolerance
         ]
         if not second_low_candidates:
             return None
 
-        second_low_bar, second_low = min(second_low_candidates, key=lambda x: x[1])
+        second_low_rel_idx, second_low_bar, second_low = min(second_low_candidates, key=lambda x: x[2])
 
         # 找颈线（两个低点之间的高点）
         between_bars = [
@@ -124,7 +125,12 @@ class WBottomDetector(PatternDetector):
         if neckline_height < self.min_neckline_height:
             return None
 
-        return (first_low_bar, first_low, second_low_bar, second_low, neckline)
+        # 计算绝对索引（在完整bars中的位置）
+        offset = len(bars) - 10
+        first_low_abs_idx = offset + first_low_idx
+        second_low_abs_idx = offset + second_low_rel_idx
+
+        return (first_low_bar, first_low, second_low_bar, second_low, neckline, first_low_abs_idx, second_low_abs_idx)
 
     def _create_breakout_signal(
         self,
@@ -135,6 +141,8 @@ class WBottomDetector(PatternDetector):
         second_low_bar: "Bar",
         second_low: float,
         neckline: float,
+        first_low_abs_idx: int = None,
+        second_low_abs_idx: int = None,
     ) -> PatternSignal:
         """创建突破信号
 
@@ -146,13 +154,16 @@ class WBottomDetector(PatternDetector):
             second_low_bar: 第二个低点K线
             second_low: 第二个低点价格
             neckline: 颈线价格
+            first_low_abs_idx: 第一个低点的绝对索引
+            second_low_abs_idx: 第二个低点的绝对索引
 
         Returns:
             PatternSignal
         """
         # 计算置信度
         confidence = self._calculate_w_confidence(
-            bars, first_low, second_low, neckline, bar
+            bars, first_low, second_low, neckline, bar,
+            first_low_abs_idx, second_low_abs_idx
         )
 
         # 计算止损和目标
@@ -184,12 +195,14 @@ class WBottomDetector(PatternDetector):
         second_low: float,
         neckline: float,
         bar: "Bar",
+        first_low_idx: int = None,
+        second_low_idx: int = None,
     ) -> float:
         """计算W底置信度
 
         综合考虑：
         - 完成度：两个低点越接近，置信度越高
-        - 成交量：突破时放量增加置信度
+        - 成交量：三阶段量能确认（形成期缩量、突破期放量、确认期）
         - 趋势：与上升趋势共振增强信号
         - 动量：突破力度影响置信度
 
@@ -199,6 +212,8 @@ class WBottomDetector(PatternDetector):
             second_low: 第二个低点价格
             neckline: 颈线价格
             bar: 当前K线
+            first_low_idx: 第一个低点在bars中的绝对索引
+            second_low_idx: 第二个低点在bars中的绝对索引
 
         Returns:
             置信度 0~1
@@ -207,9 +222,8 @@ class WBottomDetector(PatternDetector):
         low_diff = abs(first_low - second_low) / first_low
         completion = 1.0 - min(1.0, low_diff / self.tolerance)
 
-        # 成交量因子
-        volume_ratio = self._volume_ratio(bars)
-        volume = min(1.0, volume_ratio / 2.0)  # 归一化到0~1
+        # 成交量因子：使用三阶段量能确认
+        volume = self._staged_volume_score(bars, first_low_idx, second_low_idx)
 
         # 趋势因子：上升趋势中更可信
         is_uptrend = self._is_trend_up(bars, period=20)
@@ -225,3 +239,46 @@ class WBottomDetector(PatternDetector):
             trend=trend,
             momentum=momentum,
         )
+
+    def _staged_volume_score(self, bars: List["Bar"], first_low_idx: int = None, second_low_idx: int = None) -> float:
+        """三阶段量能评分
+
+        阶段1（形成期）：两个低点之间 → 应缩量
+        阶段2（突破期）：突破颈线时 → 应放量>=1.5倍
+        阶段3（确认期）：突破后 → 持续或回踩缩量
+
+        Returns:
+            量能评分 0~1
+        """
+        # 若无索引信息，回退到简单量比
+        if first_low_idx is None or second_low_idx is None:
+            volume_ratio = self._volume_ratio(bars)
+            return min(1.0, volume_ratio / 2.0)
+
+        breakout_idx = len(bars) - 1
+        stages = []
+
+        # 阶段1：形成期（两个低点之间）
+        if second_low_idx > first_low_idx + 1:
+            stages.append({
+                'name': 'formation',
+                'start_idx': first_low_idx,
+                'end_idx': second_low_idx,
+                'expect': 'shrink',
+            })
+
+        # 阶段2：突破期（第二低点到当前突破K线）
+        if breakout_idx > second_low_idx:
+            stages.append({
+                'name': 'breakout',
+                'start_idx': second_low_idx,
+                'end_idx': breakout_idx,
+                'expect': 'expand',
+            })
+
+        if not stages:
+            volume_ratio = self._volume_ratio(bars)
+            return min(1.0, volume_ratio / 2.0)
+
+        result = self.volume_analyzer.staged_volume_check(bars, stages)
+        return result['score']

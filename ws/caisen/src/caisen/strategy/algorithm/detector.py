@@ -94,13 +94,20 @@ class PatternDetector(ABC):
             print(f"Detected: {signal.pattern}, confidence: {signal.confidence}")
     """
 
-    def __init__(self, name: str = None):
+    def __init__(self, name: str = None, volume_config: Dict[str, Any] = None):
         """初始化检测器
 
         Args:
             name: 检测器名称，用于配置和日志
+            volume_config: VolumeAnalyzer 配置参数，支持 base_period 和 breakout_multiplier
         """
+        from .caisen_components.volume_analyzer import VolumeAnalyzer
         self.name = name or self.__class__.__name__
+        vol_cfg = volume_config or {}
+        self.volume_analyzer = VolumeAnalyzer(
+            base_period=vol_cfg.get('base_period', 20),
+            breakout_multiplier=vol_cfg.get('breakout_multiplier', 1.5),
+        )
 
     @abstractmethod
     def detect(self, bars: List["Bar"]) -> Optional[PatternSignal]:

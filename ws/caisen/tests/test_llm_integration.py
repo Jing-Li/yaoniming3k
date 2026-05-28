@@ -67,12 +67,12 @@ class TestLLMStrategyIntegration:
         strategy.cache.index_signals(signals)
         strategy.cache.set_annotations(annotations)
 
-        # 逐帧执行
+        # 逐帧执行，从 BarResult 解包
         orders = []
         for bar in bars:
-            order = strategy.on_bar(bar)
-            if order:
-                orders.append(order)
+            bar_result = strategy.on_bar(bar)
+            if bar_result.order:
+                orders.append(bar_result.order)
 
         # 验证：2 个订单（买入 + 卖出）
         assert len(orders) == 2
@@ -101,14 +101,14 @@ class TestLLMStrategyIntegration:
 
         orders = []
         for bar in bars:
-            order = strategy.on_bar(bar)
-            if order:
-                orders.append(order)
+            bar_result = strategy.on_bar(bar)
+            if bar_result.order:
+                orders.append(bar_result.order)
 
         assert len(orders) == 0
 
-    def test_get_annotations_returns_cached_annotations(self):
-        """测试 get_annotations 返回缓存的标注"""
+    def test_annotations_emitted_on_first_bar(self):
+        """测试标注通过第一次 on_bar 的 BarResult 发出"""
         annotations = [
             {"timestamp": "2024-01-01", "type": "buy_signal", "data": {"price": 100}},
             {"timestamp": "2024-01-03", "type": "horizontal_line", "data": {"price": 105}},
@@ -122,9 +122,10 @@ class TestLLMStrategyIntegration:
         )
         strategy.cache.set_annotations(annotations)
 
-        result = strategy.get_annotations()
+        bar = Bar(timestamp=datetime(2024, 1, 1), symbol="ag", close=100)
+        result = strategy.on_bar(bar)
 
-        assert len(result) == 2
+        assert len(result.annotations) == 2
 
 
 class TestSignalCacheIntegration:
@@ -168,7 +169,6 @@ class TestSignalCacheIntegration:
         cache.index_signals(signals)
 
         # 验证：cache 只存 action，不存 confidence
-        # confidence 由策略在实际下单时参考
         assert cache.get("2024-01-01") == "buy"
         assert cache.get("2024-01-02") == "hold"
 
@@ -178,7 +178,6 @@ class TestEndToEndScenario:
 
     def test_winning_trade(self):
         """测试盈利交易场景"""
-        # 场景：买入价 103，卖出价 108，盈利
         bars = [
             Bar(timestamp=datetime(2024, 1, 1), symbol="ag", close=100),
             Bar(timestamp=datetime(2024, 1, 2), symbol="ag", close=103),  # 买入
@@ -201,9 +200,9 @@ class TestEndToEndScenario:
 
         orders = []
         for bar in bars:
-            order = strategy.on_bar(bar)
-            if order:
-                orders.append(order)
+            bar_result = strategy.on_bar(bar)
+            if bar_result.order:
+                orders.append(bar_result.order)
 
         assert len(orders) == 2
         assert orders[0].side == Side.BUY
@@ -232,9 +231,9 @@ class TestEndToEndScenario:
 
         orders = []
         for bar in bars:
-            order = strategy.on_bar(bar)
-            if order:
-                orders.append(order)
+            bar_result = strategy.on_bar(bar)
+            if bar_result.order:
+                orders.append(bar_result.order)
 
         assert len(orders) == 2
         # 亏损场景也能正确执行买入和卖出

@@ -1,8 +1,7 @@
-# 可视化标注与报告方案
+# ADR-0005: 可视化标注与报告方案
 
-> **状态更新 (2026-05-18)**:
-> 已部分实现。使用纯 HTML + ECharts 替代 Plotly，生成交互式 K 线图。
-> 完整报告功能待 CLI 集成。
+## Status
+Implemented
 
 LLM 策略返回可视化标注（Annotation），与回测结果一起持久化，通过 HTML 生成可视化报告。
 
@@ -22,6 +21,3 @@ LLM 策略返回可视化标注（Annotation），与回测结果一起持久化
 - PDF 报告 — 不支持交互，图表效果差
 
 **后果**：前后端分离；Annotation 格式需与 LLM 返回格式保持一致（见 ADR-0007）。
-
-**待实现**：
-- [ ] CLI 集成：生成 report 目录和 data.json

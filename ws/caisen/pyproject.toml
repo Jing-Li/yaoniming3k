@@ -15,7 +15,11 @@ dependencies = [
     "click",
     "fastapi",
     "uvicorn",
+    "websockets",
 ]
+
+[project.scripts]
+caisen = "caisen.cli.main:cli"
 
 [project.optional-dependencies]
 dev = [
@@ -57,4 +61,4 @@ packages = ["src/caisen"]
 
 # Frontend JS files to include in package
 [tool.hatch.build.targets.wheel.force-include]
-"src/caisen/visualization/js/" = "caisen/visualization/js/"
+"src/caisen/frontend/dist/" = "caisen/frontend/dist/"

@@ -5,6 +5,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from ..config.project_config import ProjectConfig
 from ..core.config import Config, BacktestConfig
 from ..data.config import DataConfig
 from ..core.bar import Bar
@@ -90,7 +91,7 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
                 freq=freq,
                 start=start,
                 end=end,
-                data_dir="/home/user/data",
+                data_dir=ProjectConfig.load().data_dir,
             ),
             output_dir=output_dir,
         )
@@ -316,7 +317,7 @@ def optimize(symbol: str, freq: str, start: str, end: str, output_dir: str, work
             freq=freq,
             start=start,
             end=end,
-            data_dir="/home/user/data",
+            data_dir=ProjectConfig.load().data_dir,
         )
         try:
             bars = load_bars(data_cfg)

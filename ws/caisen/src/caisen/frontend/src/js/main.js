@@ -10,14 +10,28 @@ import { PATTERN_COLORS, DEBUG_CONFIG } from './constants.js';
 import { buildKLineOption, buildEquityOption, buildTooltipContent } from './chart-builder.js';
 import { processAnnotations, processTrades, getAnnotationRenderer } from './chart-builder.js';
 import { renderHeader, renderMetrics, renderTradesTable, renderPatternLegend, initDateInputs, showError, formatValue, formatTimestamp, calculateAnnualReturn } from './components.js';
-import { renderKLineChart, renderEquityChart, toggleZoom, resetZoom, toggleEquity } from './chart-renderer.js';
+import { renderKLineChart, renderEquityChart, toggleZoom, resetZoom, toggleEquity, toggleMA, setupChartSync } from './chart-renderer.js';
 import { loadData, loadRun, showRunsList, hideRunsList, applyDateFilter } from './data-loader.js';
+import { annotationFilterToggle, annotationFilterSelectAll, annotationFilterSelectNone, toggleAnnotationFilterPanel } from './annotation-filter.js';
+import { renderHeatmapChart } from './heatmap-chart.js';
+import { renderDrawdownChart } from './drawdown-chart.js';
+import { renderTradeDistribution } from './trade-distribution.js';
+import { renderVersionCompare, disposeVersionCompare, buildVersionCompareOption } from './version-compare.js';
+import { getStrategyDisplayName, STRATEGY_DISPLAY_NAMES } from './constants.js';
 
 // Make functions available globally for inline script
 window.buildKLineOption = buildKLineOption;
 window.applyDateFilter = applyDateFilter;
 window.loadRun = loadRun;
 window.showRunsList = showRunsList;
+window.toggleZoom = toggleZoom;
+window.resetZoom = resetZoom;
+window.toggleEquity = toggleEquity;
+window.toggleMA = toggleMA;
+window.annotationFilterToggle = annotationFilterToggle;
+window.annotationFilterSelectAll = annotationFilterSelectAll;
+window.annotationFilterSelectNone = annotationFilterSelectNone;
+window.toggleAnnotationFilterPanel = toggleAnnotationFilterPanel;
 
 // Global handlers
 window.onerror = function(message, source, lineno, colno, error) {
@@ -47,6 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
 export {
     appState,
     PATTERN_COLORS,
+    STRATEGY_DISPLAY_NAMES,
+    getStrategyDisplayName,
     buildKLineOption,
     buildEquityOption,
     buildTooltipContent,
@@ -63,9 +79,17 @@ export {
     toggleZoom,
     resetZoom,
     toggleEquity,
+    toggleMA,
+    setupChartSync,
     loadData,
     loadRun,
     showRunsList,
     hideRunsList,
-    applyDateFilter
+    applyDateFilter,
+    renderHeatmapChart,
+    renderDrawdownChart,
+    renderTradeDistribution,
+    renderVersionCompare,
+    disposeVersionCompare,
+    buildVersionCompareOption
 };

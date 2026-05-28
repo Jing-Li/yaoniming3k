@@ -1,7 +1,7 @@
 # ADR-0010: 前端模块化重构
 
 ## Status
-Proposed
+Implemented
 
 ## Context
 

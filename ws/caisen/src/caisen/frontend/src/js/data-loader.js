@@ -5,9 +5,16 @@
 
 import { appState } from './app-state.js';
 import { showError, renderAll } from './components.js';
-import { renderKLineChart, renderEquityChart } from './chart-renderer.js';
+import { renderKLineChart, renderEquityChart, setupChartSync, lazyInitChart } from './chart-renderer.js';
 import { renderTradesTable, renderPatternLegend, initDateInputs } from './components.js';
 import { DEBUG_CONFIG } from './constants.js';
+import { buildFilterPanel } from './annotation-filter.js';
+import { renderHeatmapChart } from './heatmap-chart.js';
+import { renderDrawdownChart } from './drawdown-chart.js';
+import { renderTradeDistribution } from './trade-distribution.js';
+
+// ==================== Data Cache ====================
+const dataCache = new Map();
 
 /**
  * Get data URL from query params
@@ -105,6 +112,64 @@ export function loadRun(runId) {
 }
 
 /**
+ * 验证可视化数据是否可用
+ * @param {object} data
+ * @returns {{valid: boolean, message: string}}
+ */
+export function validateVisualizationData(data) {
+    if (!data) return { valid: false, message: '未获取到数据' };
+    if (!Array.isArray(data.bars) || data.bars.length === 0) {
+        return { valid: false, message: '无K线数据，无法显示蜡烛图' };
+    }
+    const firstBar = data.bars[0];
+    const requiredFields = ['timestamp', 'open', 'high', 'low', 'close'];
+    const missing = requiredFields.filter(f => firstBar[f] === undefined || firstBar[f] === null);
+    if (missing.length > 0) {
+        return { valid: false, message: `K线数据格式不完整，缺少: ${missing.join(', ')}` };
+    }
+    return { valid: true, message: '' };
+}
+
+/**
+ * 展示数据不可用的友好提示，并隐藏原有图表区域
+ * @param {string} message
+ */
+export function showDataError(message) {
+    // 隐藏原有图表与周边面板
+    document.querySelectorAll('.chart-container').forEach(c => { c.style.display = 'none'; });
+    const metricsPanel = document.getElementById('metrics-panel');
+    if (metricsPanel) metricsPanel.style.display = 'none';
+    const tradesPanel = document.querySelector('.trades-panel');
+    if (tradesPanel) tradesPanel.style.display = 'none';
+
+    // 防止重复插入
+    document.querySelectorAll('.data-error').forEach(el => el.remove());
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'data-error';
+    errorDiv.innerHTML = `
+        <div style="text-align:center; padding:60px 20px; color:var(--text-secondary);">
+            <div style="font-size:48px; margin-bottom:16px;">📊</div>
+            <h3 style="color:var(--text-primary); margin-bottom:8px;">数据不可用</h3>
+            <p>${message}</p>
+            <p style="margin-top:12px; font-size:var(--font-size-sm); color:var(--text-muted);">
+                该回测记录可能数据不完整或已损坏
+            </p>
+            <a href="/" style="display:inline-block; margin-top:20px; padding:8px 20px;
+               background:var(--glass-bg); border:1px solid var(--border-default);
+               border-radius:var(--radius-md); color:var(--text-primary); text-decoration:none;">
+                ← 返回列表
+            </a>
+        </div>
+    `;
+
+    const main = document.querySelector('.report-content')
+        || document.querySelector('main')
+        || document.body;
+    main.prepend(errorDiv);
+}
+
+/**
  * Load data from API or local file
  */
 export async function loadData() {
@@ -116,22 +181,41 @@ export async function loadData() {
             return;
         }
 
-        const apiBase = getApiBase();
+        // Check cache first
         let rawData;
-
-        if (apiBase && window.location.host) {
-            const response = await fetch(apiBase);
-            if (!response.ok) {
-                throw new Error(`API ${response.status}: ${response.statusText}`);
-            }
-            rawData = await response.json();
+        if (dataCache.has(runId)) {
+            DEBUG_CONFIG.log('[Data] 命中缓存:', runId);
+            rawData = dataCache.get(runId);
         } else {
-            const url = getDataUrl();
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const apiBase = getApiBase();
+
+            if (apiBase && window.location.host) {
+                const response = await fetch(apiBase);
+                if (!response.ok) {
+                    throw new Error(`API ${response.status}: ${response.statusText}`);
+                }
+                rawData = await response.json();
+            } else {
+                const url = getDataUrl();
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                rawData = await response.json();
             }
-            rawData = await response.json();
+
+            // Store in cache
+            dataCache.set(runId, rawData);
+            DEBUG_CONFIG.log('[Data] 已缓存:', runId);
+        }
+
+        // 数据有效性验证：不合法的数据不进入渲染流程
+        const validation = validateVisualizationData(rawData);
+        if (!validation.valid) {
+            DEBUG_CONFIG.error('[Data] 数据验证失败:', validation.message);
+            hideRunsList();
+            showDataError(validation.message);
+            return;
         }
 
         appState.setRawData(rawData);
@@ -144,6 +228,16 @@ export async function loadData() {
         renderTradesTable();
         renderPatternLegend();
         initDateInputs();
+        buildFilterPanel(rawData.annotations);
+
+        // Lazy-load non-first-screen charts (drawdown, heatmap, distribution)
+        lazyInitChart('drawdown-chart', () => renderDrawdownChart());
+        lazyInitChart('heatmap-chart', () => renderHeatmapChart());
+        lazyInitChart('trade-distribution-chart', () => renderTradeDistribution());
+
+        // After all charts are initialized, wire up cross-chart synchronization
+        // (idempotent: only binds the first time it's called).
+        setupChartSync();
     } catch (error) {
         DEBUG_CONFIG.error('[Data] 加载失败:', error.message);
         showError(error.message);
@@ -185,4 +279,8 @@ export function applyDateFilter() {
     renderEquityChart();
     renderTradesTable();
     renderPatternLegend();
+    buildFilterPanel(filteredData.annotations);
+    renderDrawdownChart();
+    renderHeatmapChart();
+    renderTradeDistribution();
 }

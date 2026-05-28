@@ -5,9 +5,10 @@ from caisen.core.bar import Bar
 from caisen.core.order import Order, Side
 from caisen.core.engine import BacktestEngine
 from caisen.core.config import BacktestConfig
+from caisen.strategy.base import Strategy, BarResult
 
 
-class BuyAndHoldStrategy:
+class BuyAndHoldStrategy(Strategy):
     """买入后持有到最后的简单策略"""
 
     def __init__(self):
@@ -16,17 +17,14 @@ class BuyAndHoldStrategy:
     def on_init(self, config):
         pass
 
-    def on_bar(self, bar: Bar):
+    def on_bar(self, bar: Bar) -> BarResult:
         if not self.bought and bar.timestamp == datetime(2024, 1, 2):
             self.bought = True
-            return Order(symbol="TEST", side=Side.BUY, quantity=100)
-        return None
+            return BarResult(order=Order(symbol="TEST", side=Side.BUY, quantity=100))
+        return BarResult()
 
     def on_session_end(self):
         pass
-
-    def get_annotations(self):
-        return []
 
 
 def test_final_equity_uses_market_price():

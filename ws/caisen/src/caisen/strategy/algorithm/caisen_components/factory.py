@@ -12,6 +12,7 @@ from ..patterns import (
     TriangleDetector,
     FlagDetector, RectangleDetector, RoundingBottomDetector,
     CupHandleDetector, BreakoutPullbackDetector,
+    BreakdownPullbackDetector, FakeBreakoutDetector,
 )
 
 if TYPE_CHECKING:
@@ -30,6 +31,8 @@ DETECTOR_CLASSES = {
     "rounding_bottom": RoundingBottomDetector,
     "cup_handle": CupHandleDetector,
     "breakout_pullback": BreakoutPullbackDetector,
+    "breakdown_pullback": BreakdownPullbackDetector,
+    "fake_breakout": FakeBreakoutDetector,
 }
 
 # 检测器默认配置
@@ -43,6 +46,8 @@ DEFAULT_DETECTOR_CONFIG = {
     "rounding_bottom": {"min_bars": 15, "stop_loss_factor": 0.93, "min_profit_pct": 0.03},
     "cup_handle": {"min_bars": 20, "stop_loss_factor": 0.93, "min_profit_pct": 0.03},
     "breakout_pullback": {"lookback_period": 30, "stop_loss_factor": 0.93, "min_profit_pct": 0.03},
+    "breakdown_pullback": {"min_bars": 15, "lookback_period": 30, "max_amplitude": 0.05, "min_platform_bars": 8, "max_pullback_bars": 3, "breakdown_tolerance": 0.03, "stop_loss_factor": 0.93, "min_profit_pct": 0.03},
+    "fake_breakout": {"min_bars": 15, "lookback_period": 30, "max_amplitude": 0.05, "min_platform_bars": 8, "max_fallback_bars": 3, "fake_tolerance": 0.03, "stop_loss_factor": 1.02, "min_profit_pct": 0.03},
 }
 
 
@@ -204,6 +209,28 @@ class DetectorFactory:
             return detector_class(
                 lookback_period=config.get("lookback_period", 30),
                 stop_loss_factor=config.get("stop_loss_factor", self.default_stop_loss),
+                min_profit_pct=config.get("min_profit_pct", self.default_profit_pct),
+            )
+        elif pattern_name == "breakdown_pullback":
+            return detector_class(
+                min_bars=config.get("min_bars", 15),
+                lookback_period=config.get("lookback_period", 30),
+                max_amplitude=config.get("max_amplitude", 0.05),
+                min_platform_bars=config.get("min_platform_bars", 8),
+                max_pullback_bars=config.get("max_pullback_bars", 3),
+                breakdown_tolerance=config.get("breakdown_tolerance", 0.03),
+                stop_loss_factor=config.get("stop_loss_factor", self.default_stop_loss),
+                min_profit_pct=config.get("min_profit_pct", self.default_profit_pct),
+            )
+        elif pattern_name == "fake_breakout":
+            return detector_class(
+                min_bars=config.get("min_bars", 15),
+                lookback_period=config.get("lookback_period", 30),
+                max_amplitude=config.get("max_amplitude", 0.05),
+                min_platform_bars=config.get("min_platform_bars", 8),
+                max_fallback_bars=config.get("max_fallback_bars", 3),
+                fake_tolerance=config.get("fake_tolerance", 0.03),
+                stop_loss_factor=config.get("stop_loss_factor", 1.02),
                 min_profit_pct=config.get("min_profit_pct", self.default_profit_pct),
             )
         else:

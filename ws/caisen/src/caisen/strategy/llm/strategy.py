@@ -3,7 +3,7 @@
 from typing import List, Optional, TYPE_CHECKING
 import os
 
-from caisen.strategy.base import Strategy, Annotation
+from caisen.strategy.base import Strategy, Annotation, BarResult
 
 if TYPE_CHECKING:
     from caisen.core.bar import Bar
@@ -65,7 +65,7 @@ class LLMStrategy(Strategy):
         self.position = 0  # 0=空仓, 1=持仓
         self._bars = []  # 保存所有 bar 用于后续处理
         self.cache = SignalCache()
-        self._annotations_returned = False  # 跟踪是否已返回标注
+        self._annotations_emitted = False  # 标注是否已随 BarResult 发出
 
     def _create_client_from_config(self, config: "LLMStrategyConfig"):
         """根据配置创建 LLM 客户端"""
@@ -95,11 +95,15 @@ class LLMStrategy(Strategy):
             examples_count=config.examples
         )
 
-    def analyze(self, bars) -> "LLMResult":
-        """分析 K 线数据（组合三个组件）
+    def analyze(self, bars, batch_size: int = 20) -> "LLMResult":
+        """分析 K 线数据（组合三个组件，支持分批处理）
+
+        当 K 线数量超过 batch_size 时自动分批调用 LLM，合并结果。
+        分批可避免推理模型因 thinking 消耗 token 导致响应截断。
 
         Args:
             bars: K 线数据列表
+            batch_size: 每批最多处理的 K 线数量（默认 20）
 
         Returns:
             LLMResult: 包含 signals 和 annotations
@@ -109,9 +113,20 @@ class LLMStrategy(Strategy):
         if self.llm_client is None:
             raise ValueError("llm_client is required")
 
-        prompt = self.prompt_builder.build(bars)
-        response = self.llm_client.call(prompt)
-        return self.response_parser.parse(response)
+        from .client import LLMResult
+
+        all_signals: list = []
+        all_annotations: list = []
+
+        for i in range(0, len(bars), batch_size):
+            batch = bars[i:i + batch_size]
+            prompt = self.prompt_builder.build(batch)
+            response = self.llm_client.call(prompt)
+            result = self.response_parser.parse(response)
+            all_signals.extend(result.signals)
+            all_annotations.extend(result.annotations)
+
+        return LLMResult(signals=all_signals, annotations=all_annotations)
 
     def on_init(self, config: "BacktestConfig") -> None:
         """回测开始前调用
@@ -162,60 +177,59 @@ class LLMStrategy(Strategy):
         self.cache.index_signals(result.signals)
         self.cache.set_annotations(result.annotations)
 
-    def on_bar(self, bar: "Bar") -> Optional["Order"]:
-        """每根 K 线调用
+    def on_bar(self, bar: "Bar") -> "BarResult":
+        """每根 K 线调用，返回 BarResult
 
-        查缓存获取信号，返回对应的 Order
+        第一次调用时附带所有缓存标注（LLM 在 on_init 阶段预计算）。
         """
         from caisen.core.order import Order, Side
+        from caisen.strategy.base import AnnotationType
+        from datetime import datetime
 
-        # 获取时间戳字符串
-        ts = bar.timestamp.strftime("%Y-%m-%d")
+        # 第一次调用时一次性发出所有标注
+        annotations = []
+        if not self._annotations_emitted:
+            self._annotations_emitted = True
+            for raw in self.cache.get_annotations():
+                ts = raw.get("timestamp", "")
+                type_str = raw.get("type", "neutral_signal")
+                if isinstance(ts, str):
+                    ts = datetime.fromisoformat(ts)
+                try:
+                    ann_type = AnnotationType(type_str)
+                except ValueError:
+                    import warnings
+                    warnings.warn(
+                        f"LLM 返回了未知 annotation type: '{type_str}'，已降级为 text_label",
+                        stacklevel=2
+                    )
+                    ann_type = AnnotationType.TEXT_LABEL
+                annotations.append(Annotation(
+                    type=ann_type,
+                    timestamp=ts,
+                    data=raw.get("data", {})
+                ))
 
         # 查缓存获取信号
-        action = self.cache.get(ts)
+        ts_key = bar.timestamp.strftime("%Y-%m-%d")
+        action = self.cache.get(ts_key)
 
-        # 根据信号和持仓状态决定是否下单
+        order = None
         if action == "buy" and self.position == 0:
             self.position = 1
-            return Order(symbol=bar.symbol, side=Side.BUY)
+            order = Order(symbol=bar.symbol, side=Side.BUY)
         elif action == "sell" and self.position == 1:
             self.position = 0
-            return Order(symbol=bar.symbol, side=Side.SELL)
+            order = Order(symbol=bar.symbol, side=Side.SELL)
 
-        # hold 或状态不匹配，返回 None
-        return None
+        return BarResult(order=order, annotations=annotations)
 
     def on_session_end(self) -> None:
         """回测结束后调用"""
         pass
 
-    def get_annotations(self) -> List[Annotation]:
-        """获取可视化标注
-
-        注意：每个标注只返回一次，避免重复
-        """
-        if self._annotations_returned:
-            return []
-
-        self._annotations_returned = True
-
-        from caisen.strategy.base import Annotation as BaseAnnotation, AnnotationType
-        from datetime import datetime
-
-        annotations = []
-        for ann in self.cache.get_annotations():
-            ts = ann.get("timestamp", "")
-            if isinstance(ts, str):
-                ts = datetime.fromisoformat(ts)
-            annotations.append(BaseAnnotation(
-                type=AnnotationType(ann.get("type", "neutral_signal")),
-                timestamp=ts,
-                data=ann.get("data", {})
-            ))
-        return annotations
-
     def reset(self) -> None:
         """重置策略状态"""
         self.position = 0
         self._bars = []
+        self._annotations_emitted = False

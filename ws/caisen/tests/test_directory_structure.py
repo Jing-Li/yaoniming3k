@@ -30,7 +30,7 @@ class TestDirectoryStructure:
         """顶层目录符合规范"""
         # 允许的顶层目录（参考 ADR-0009）
         allowed = {"core", "strategy", "data", "result", "cli", "llm",
-                   "frontend", "web"}  # frontend 和 web 是 visualization 的子目录
+                   "frontend", "web", "backtest", "config"}  # backtest: 回测runner; config: 项目配置
         actual = {d.name for d in caisen_dir.iterdir() if d.is_dir() and not d.name.startswith("__")}
 
         unknown = actual - allowed

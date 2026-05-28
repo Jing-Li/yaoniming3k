@@ -42,6 +42,7 @@ class FlagDetector(PatternDetector):
         if len(bars) < self.min_bars:
             return None
 
+        self._last_bars = bars  # 保存引用用于量能分析
         current_bar = bars[-1]
 
         # 找旗杆（最近的大幅涨跌）
@@ -151,7 +152,14 @@ class FlagDetector(PatternDetector):
         Returns:
             PatternSignal
         """
-        confidence = 0.6  # 简化实现，固定置信度
+        # 量能确认：旗形突破应放量
+        volume_grade = self.volume_analyzer.grade(self._last_bars, len(self._last_bars) - 1) if hasattr(self, '_last_bars') else 'normal'
+        if volume_grade == 'strong':
+            confidence = 0.75
+        elif volume_grade == 'normal':
+            confidence = 0.6
+        else:
+            confidence = 0.45
 
         if direction == "long":
             target = bar.close + pole_height
@@ -167,6 +175,7 @@ class FlagDetector(PatternDetector):
             target=target,
             points=[],
             direction=direction,
+            volume_grade=volume_grade,
         )
 
 
@@ -263,7 +272,15 @@ class RectangleDetector(PatternDetector):
             置信度 0~1
         """
         completion = 1.0 - min(1.0, amplitude / avg_price / self.max_amplitude)
-        volume = min(1.0, self._volume_ratio(bars) / 2.0)
+
+        # 量能确认：矩形突破应放量
+        volume_grade = self.volume_analyzer.grade(bars, len(bars) - 1)
+        if volume_grade == 'strong':
+            volume = 0.9
+        elif volume_grade == 'normal':
+            volume = 0.6
+        else:
+            volume = 0.3
 
         if direction == "long":
             trend = 0.7 if self._is_trend_up(bars, 20) else 0.3
@@ -314,7 +331,26 @@ class RoundingBottomDetector(PatternDetector):
         low_idx, neckline = result
 
         if current_bar.close > neckline:
-            confidence = 0.7  # 简化实现
+            # 量能确认：圆弧底完成期应逐步放量
+            # 检查后半段K线量能是否递增
+            recent_bars = bars[-self.min_bars:]
+            mid_point = len(recent_bars) // 2
+            indices = list(range(mid_point, len(recent_bars)))
+            # 简化：取几个关键点检查递增
+            key_indices = [len(bars) - self.min_bars + mid_point,
+                          len(bars) - self.min_bars + (mid_point + len(recent_bars)) // 2,
+                          len(bars) - 1]
+            key_indices = [i for i in key_indices if 0 <= i < len(bars)]
+            is_progressive = self.volume_analyzer.progressive_volume(bars, key_indices)
+
+            volume_grade = self.volume_analyzer.grade(bars, len(bars) - 1)
+            if is_progressive and volume_grade == 'strong':
+                confidence = 0.85
+            elif is_progressive or volume_grade != 'weak':
+                confidence = 0.7
+            else:
+                confidence = 0.5
+
             amplitude = neckline - bars[-self.min_bars + low_idx].low
             target = neckline + amplitude
             stop_loss = bars[-self.min_bars + low_idx].low * self.stop_loss_factor
@@ -327,6 +363,8 @@ class RoundingBottomDetector(PatternDetector):
                 points=[],
                 neckline=neckline,
                 direction="long",
+                volume_progressive=is_progressive,
+                volume_grade=volume_grade,
             )
 
         return None
@@ -404,7 +442,15 @@ class CupHandleDetector(PatternDetector):
         handle_high, cup_bottom, cup_high = result
 
         if current_bar.close > handle_high:
-            confidence = 0.75  # 简化实现
+            # 量能确认：杯柄突破应放量
+            volume_grade = self.volume_analyzer.grade(bars, len(bars) - 1)
+            if volume_grade == 'strong':
+                confidence = 0.85
+            elif volume_grade == 'normal':
+                confidence = 0.7
+            else:
+                confidence = 0.55
+
             amplitude = cup_high - cup_bottom
             target = current_bar.close + amplitude
             stop_loss = cup_bottom * self.stop_loss_factor
@@ -418,6 +464,7 @@ class CupHandleDetector(PatternDetector):
                 handle_high=handle_high,
                 cup_high=cup_high,
                 direction="long",
+                volume_grade=volume_grade,
             )
 
         return None
@@ -501,7 +548,15 @@ class BreakoutPullbackDetector(PatternDetector):
         # 检查突破前高后的回踩再涨
         # 简化实现：当前价格突破前高
         if current_bar.close > previous_high:
-            confidence = 0.7
+            # 量能确认：过前高时应放量
+            volume_grade = self.volume_analyzer.grade(bars, len(bars) - 1)
+            if volume_grade == 'strong':
+                confidence = 0.8
+            elif volume_grade == 'normal':
+                confidence = 0.65
+            else:
+                confidence = 0.5
+
             amplitude = current_bar.close - previous_high
             target = current_bar.close + amplitude
             stop_loss = previous_high * self.stop_loss_factor
@@ -514,6 +569,7 @@ class BreakoutPullbackDetector(PatternDetector):
                 points=[],
                 breakout_high=previous_high,
                 direction="long",
+                volume_grade=volume_grade,
             )
 
         return None

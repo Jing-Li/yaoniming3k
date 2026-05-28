@@ -4,6 +4,31 @@
  */
 
 /**
+ * Strategy display name map
+ * 将技术性策略类名映射为形态化的英文代号
+ *  - Phoenix : 凤凰，蔡森十二形态
+ *  - Tide    : 潮汐，均线交叉
+ *  - Eagle   : 鹰眼，突破
+ *  - Storm   : 风暴，动量
+ *  - Anchor  : 锚点，均值回归
+ */
+export const STRATEGY_DISPLAY_NAMES = {
+    'CaiSenStrategy': 'Phoenix',
+    'MACrossStrategy': 'Tide',
+    'BreakoutStrategy': 'Eagle',
+    'MomentumStrategy': 'Storm',
+    'MeanReversionStrategy': 'Anchor',
+};
+
+/**
+ * Get strategy display name, fall back to the raw name when unmapped.
+ */
+export function getStrategyDisplayName(rawName) {
+    if (!rawName) return '';
+    return STRATEGY_DISPLAY_NAMES[rawName] || rawName;
+}
+
+/**
  * Pattern colors map
  */
 export const PATTERN_COLORS = {
@@ -18,7 +43,9 @@ export const PATTERN_COLORS = {
     double_bottom: '#68d391',
     cup_and_handle: '#38b2ac',
     arc_bottom: '#ed64a6',
-    through_high: '#4299e1'
+    through_high: '#4299e1',
+    breakdown_pullback: '#38b2ac',
+    fake_breakout: '#e53e3e'
 };
 
 /**

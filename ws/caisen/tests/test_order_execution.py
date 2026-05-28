@@ -6,13 +6,13 @@ from caisen.core.bar import Bar
 from caisen.core.order import Order, Side
 from caisen.core.engine import BacktestEngine
 from caisen.core.config import BacktestConfig
-from caisen.strategy.base import Strategy
+from caisen.strategy.base import Strategy, BarResult
 
 
 class AlwaysBuyStrategy(Strategy):
     """总是买入的策略"""
-    def on_bar(self, bar: Bar) -> Order:
-        return Order(symbol=bar.symbol, side=Side.BUY, quantity=100)
+    def on_bar(self, bar: Bar) -> BarResult:
+        return BarResult(order=Order(symbol=bar.symbol, side=Side.BUY, quantity=100))
 
 
 def test_market_order_executes_at_next_bar_open():

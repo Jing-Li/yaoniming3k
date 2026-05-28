@@ -1,17 +1,25 @@
 /* ===== CSS Variables ===== */
 :root {
-  /* Colors */
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #111827;
-  --bg-card: #1a2234;
+  /* ----- Background Layers (3-tier dark) ----- */
+  --bg-primary: #060912;       /* deepest, app shell */
+  --bg-secondary: #0f172a;     /* mid layer, sections */
+  --bg-tertiary: #1a2234;      /* elevated surfaces */
+  --bg-card: #1a2234;          /* legacy alias, kept for compatibility */
   --bg-card-hover: #1f2a40;
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(96, 165, 250, 0.3);
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  /* ----- Borders ----- */
+  --border-subtle: rgba(255, 255, 255, 0.04);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-color: var(--border-default); /* legacy alias */
+  --border-hover: rgba(96, 165, 250, 0.35);
 
+  /* ----- Text (3-tier hierarchy) ----- */
+  --text-primary: #f8fafc;     /* near-white, headlines */
+  --text-secondary: #cbd5e1;   /* body, secondary info */
+  --text-muted: #64748b;       /* labels, captions */
+
+  /* ----- Semantic / Trading Colors ----- */
   --color-up: #10b981;
   --color-up-bg: rgba(16, 185, 129, 0.15);
   --color-down: #ef4444;
@@ -21,29 +29,77 @@
   --color-accent: #8b5cf6;
   --color-accent-bg: rgba(139, 92, 246, 0.15);
 
-  /* Spacing */
+  /* ----- Status Colors ----- */
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.12);
+  --color-danger: #ef4444;
+  --color-danger-bg: rgba(239, 68, 68, 0.12);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.12);
+
+  /* ----- Gradients ----- */
+  --gradient-up: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-down: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139, 92, 246, 0.18), transparent 60%),
+                   radial-gradient(ellipse 60% 40% at 20% 10%, rgba(56, 189, 248, 0.12), transparent 60%),
+                   radial-gradient(ellipse 60% 40% at 80% 20%, rgba(16, 185, 129, 0.10), transparent 60%);
+  --gradient-text: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+
+  /* ----- Glassmorphism ----- */
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-bg-strong: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 12px;
+
+  /* ----- Typography Scale ----- */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-md: 1.125rem;    /* 18px */
+  --font-size-lg: 1.25rem;     /* 20px */
+  --font-size-xl: 1.5rem;      /* 24px */
+  --font-size-2xl: 1.875rem;   /* 30px */
+  --font-size-3xl: 2.25rem;    /* 36px */
+
+  /* ----- Spacing ----- */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
+  --spacing-3xl: 72px;
 
-  /* Border Radius */
+  /* ----- Border Radius ----- */
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
+  --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  /* ----- Shadows ----- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
-  --shadow-glow-up: 0 0 20px rgba(16, 185, 129, 0.2);
-  --shadow-glow-down: 0 0 20px rgba(239, 68, 68, 0.2);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --shadow-glow-up: 0 0 24px rgba(16, 185, 129, 0.25);
+  --shadow-glow-down: 0 0 24px rgba(239, 68, 68, 0.25);
+  --shadow-glow-primary: 0 0 32px rgba(96, 165, 250, 0.25);
+  --shadow-glow-accent: 0 0 32px rgba(139, 92, 246, 0.22);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 
-  /* Transitions */
-  --transition-fast: 150ms ease;
+  /* ----- Transitions ----- */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ----- Z-Index ----- */
+  --z-base: 1;
+  --z-sticky: 100;
+  --z-overlay: 1000;
+  --z-tooltip: 1100;
 }

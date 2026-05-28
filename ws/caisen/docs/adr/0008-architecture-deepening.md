@@ -1,7 +1,7 @@
 # ADR-0008: 架构深化改进
 
 ## Status
-Proposed
+Implemented
 
 ## Context
 通过架构审查发现7个需要改进的架构问题，涉及模块深度、接缝质量、测试性和知识局部性。

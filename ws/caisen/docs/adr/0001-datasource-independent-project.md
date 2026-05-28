@@ -2,7 +2,7 @@
 
 ## 状态
 
-Accepted
+Superseded — 数据加载模块已合并到 caisen 核心包内（见 ADR-0007），caisen-data 独立项目未单独创建。
 
 ## 日期
 

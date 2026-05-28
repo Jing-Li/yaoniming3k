@@ -119,183 +119,66 @@ RULES_FRAMEWORK = """## 蔡森形态识别规则（严格版 V3）
 
 **观望（hold）**：不满足买入条件或持仓中未触发卖出条件"""
 
-OUTPUT_FORMAT = """## 输出格式（严格 JSON）
+OUTPUT_FORMAT = """## 输出格式（严格 JSON，禁止任何其他文本）
 
-必须为每根 K 线输出信号，无信号用 hold。
+**直接输出合法 JSON，不得用 markdown 代码块包裹，不得有任何前缀/后缀说明文字。**
 
-```json
+输出结构：
 {
   "signals": [
     {
-      "timestamp": "YYYY-MM-DD HH:mm",
+      "timestamp": "YYYY-MM-DD",
       "action": "buy|sell|hold",
       "confidence": 0.0-1.0,
-      "reason": "判定依据（趋势+形态+量能三要素）"
+      "reason": "趋势:[MA5>MA20✓/✗] 形态:[形态名或无] 量能:[放量✓/缩量✗/无量✗]"
     }
   ],
   "annotations": [
     {
-      "timestamp": "YYYY-MM-DD HH:mm",
-      "type": "buy_signal|sell_signal|pattern_mark|support|resistance",
-      "data": {
-        "price": 1234.56,
-        "label": "形态标签",
-        "description": "详细描述"
-      }
+      "timestamp": "YYYY-MM-DD",
+      "type": "buy_signal|sell_signal|pattern_mark|horizontal_line",
+      "data": {"price": 1234.56, "label": "标签", "description": "描述"}
     }
   ]
 }
-```
 
 ### 判定优先级（严格按此顺序）
 
-1. **卖出优先**：有持仓时，先检查是否触发卖出条件
-2. **趋势次之**：不满足上升趋势时，不买入
-3. **形态最后**：趋势+量能都满足时，才检查形态
+1. **卖出优先**：有持仓时，先检查止损/趋势破坏/形态破坏
+2. **趋势次之**：MA5 < MA20 时禁止 buy
+3. **形态最后**：趋势+量能满足时才检查形态
 
-### 关键规则
+### 硬性规则
 
-- 每根 K 线必须有输出（buy/sell/hold）
-- confidence 必须反映信号质量
-- reason 必须说明判定依据
-
-### 禁止事项
-
+- 每根 K 线必须有一条 signal（buy/sell/hold）
+- reason 必须包含趋势/形态/量能三项，格式严格如上
+- confidence 须在 [0.0, 1.0] 之间
 - 禁止输出空 signals 数组
 - 禁止跳过任何 K 线
-- 禁止在下降趋势中输出 buy"""
+- 禁止在 MA5 < MA20 时输出 buy"""
 
-EXAMPLES_TEMPLATE = """## 示例（高质量信号标准）
+EXAMPLES_TEMPLATE = """## 示例（reason 必须严格使用三要素格式）
 
 ### 示例 1：上升趋势 + 平台突破 + 放量 = 买入
+{"signals": [
+  {"timestamp": "2024-01-04", "action": "hold", "confidence": 0.0, "reason": "趋势:[MA5>MA20✓] 形态:[等待突破确认] 量能:[整理期缩量✓]"},
+  {"timestamp": "2024-01-05", "action": "buy",  "confidence": 0.92, "reason": "趋势:[MA5>MA20✓] 形态:[平台突破颈线102✓] 量能:[放量2000>均量1333✓]"}
+], "annotations": [
+  {"timestamp": "2024-01-05", "type": "buy_signal", "data": {"price": 103.5, "label": "平台突破", "description": "上升趋势放量突破颈线"}}
+]}
 
-**判定过程**：
-1. 趋势：MA5 > MA20 ✓
-2. 形态：5 根横盘整理，突破颈线 ✓
-3. 量能：突破量 2000 > 均量 1000 × 1.5 ✓
+### 示例 2：下降趋势 = 禁止买入
+{"signals": [
+  {"timestamp": "2024-01-06", "action": "hold", "confidence": 0.0, "reason": "趋势:[MA5<MA20✗] 形态:[无] 量能:[无量✗]"},
+  {"timestamp": "2024-01-07", "action": "hold", "confidence": 0.0, "reason": "趋势:[MA5<MA20✗] 形态:[无] 量能:[无量✗]"}
+]}
 
-**结论**：置信度 0.92 买入
+### 示例 3：趋势满足但量能不足 = 观望
+{"signals": [
+  {"timestamp": "2024-01-08", "action": "hold", "confidence": 0.55, "reason": "趋势:[MA5>MA20✓] 形态:[平台突破✓] 量能:[缩量800<均量1500✗]"}
+]}
 
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-04 14:00", "action": "hold", "confidence": 0.0, "reason": "等待突破确认"},
-    {"timestamp": "2024-01-04 15:00", "action": "buy", "confidence": 0.92, "reason": "上升趋势(MA5>MA20) + 平台突破颈线102 + 放量2000>均量1333"}
-  ],
-  "annotations": [
-    {"timestamp": "2024-01-04 15:00", "type": "buy_signal", "data": {"price": 103.5, "label": "平台突破", "description": "上升趋势放量突破"}}
-  ]
-}
-```
-
-### 示例 2：下降趋势 = 不买入
-
-**判定过程**：
-1. 趋势：MA5 < MA20 ✗
-2. 结论：禁止买入
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-06 10:00", "action": "hold", "confidence": 0.0, "reason": "MA5<MA20下降趋势，禁止买入"},
-    {"timestamp": "2024-01-06 11:00", "action": "hold", "confidence": 0.0, "reason": "下降趋势中，等待企稳"}
-  ]
-}
-```
-
-### 示例 3：突破无量 = 观望
-
-**判定过程**：
-1. 趋势：MA5 > MA20 ✓
-2. 形态：平台突破 ✓
-3. 量能：突破量 800 < 均量 1000 ✗
-
-**结论**：量能不足，置信度 0.55 < 0.70，观望
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-07 12:00", "action": "hold", "confidence": 0.55, "reason": "上升趋势+平台突破，但量能不足(800<1500)，不满足量能条件"}
-  ]
-}
-```
-
-### 示例 4：破底翻 + 拉回确认 = 买入
-
-**判定过程**：
-1. 时刻 12:00：瞬间跌破下沿 98，量能萎缩 → 观察
-2. 时刻 13:00：拉回 99.5，量能放大 → 确认买入
-
-**结论**：第一买点，置信度 0.88
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-08 12:00", "action": "hold", "confidence": 0.0, "reason": "瞬间跌破98，等待拉回确认"},
-    {"timestamp": "2024-01-08 13:00", "action": "buy", "confidence": 0.88, "reason": "破底翻确认：跌破98后拉回101，放量1500>均量1000"}
-  ]
-}
-```
-
-### 示例 5：W 底颈线突破 = 买入
-
-**判定过程**：
-1. 两个低点：95.5 和 95.2（差异 < 5%）✓
-2. 颈线突破：收盘 101.5 > 颈线 98 ✓
-3. 量能：突破量 1800 > 均量 ✓
-
-**结论**：W 底形成，置信度 0.90
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-09 15:00", "action": "buy", "confidence": 0.90, "reason": "W底颈线突破：双底95.5/95.2确认，颈线98放量突破"}
-  ],
-  "annotations": [
-    {"timestamp": "2024-01-09 15:00", "type": "buy_signal", "data": {"price": 101.5, "label": "W底突破", "description": "颈线突破买入"}}
-  ]
-}
-```
-
-### 示例 6：止损触发 = 卖出
-
-**判定过程**：
-1. 持仓中，买入价 100，当前价 97.5（亏损 2.5%）
-2. 触发硬性止损条件（亏损 ≥ 2%）
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-10 11:00", "action": "sell", "confidence": 1.0, "reason": "硬性止损触发：买入价100，当前97.5，亏损2.5% ≥ 2%止损线"}
-  ]
-}
-```
-
-### 示例 7：趋势破坏 = 卖出
-
-**判定过程**：
-1. 持仓中，MA5 从 > MA20 转为 < MA20
-2. 趋势转空，立即卖出
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-11 14:00", "action": "sell", "confidence": 1.0, "reason": "趋势破坏：MA5(98) < MA20(99)，上升趋势结束，卖出"}
-  ]
-}
-```
-
-### 示例 8：持仓中管理 = 每根K线检查
-
-**判定过程**：
-1. 持仓买入价 100，止损位 97（形态低点）
-2. 当前价格 97.5，未破止损，但 MA5 < MA20
-3. 趋势破坏，卖出
-
-```json
-{
-  "signals": [
-    {"timestamp": "2024-01-12 10:00", "action": "sell", "confidence": 1.0, "reason": "持仓管理：趋势破坏MA5<MA20，卖出保护本金"}
-  ]
-}
-```""
+### 示例 4：止损触发 = 立即卖出
+{"signals": [
+  {"timestamp": "2024-01-10", "action": "sell", "confidence": 1.0, "reason": "趋势:[MA5<MA20✗] 形态:[跌破买入形态低点✗] 量能:[放量下跌] 止损:买入100当前97.5亏2.5%≥2%"}
+]}"""

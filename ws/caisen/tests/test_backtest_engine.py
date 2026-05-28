@@ -6,7 +6,7 @@ from caisen.core.engine import BacktestEngine, BacktestResult
 from caisen.core.config import BacktestConfig
 from caisen.core.bar import Bar
 from caisen.core.order import Order, Side
-from caisen.strategy.base import Strategy, Annotation, AnnotationType
+from caisen.strategy.base import Strategy, Annotation, AnnotationType, BarResult
 
 
 class DummyStrategy(Strategy):
@@ -15,25 +15,21 @@ class DummyStrategy(Strategy):
     def __init__(self):
         super().__init__()
         self.order_count = 0
-        self.annotations = []
 
     def on_init(self, config):
         pass
 
-    def on_bar(self, bar: Bar) -> Order:
+    def on_bar(self, bar: Bar) -> BarResult:
         self.order_count += 1
-        return Order(
+        return BarResult(order=Order(
             symbol=bar.symbol,
             side=Side.BUY,
             quantity=1,
             timestamp=bar.timestamp
-        )
+        ))
 
     def on_session_end(self):
         pass
-
-    def get_annotations(self):
-        return []
 
 
 class AlwaysHoldStrategy(Strategy):
@@ -46,22 +42,19 @@ class AlwaysHoldStrategy(Strategy):
     def on_init(self, config):
         pass
 
-    def on_bar(self, bar: Bar) -> Order:
+    def on_bar(self, bar: Bar) -> BarResult:
         if not self.bought:
             self.bought = True
-            return Order(
+            return BarResult(order=Order(
                 symbol=bar.symbol,
                 side=Side.BUY,
                 quantity=100,
                 timestamp=bar.timestamp
-            )
-        return None
+            ))
+        return BarResult()
 
     def on_session_end(self):
         pass
-
-    def get_annotations(self):
-        return []
 
 
 @pytest.fixture
@@ -160,30 +153,31 @@ class TestBacktestEngineRun:
             assert "positions" in point
 
     def test_run_collects_annotations(self, config, sample_bars):
-        """run() 收集策略标注"""
+        """run() 从 BarResult 收集策略标注"""
         engine = BacktestEngine(config)
 
         class AnnotatedStrategy(Strategy):
             def __init__(self):
                 super().__init__()
+                self._first = True
 
             def on_init(self, config):
                 pass
 
-            def on_bar(self, bar: Bar) -> Order:
-                return None
+            def on_bar(self, bar: Bar) -> BarResult:
+                if self._first:
+                    self._first = False
+                    return BarResult(annotations=[
+                        Annotation(
+                            type=AnnotationType.BUY_SIGNAL,
+                            timestamp=datetime(2024, 1, 1),
+                            data={"price": 100, "reason": "test"}
+                        )
+                    ])
+                return BarResult()
 
             def on_session_end(self):
                 pass
-
-            def get_annotations(self):
-                return [
-                    Annotation(
-                        type=AnnotationType.BUY_SIGNAL,
-                        timestamp=datetime(2024, 1, 1),
-                        data={"price": 100, "reason": "test"}
-                    )
-                ]
 
         strategy = AnnotatedStrategy()
         result = engine.run(strategy, sample_bars)

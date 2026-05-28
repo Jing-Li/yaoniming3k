@@ -55,9 +55,9 @@ class TestCaiSenStrategyV2:
         # 下跌行情 - W底前不应产生买入信号
         for i in range(20):
             bar = make_bar(i, 100 - i, 101 - i, 95 - i, 96 - i, volume=1000)
-            order = strategy.on_bar(bar)
+            bar_result = strategy.on_bar(bar)
             # 下跌趋势不应产生买入信号
-            if order and order.side == Side.BUY:
+            if bar_result.order and bar_result.order.side == Side.BUY:
                 assert False, "下跌趋势不应产生买入信号"
 
     def test_w_bottom_detection(self):
@@ -82,11 +82,11 @@ class TestCaiSenStrategyV2:
 
         # 4. 放量突破颈线103
         bar_breakout = make_bar(15, 101, 106, 100, 105, volume=1500)
-        order = strategy.on_bar(bar_breakout)
+        bar_result = strategy.on_bar(bar_breakout)
 
         # 突破颈线应产生买入信号
-        assert order is not None, "W底突破颈线应产生买入信号"
-        assert order.side == Side.BUY
+        assert bar_result.order is not None, "W底突破颈线应产生买入信号"
+        assert bar_result.order.side == Side.BUY
 
     def test_m_top_detection(self):
         """测试M头形态检测（仅验证检测功能，v2当前只支持做多）"""
@@ -129,15 +129,15 @@ class TestCaiSenStrategyV2:
 
         # 买入
         bar1 = make_bar(0, 100, 101, 99, 100, volume=1000)
-        order1 = strategy.on_bar(bar1)
-        assert order1 is None or order1.side == Side.BUY
+        br1 = strategy.on_bar(bar1)
+        assert br1.order is None or br1.order.side == Side.BUY
 
         # 持仓中，止损
         bar2 = make_bar(1, 100, 101, 94, 95, volume=1000)  # 跌破止损价
-        order2 = strategy.on_bar(bar2)
+        br2 = strategy.on_bar(bar2)
 
-        if order2 is not None:
-            assert order2.side == Side.SELL, "跌破止损价应触发卖出"
+        if br2.order is not None:
+            assert br2.order.side == Side.SELL, "跌破止损价应触发卖出"
 
     def test_position_management(self):
         """测试仓位管理"""
@@ -145,11 +145,11 @@ class TestCaiSenStrategyV2:
 
         # 产生买入信号
         bar = make_bar(0, 95, 100, 94, 99, volume=1000)
-        order1 = strategy.on_bar(bar)
+        br1 = strategy.on_bar(bar)
 
         # 再次买入同一标的应返回None（已有持仓）
         bar2 = make_bar(1, 99, 105, 98, 104, volume=1000)
-        order2 = strategy.on_bar(bar2)
+        br2 = strategy.on_bar(bar2)
         # 已有持仓，不应再次买入
         # 注意：取决于实现，可能是None或止盈单
 
@@ -164,6 +164,35 @@ class TestCaiSenStrategyV2:
         names = [d.name for d in strategy.detectors]
         assert "w_bottom" in names
         assert "m_top" in names
+
+    def test_all_twelve_patterns(self):
+        """测试蔡森十二形态全部可启用"""
+        all_patterns = [
+            "w_bottom", "m_top",
+            "head_and_shoulders_bottom", "head_and_shoulders_top",
+            "triangle", "flag", "rectangle",
+            "rounding_bottom", "cup_handle",
+            "breakout_pullback",
+            "breakdown_pullback", "fake_breakout",
+        ]
+        strategy = CaiSenStrategy(enabled_patterns=all_patterns)
+        assert len(strategy.detectors) == 12
+
+        names = [d.name for d in strategy.detectors]
+        for pattern in all_patterns:
+            assert pattern in names, f"{pattern} not in detector names"
+
+    def test_breakdown_pullback_enabled(self):
+        """测试破底翻形态启用"""
+        strategy = CaiSenStrategy(enabled_patterns=["breakdown_pullback"])
+        assert len(strategy.detectors) == 1
+        assert strategy.detectors[0].name == "breakdown_pullback"
+
+    def test_fake_breakout_enabled(self):
+        """测试假突破形态启用"""
+        strategy = CaiSenStrategy(enabled_patterns=["fake_breakout"])
+        assert len(strategy.detectors) == 1
+        assert strategy.detectors[0].name == "fake_breakout"
 
 
 class TestPatternDetectors:

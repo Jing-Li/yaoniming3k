@@ -9,6 +9,7 @@ from .portfolio import Portfolio
 from .position import Position
 from .config import BacktestConfig
 from .annotation import Annotation
+from .bar_result import BarResult
 from ..strategy.base import Strategy
 
 # Re-export BacktestResult for backward compatibility
@@ -29,8 +30,14 @@ class BacktestEngine:
         self.annotations: List[Annotation] = []
         self.strategy: Optional[Strategy] = None
 
-    def run(self, strategy: Strategy, bars: List[Bar]):
-        """运行回测"""
+    def run(self, strategy: Strategy, bars: List[Bar], on_bar=None):
+        """运行回测
+
+        Args:
+            strategy: 策略实例
+            bars: K 线数据列表
+            on_bar: 可选回调 on_bar(index, bar)，每根 bar 处理后调用
+        """
         self.strategy = strategy
 
         # 初始化策略
@@ -38,8 +45,15 @@ class BacktestEngine:
 
         # 主循环
         for i, bar in enumerate(bars[:-1]):
-            # 策略决策
-            order = strategy.on_bar(bar)
+            # 策略决策，返回 BarResult
+            bar_result = strategy.on_bar(bar)
+
+            # 兼容旧版：策略返回 Order 或 None
+            if isinstance(bar_result, BarResult):
+                order = bar_result.order
+                self.annotations.extend(bar_result.annotations)
+            else:
+                order = bar_result  # 兼容返回 Order/None 的旧策略
 
             # 执行订单
             if order:
@@ -50,8 +64,9 @@ class BacktestEngine:
             # 更新净值
             self._update_equity(bar)
 
-            # 收集标注
-            self.annotations.extend(strategy.get_annotations())
+            # 进度回调
+            if on_bar is not None:
+                on_bar(i, bar)
 
         # 最终更新
         self._update_equity(bars[-1])

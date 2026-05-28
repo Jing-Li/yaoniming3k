@@ -206,7 +206,8 @@ class SimpleBacktester:
 
 def main():
     # 配置
-    DATA_DIR = "/home/user/data"
+    from caisen.config.project_config import ProjectConfig
+    DATA_DIR = ProjectConfig.load().data_dir
     SYMBOL = "ag"
     FREQ = "60m"
     START = "2026-01-05"

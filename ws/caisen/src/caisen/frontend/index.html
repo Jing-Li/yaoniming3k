@@ -3,31 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caisen 回测可视化</title>
+    <title>策微 CeWei</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/src/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
     <div class="container">
         <!-- Hero Section -->
         <div class="hero">
-            <h1>Caisen 回测可视化</h1>
-            <p>量化策略回测分析平台，查看交易记录、性能指标与策略表现</p>
+            <h1>策微</h1>
+            <div class="hero-tagline">CeWei</div>
+            <p>量化策略回测与可视化分析平台</p>
             <div class="hero-stats" id="hero-stats">
                 <!-- Filled by JS -->
             </div>
         </div>
 
-        <!-- Main Content: Runs List -->
-        <main id="runs-container">
+        <!-- Search Bar -->
+        <div class="search-bar" style="display:flex;justify-content:center;margin:var(--spacing-lg,24px) 0;">
+            <div style="position:relative;width:100%;max-width:520px;">
+                <span style="position:absolute;left:var(--spacing-md,16px);top:50%;transform:translateY(-50%);color:var(--text-muted,#64748b);font-size:var(--font-size-base,16px);pointer-events:none;">⌕</span>
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="搜索策略名称..."
+                    class="search-input"
+                    autocomplete="off"
+                    style="width:100%;padding:var(--spacing-md,12px) var(--spacing-md,16px) var(--spacing-md,12px) calc(var(--spacing-md,16px) * 2 + 12px);background:var(--glass-bg,rgba(15,23,42,0.7));-webkit-backdrop-filter:blur(var(--glass-blur,12px));backdrop-filter:blur(var(--glass-blur,12px));border:1px solid var(--glass-border,rgba(255,255,255,0.08));border-radius:var(--radius-full,9999px);color:var(--text-primary,#f8fafc);font-size:var(--font-size-sm,14px);outline:none;transition:border-color var(--transition-normal,250ms) ease, box-shadow var(--transition-normal,250ms) ease;"
+                    onfocus="this.style.borderColor='var(--border-hover, rgba(96,165,250,0.35))';this.style.boxShadow='var(--shadow-glow-primary, 0 0 32px rgba(96,165,250,0.25))';"
+                    onblur="this.style.borderColor='var(--glass-border, rgba(255,255,255,0.08))';this.style.boxShadow='none';"
+                >
+            </div>
+        </div>
+
+        <!-- Main Content: New Backtest Panel + Runs List -->
+        <div style="display:flex;gap:var(--spacing-xl,32px);align-items:flex-start;flex-wrap:wrap;">
+
+        <!-- New Backtest Panel -->
+        <section id="backtest-panel" class="backtest-panel">
+            <h2 class="backtest-panel__title">新建回测</h2>
+
+            <form id="bp-form" class="backtest-panel__form" autocomplete="off">
+
+                <div class="bp-field">
+                    <label class="bp-label" for="bp-strategy">策略</label>
+                    <select id="bp-strategy" class="bp-select">
+                        <option value="">加载中...</option>
+                    </select>
+                    <div id="bp-llm-note" class="bp-note"></div>
+                </div>
+
+                <div class="bp-field" id="bp-preset-wrap" style="display:none;">
+                    <label class="bp-label" for="bp-preset">配置预设</label>
+                    <select id="bp-preset" class="bp-select">
+                        <option value="">-- 默认参数 --</option>
+                    </select>
+                </div>
+
+                <div class="bp-field">
+                    <label class="bp-label" for="bp-datasource">数据源</label>
+                    <select id="bp-datasource" class="bp-select">
+                        <option value="">加载中...</option>
+                    </select>
+                </div>
+
+                <div class="bp-date-row">
+                    <div class="bp-field">
+                        <label class="bp-label" for="bp-start">开始日期</label>
+                        <input type="date" id="bp-start" class="bp-input">
+                    </div>
+                    <div class="bp-field">
+                        <label class="bp-label" for="bp-end">结束日期</label>
+                        <input type="date" id="bp-end" class="bp-input">
+                    </div>
+                </div>
+
+                <div id="bp-error" class="bp-error"></div>
+
+                <button type="submit" class="bp-submit">开始回测</button>
+            </form>
+
+            <div id="bp-progress-area" class="bp-progress">
+                <p class="bp-progress__label">回测进行中...</p>
+                <div class="bp-progress__track">
+                    <div id="bp-progress-bar" class="bp-progress__bar"></div>
+                </div>
+                <p id="bp-progress-label" class="bp-progress__pct">0%</p>
+            </div>
+        </section>
+
+        <!-- Runs List -->
+        <main id="runs-container" style="flex:1;min-width:0;">
             <!-- Loading State -->
             <div class="loading-state">
                 <div class="spinner"></div>
                 <p>加载回测记录...</p>
             </div>
         </main>
+
+        </div><!-- end flex container -->
 
         <!-- Quick Actions -->
         <div class="quick-actions">
@@ -42,6 +119,7 @@
 
     <script type="module">
         import { loadRunsList, refreshRuns } from '/js/runs-list.js';
+        import { initBacktestPanel } from '/js/backtest-panel.js';
 
         // Make functions available globally
         window.refreshRuns = refreshRuns;
@@ -49,6 +127,7 @@
         // Initialize on DOM ready
         document.addEventListener('DOMContentLoaded', () => {
             loadRunsList();
+            initBacktestPanel();
         });
     </script>
 </body>

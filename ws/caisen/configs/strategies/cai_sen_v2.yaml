@@ -18,10 +18,12 @@ weights:
   rounding_bottom: 0.20       # 圆弧底
   cup_handle: 0.15             # 杯柄
   breakout_pullback: 0.10     # 过前高
+  breakdown_pullback: 0.15    # 破底翻
 
   # 顶部反转形态 (看跌)
   m_top: 0.30                 # M头
   head_and_shoulders_top: 0.25  # 头肩顶
+  fake_breakout: 0.15         # 假突破
 
   # 整理形态 (双向)
   triangle: 0.25              # 对称三角
@@ -53,10 +55,12 @@ enabled_patterns:
   rounding_bottom: true
   cup_handle: true
   breakout_pullback: true
+  breakdown_pullback: true
 
   # 顶部反转
   m_top: true
   head_and_shoulders_top: true
+  fake_breakout: true
 
   # 整理形态
   triangle: true
@@ -108,6 +112,24 @@ detectors:
   # 过前高参数
   breakout_pullback:
     lookback_period: 30
+
+  # 破底翻参数
+  breakdown_pullback:
+    min_bars: 15
+    lookback_period: 30
+    max_amplitude: 0.05
+    min_platform_bars: 8
+    max_pullback_bars: 3
+    breakdown_tolerance: 0.03
+
+  # 假突破参数
+  fake_breakout:
+    min_bars: 15
+    lookback_period: 30
+    max_amplitude: 0.05
+    min_platform_bars: 8
+    max_fallback_bars: 3
+    fake_tolerance: 0.03
 
 # ===== 置信度因子权重 =====
 # 用于计算每个形态的置信度

@@ -8,6 +8,8 @@ from .other import (
     FlagDetector, RectangleDetector, RoundingBottomDetector,
     CupHandleDetector, BreakoutPullbackDetector,
 )
+from .breakdown_pullback import BreakdownPullbackDetector
+from .fake_breakout import FakeBreakoutDetector
 
 __all__ = [
     "WBottomDetector",
@@ -20,4 +22,6 @@ __all__ = [
     "RoundingBottomDetector",
     "CupHandleDetector",
     "BreakoutPullbackDetector",
+    "BreakdownPullbackDetector",
+    "FakeBreakoutDetector",
 ]

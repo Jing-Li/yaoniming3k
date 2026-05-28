@@ -2,8 +2,7 @@
 
 import pytest
 from datetime import datetime
-from typing import Optional
-from caisen.strategy.base import Strategy, Annotation, AnnotationType
+from caisen.strategy.base import Strategy, Annotation, AnnotationType, BarResult
 from caisen.core.bar import Bar
 from caisen.core.order import Order, Side
 
@@ -15,10 +14,10 @@ class DummyStrategy(Strategy):
         self.call_count = 0
         self.last_bar = None
 
-    def on_bar(self, bar: Bar) -> Optional[Order]:
+    def on_bar(self, bar: Bar) -> BarResult:
         self.call_count += 1
         self.last_bar = bar
-        return None
+        return BarResult()
 
 
 class TestStrategy:
@@ -51,15 +50,27 @@ class TestStrategy:
         assert strategy.call_count == 1
         assert strategy.last_bar == bar
 
+    def test_strategy_on_bar_returns_bar_result(self):
+        """Test that on_bar returns BarResult"""
+        strategy = DummyStrategy()
+        bar = Bar(
+            timestamp=datetime(2024, 1, 1),
+            symbol="TEST",
+            open=100.0,
+            high=105.0,
+            low=98.0,
+            close=103.0,
+            volume=1000000.0,
+        )
+        result = strategy.on_bar(bar)
+        assert isinstance(result, BarResult)
+        assert result.order is None
+        assert result.annotations == []
+
     def test_strategy_on_session_end(self):
         """Test that on_session_end can be called"""
         strategy = DummyStrategy()
         strategy.on_session_end()  # Should not raise
-
-    def test_strategy_get_annotations_returns_empty_list(self):
-        """Test that default get_annotations returns empty list"""
-        strategy = DummyStrategy()
-        assert strategy.get_annotations() == []
 
     def test_strategy_reset(self):
         """Test that reset can be called"""

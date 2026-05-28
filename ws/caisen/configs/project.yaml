@@ -1,0 +1,12 @@
+# Caisen 项目全局配置
+# 此文件覆盖内嵌默认值；缺失字段自动回退到默认值。
+
+# 本地行情数据根目录（存放 Parquet 文件）
+# 结构: {data_dir}/{symbol}/{freq}/*.parquet
+data_dir: /home/user/data
+
+# 回测结果输出目录
+output_dir: ./runs
+
+# Web 服务端口
+api_port: 8001

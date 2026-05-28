@@ -9,6 +9,7 @@ import {
     filterValidMarkLines,
     isValidCoord
 } from './utils.js';
+import { filterAnnotations } from './annotation-filter.js';
 
 /**
  * Build K-Line chart option
@@ -27,8 +28,9 @@ export function buildKLineOption({ data, isZoomEnabled }) {
     const klineData = data.bars.map(bar => [bar.open, bar.close, bar.low, bar.high]);
     const volumes = data.bars.map(bar => bar.volume);
 
-    // Collect all annotations
-    const { markPoints, markLines } = processAnnotations(data.annotations, data.bars);
+    // Collect all annotations (apply filter)
+    const filteredAnnotations = filterAnnotations(data.annotations);
+    const { markPoints, markLines } = processAnnotations(filteredAnnotations, data.bars);
 
     // Trades markers
     const tradeMarkers = processTrades(data.trades, data.bars);

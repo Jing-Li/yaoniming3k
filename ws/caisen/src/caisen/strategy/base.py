@@ -5,6 +5,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 # 从 core 导入 Annotation 和 AnnotationType（共享契约）
 from ..core.annotation import Annotation, AnnotationType
+from ..core.bar_result import BarResult
 
 if TYPE_CHECKING:
     from ..core.config import BacktestConfig
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
     from ..core.order import Order
 
 # 导出，方便 from .base import Strategy, Annotation, AnnotationType
-__all__ = ["Strategy", "Annotation", "AnnotationType"]
+__all__ = ["Strategy", "Annotation", "AnnotationType", "BarResult"]
 
 
 class Strategy(ABC):
@@ -23,17 +24,13 @@ class Strategy(ABC):
         pass
 
     @abstractmethod
-    def on_bar(self, bar: "Bar") -> Optional["Order"]:
-        """每根K线调用，返回订单或None"""
+    def on_bar(self, bar: "Bar") -> "BarResult":
+        """每根K线调用，返回 BarResult（包含本 bar 的订单和标注）"""
         pass
 
     def on_session_end(self) -> None:
         """回测结束后调用，可用于清理"""
         pass
-
-    def get_annotations(self) -> List[Annotation]:
-        """获取可视化标注"""
-        return []
 
     def reset(self) -> None:
         """重置策略状态"""

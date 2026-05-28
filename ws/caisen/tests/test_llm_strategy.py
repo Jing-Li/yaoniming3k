@@ -90,11 +90,11 @@ class TestLLMStrategyOnBar:
             close=103,
             volume=1000
         )
-        order = strategy.on_bar(bar)
+        bar_result = strategy.on_bar(bar)
 
-        assert order is not None
-        assert order.side == Side.BUY
-        assert order.symbol == "ag"
+        assert bar_result.order is not None
+        assert bar_result.order.side == Side.BUY
+        assert bar_result.order.symbol == "ag"
 
     def test_on_bar_returns_sell_order_when_has_position(self):
         """测试有持仓时 sell 信号返回 SELL 订单"""
@@ -114,10 +114,10 @@ class TestLLMStrategyOnBar:
             symbol="ag",
             close=103
         )
-        order = strategy.on_bar(bar)
+        bar_result = strategy.on_bar(bar)
 
-        assert order is not None
-        assert order.side == Side.SELL
+        assert bar_result.order is not None
+        assert bar_result.order.side == Side.SELL
 
     def test_on_bar_returns_none_when_sell_no_position(self):
         """测试无持仓时 sell 信号返回 None"""
@@ -137,10 +137,10 @@ class TestLLMStrategyOnBar:
             symbol="ag",
             close=103
         )
-        order = strategy.on_bar(bar)
+        bar_result = strategy.on_bar(bar)
 
-        # 无持仓时不能卖，返回 None
-        assert order is None
+        # 无持仓时不能卖，order 为 None
+        assert bar_result.order is None
 
     def test_on_bar_returns_none_when_hold(self):
         """测试 hold 信号返回 None"""
@@ -160,9 +160,9 @@ class TestLLMStrategyOnBar:
             symbol="ag",
             close=103
         )
-        order = strategy.on_bar(bar)
+        bar_result = strategy.on_bar(bar)
 
-        assert order is None
+        assert bar_result.order is None
 
     def test_on_bar_returns_none_when_no_signal(self):
         """测试无信号时返回 None"""
@@ -179,10 +179,10 @@ class TestLLMStrategyOnBar:
             symbol="ag",
             close=103
         )
-        order = strategy.on_bar(bar)
+        bar_result = strategy.on_bar(bar)
 
-        # 无信号默认 hold，返回 None
-        assert order is None
+        # 无信号默认 hold，order 为 None
+        assert bar_result.order is None
 
     def test_on_bar_uses_close_price(self):
         """测试订单使用收盘价"""
@@ -204,17 +204,22 @@ class TestLLMStrategyOnBar:
             close=103,
             volume=1000
         )
-        order = strategy.on_bar(bar)
+        bar_result = strategy.on_bar(bar)
 
         # 订单使用收盘价作为参考价（具体实现可能不同）
-        assert order is not None
+        assert bar_result.order is not None
 
 
 class TestLLMStrategyAnnotations:
-    """LLMStrategy.get_annotations 测试"""
+    """LLMStrategy 标注测试（通过 BarResult 获取）"""
 
-    def test_get_annotations_returns_list(self):
-        """测试 get_annotations 返回列表"""
+    def _make_bar(self, date_str: str) -> Bar:
+        from datetime import datetime
+        ts = datetime.strptime(date_str, "%Y-%m-%d")
+        return Bar(timestamp=ts, symbol="TEST", open=100, high=105, low=95, close=102, volume=1000)
+
+    def test_annotations_emitted_on_first_bar(self):
+        """第一次 on_bar 调用时标注通过 BarResult 返回"""
         signals = [{"timestamp": "2024-01-01", "action": "buy"}]
         annotations = [
             {"timestamp": "2024-01-01", "type": "buy_signal", "data": {"price": 100, "label": "买入"}}
@@ -229,11 +234,36 @@ class TestLLMStrategyAnnotations:
         strategy.cache.index_signals(signals)
         strategy.cache.set_annotations(annotations)
 
-        result = strategy.get_annotations()
-        assert isinstance(result, list)
+        bar = self._make_bar("2024-01-01")
+        result = strategy.on_bar(bar)
+        assert isinstance(result.annotations, list)
+        assert len(result.annotations) == 1
 
-    def test_get_annotations_empty_when_no_annotations(self):
-        """测试无标注时返回空列表"""
+    def test_annotations_only_emitted_once(self):
+        """标注只在第一次 on_bar 时发出，后续 bar 为空"""
+        signals = [{"timestamp": "2024-01-01", "action": "buy"}]
+        annotations = [
+            {"timestamp": "2024-01-01", "type": "buy_signal", "data": {"price": 100, "label": "买入"}}
+        ]
+        client = MockLLMClient(signals, annotations)
+        strategy = LLMStrategy(
+            llm_client=client,
+            prompt_builder=PromptBuilder(),
+            response_parser=ResponseParser()
+        )
+
+        strategy.cache.index_signals(signals)
+        strategy.cache.set_annotations(annotations)
+
+        bar1 = self._make_bar("2024-01-01")
+        bar2 = self._make_bar("2024-01-02")
+        result1 = strategy.on_bar(bar1)
+        result2 = strategy.on_bar(bar2)
+        assert len(result1.annotations) == 1
+        assert len(result2.annotations) == 0
+
+    def test_annotations_empty_when_no_annotations(self):
+        """无标注时第一次 on_bar 返回空列表"""
         client = MockLLMClient([])
         strategy = LLMStrategy(
             llm_client=client,
@@ -241,8 +271,9 @@ class TestLLMStrategyAnnotations:
             response_parser=ResponseParser()
         )
 
-        result = strategy.get_annotations()
-        assert result == []
+        bar = self._make_bar("2024-01-01")
+        result = strategy.on_bar(bar)
+        assert result.annotations == []
 
 
 class TestLLMStrategyAnalyze:

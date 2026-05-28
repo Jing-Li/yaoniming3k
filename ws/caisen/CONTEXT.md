@@ -25,8 +25,9 @@ LLM 策略的架构模式。将完整历史数据一次性发送给 LLM 分析�
 _Avoid_: 策略文件
 
 **Strategy Discovery（策略发现）**:
-回测系统扫描策略目录，自动识别符合接口约定的策略类的过程。
+回测系统扫描策略目录，自动识别符合接口约定的策略类的过程。由 `StrategyRegistry` 实现，返回包含 `params_schema` 的策略列表。
 _Avoid_: 策略插件发现
+_参见_: `StrategyRegistry`（`src/caisen/strategy/registry.py`）
 
 **Backtest Run / Run（回测运行）**:
 一次具体的回测执行，包含：一个策略、一段回测周期、一组参数、一组结果数据。
@@ -44,6 +45,12 @@ _Avoid_: 数据下载器
 **DataSource（数据源）**:
 行情数据的来源接口。回测系统通过 DataSource 从本地存储加载 K 线数据。
 _Avoid_: 数据提供者
+
+**DataSourceScanner（数据源扫描器）**:
+扫描本地 `data_dir/{symbol}/{freq}/` 三级目录结构，发现可用行情数据并推断日期范围。
+从 Parquet 文件名（`YYYYMMDD_YYYYMMDD.parquet` 格式）提取日期范围，不读取文件内容，保持扫描速度快。
+返回 `[{symbol, freq, date_range: {start, end}}]` 列表，供前端下拉菜单使用。
+_参见_: `DataSourceScanner`（`src/caisen/data/scanner.py`）、`GET /api/data-sources`
 
 **Bar（K线）**:
 一根 K 线数据，包含时间戳、开盘价、收盘价、最高价、最低价、成交量等字段。
@@ -69,6 +76,36 @@ _参见_: `Portfolio.get_equity_with_prices(prices)`（方法）
 
 **BacktestEngine（回测引擎）**:
 核心执行单元。加载数据、逐根 K 线遍历、调用策略、处理订单、更新持仓、计算净值。
+支持可选的 `on_bar(index, bar)` 钩子回调，每根 K 线处理后触发，供上层（如 BacktestRunner）收集进度。
+
+**BarResult（单根K线结果）**:
+`Strategy.on_bar()` 的返回类型。封装一根 K 线上策略产生的所有输出：`order`（可选订单）和 `annotations`（本 bar 新增的标注列表）。引擎每根 bar 解包 `BarResult`，立即处理 order 并累积 annotations，无需额外调用 `get_annotations()`。
+`get_annotations()` 接口已废弃，策略不再维护内部标注累积列表。
+_Avoid_: 返回 tuple、通过 get_annotations 收集标注
+_参见_: `BarResult`（`src/caisen/core/bar_result.py`）
+
+**BacktestRunner（回测执行器）**:
+完整回测流程的编排层，与 HTTP/WebSocket 解耦。
+流程：实例化策略 → 加载数据 → 运行 BacktestEngine（带 on_bar 钩子）→ 持久化结果 → 返回 run_id。
+通过 `on_progress(processed, total, current_date)` 回调每 100 根 K 线推送进度，供 WebSocket 端点桥接。
+_参见_: `BacktestRunner`（`src/caisen/backtest/runner.py`）
+
+**ProjectConfig（项目全局配置）**:
+从 `configs/project.yaml` 读取项目级配置（`data_dir`、`output_dir`、`api_port`）。
+文件不存在时静默降级到内嵌默认值，不报错。Web 服务、CLI、BacktestRunner 统一通过 `ProjectConfig.load()` 获取配置，消除硬编码路径。
+_参见_: `ProjectConfig`（`src/caisen/config/project_config.py`）、`configs/project.yaml`
+
+**StrategyRegistry（策略注册表）**:
+Strategy Discovery 的实现类。维护内置策略的静态清单，通过 `importlib` 动态加载并提取 `params_schema`（从 `__init__` 签名推断参数类型和默认值）。导入失败时静默跳过，不影响其余策略。
+同时扫描 `configs/strategies/` 目录，为每个策略附加可用配置预设列表（`config_presets`），供前端"配置预设"下拉菜单使用。
+_参见_: `StrategyRegistry`（`src/caisen/strategy/registry.py`）、`GET /api/strategies`
+
+**Web API（回测触发端点）**:
+Web 服务新增的回测交互端点：
+- `GET /api/strategies` — 返回 StrategyRegistry 列表（含各策略可用的 config_presets 名称列表）
+- `GET /api/data-sources` — 返回 DataSourceScanner 扫描结果
+- `POST /api/runs` — 接收 `{strategy_name, symbol, freq, start, end, config_name?}`，预校验策略名和日期格式（422），后台线程按 `configs/strategies/{config_name}.yaml` 加载参数后执行，立即返回 `{run_id}`（202）；`config_name` 为空时策略使用 `__init__` 内置默认值
+- `WS /ws/runs/{run_id}/progress` — WebSocket 进度推送；`running`/`done`/`error` 三态消息，终态后自动关闭连接
 
 **Session（会话）**:
 一次回测的生命周期。从 `on_init` 开始，逐根 K 线执行，到 `on_session_end` 结束。
@@ -126,9 +163,20 @@ _参见_: `ResultPersister`（`src/caisen/result/persistence.py`）
 检测器返回的信号，包含置信度、止损价、目标价等。策略根据信号做下单决策。
 
 **加权投票（Weighted Voting）**:
-多检测器信号的综合方式。根据各检测器权重和置信度计算加权平均，达到阈值时触发交易。
+多检测器信号的综合方式。根据各检测器权重和置信度计算加权平均，产出综合评分（total_score）与最佳信号（best_signal），达到阈值时触发交易。
 
 _参见_: `PatternDetector`（`src/caisen/strategy/algorithm/detector.py`）
+
+**ConfidenceFactors（置信度因子）**:
+形态信号质量的评判标准，采用四因子加权模型：完成度（completion，权重 0.4）、成交量（volume，0.3）、趋势共振（trend，0.2）、动量（momentum，0.1）。所有 PatternDetector 共用此模型计算置信度，权重可通过配置调整。
+_参见_: `PatternDetector._create_signal()`
+
+**AnnotationType（标注类型）**:
+可视化标注的分类枚举，定义前后端共享的标注体系。包含：买卖信号（BUY_SIGNAL/SELL_SIGNAL/NEUTRAL_SIGNAL）、线条（HORIZONTAL_LINE/TREND_LINE/FIB_LINE）、区间（SUPPORT_ZONE/RESISTANCE_ZONE）、形态标记（PATTERN_MARK）、几何图形（RECTANGLE/POLYGON）、辅助标注（VOLUME_SPIKE/TEXT_LABEL）。每种类型对应独立的渲染逻辑。
+_参见_: `core/annotation.py`
+
+**Risk Control（风控）**:
+止损止盈触发与移动止损逻辑。独立于持仓状态，定义"何时强制平仓"的规则。风控参数（止损系数、最小盈利目标、移动止损回撤百分比）在策略配置中独立设置，运行时由 PositionManager 执行。
 
 **Platform（整理平台）**:
 价格在一段时间内在某个区间内来回波动，既不创新高也不创新低。是多空力量暂时均衡的区域，也是所有大行情启动前的必经阶段。
@@ -146,26 +194,70 @@ _Avoid_: 盘整区间、横盘
 **Pattern（形态）**:
 价格与支撑/阻力位的结构性互动关系，如整理平台、破底翻、假突破等。蔡森十二形态描述的是主力在关键位置的操盘意图，而非单根K线的形状。
 
+**蔡森十二形态**:
+蔡森策略识别的 12 种价格形态，分三组：
+- **底部反转**（5 个）：W底（w_bottom）、头肩底（head_and_shoulders_bottom）、圆弧底（rounding_bottom）、杯柄（cup_handle）、过前高（breakout_pullback）、破底翻（breakdown_pullback）
+- **顶部反转**（3 个）：M头（m_top）、头肩顶（head_and_shoulders_top）、假突破（fake_breakout）
+- **整理形态**（4 个）：对称三角（triangle）、旗形（flag）、矩形（rectangle）
+
+每种形态由独立的 PatternDetector 实现，通过加权投票产生综合信号。
+
 **Equity Curve（净值曲线）**:
 回测过程中账户净值随时间变化的序列数据。按每根 K 线采样。
 
 **Visualization Report（可视化报告）**:
-回测结果的可视化输出，包含 K 线图、净值曲线、交易标注、策略形态标记等。
+回测结果的可视化输出，包含 K 线图、净值曲线、回撤图、月度收益热力图、交易标注、策略形态标记等。
 由 Python 生成 JSON 数据，前端 HTML 渲染器渲染。
 Web 服务位于 `src/caisen/web/`，前端位于 `src/caisen/frontend/`，通过 `caisen web` 命令启动。
 _Avoid_: 回测图表、报告 HTML
 
+**Drawdown Chart（回撤图）**:
+独立展示策略最大回撤区间和恢复过程的可视化图表。标注最大回撤的起止点和恢复时间，是评估策略下行风险的关键工具。
+
+**Monthly Returns（月度收益）**:
+按月度聚合的策略收益率，作为独立的绩效度量维度。以年月矩阵展示，可快速识别策略在不同时段的表现规律。
+
+**Annotation Filter（注解过滤）**:
+用户选择性查看标注类型的交互机制。允许按 AnnotationType 启用或禁用特定标注的显示，在不修改数据的情况下调整视图聚焦点。
+
 **Annotation（可视化标注）**:
 策略在 K 线图上绘制的辅助信息。包含 type（类型）、timestamp（时间）、data（数据）三个核心字段。类型决定渲染方式。
-_参见_: ADR-0007 可视化报告架构
+_参见_: ADR-0005 可视化标注方案
 
 **MPA（多页应用）**:
 可视化报告采用多页面架构。`index.html` 为 runs 列表页，`report.html` 为回测详情页。两个页面独立，可离线打开。
-_参见_: ADR-0007 可视化报告架构
+_参见_: ADR-0010 前端模块化
 
 **Frontend Bundle（前端子目录）**:
 前端代码独立存放于 `frontend/` 子目录，包含 HTML 页面、JS 模块、CSS 样式、单元测试和 E2E 测试。使用 Vite 构建。
-_参见_: ADR-0007 可视化报告架构
+_参见_: ADR-0010 前端模块化
+
+**VolumeAnalyzer（量能分析器）**:
+分阶段量能评估组件。根据蔡森理论，不同形态阶段对成交量有不同要求：形成期应缩量（多空均衡）、突破期应放量（>=1.5倍均量）、确认期应持续放量或缩量回踩。VolumeAnalyzer 替代简单的均量倍数计算，提供 staged_volume_check（分阶段检查）、grade（量能分级：weak/normal/strong）等能力。
+_参见_: `strategy/algorithm/caisen_components/volume_analyzer.py`
+
+**Multi-Timeframe Resonance（多周期共振）**:
+蔡森理论核心原则"大周期决定小周期"的量化实现。周线确定长期方向、日线确定中期波段、分钟线（60m/30m/15m）确定短期择时。当多个周期信号方向一致时称为"共振"，共振时信号可靠性显著提升。周期间方向冲突时拒绝交易。
+_Avoid_: 多时间框架、多级别分析
+_参见_: ADR-0018
+
+**TimeframeFilter（周期过滤器）**:
+多周期共振的执行组件。将周期分为方向周期（direction_tf，如周线/日线）和入场周期（entry_tf，如60m/30m/15m）。仅当入场信号与方向周期一致时才放行，共振时给予置信度加成（resonance_boost）。
+_参见_: `strategy/algorithm/caisen_components/timeframe_filter.py`
+
+**Staged Position Management（分阶段仓位管理）**:
+基于蔡森"两加码点"理论的仓位管理模式。将建仓分为三阶段：首批30%（形态首次突破）、加码30%（回踩不破确认）、加码20%（目标位70%前创新高）。减仓规则同样分阶段：到保守目标减40%、假突破信号全清、小周期顶部形态减25%。
+_Avoid_: 分批加仓、金字塔加仓
+_参见_: `strategy/algorithm/caisen_components/position_manager.py`
+
+**Walk-Forward Validation（滚动窗口验证）**:
+参数优化的防过拟合验证方法。将历史数据分为N段，每段前70%用于训练优化、后30%用于测试验证，窗口逐步向前滚动。最终指标取所有测试段的平均值，代表参数的样本外真实表现。
+_参见_: ADR-0019
+
+**Adaptive Optimization（自适应优化）**:
+策略参数的自动迭代更新机制。当近期表现显著劣于历史基线（夏普比率衰退>30%或回撤超限）时，自动触发增量重优化。基于上次最优参数附近搜索（warm-start），而非从头全局搜索。
+_Avoid_: 自动优化、参数自学习
+_参见_: ADR-0019
 
 ## Relationships
 
@@ -174,12 +266,24 @@ _参见_: ADR-0007 可视化报告架构
 - 一个 **Strategy** 在一个 **Session** 中被调用多次（每根 K 线一次）
 - 一个 **Strategy** 管理一个 **Portfolio**，Portfolio 包含多个 **Position**
 - **Strategy** 分为 **Code Strategy** 和 **LLM Strategy** 两种实现
-- **Code Strategy**（如 CaiSenStrategy）使用 **PatternDetector** 进行形态检测，多检测器通过 **加权投票** 产生信号
+- **Code Strategy**（如 CaiSenStrategy）使用 **PatternDetector** 进行形态检测，多检测器通过 **加权投票** 产生综合评分与最佳信号
+- **PatternDetector** 使用 **ConfidenceFactors** 计算形态信号的置信度
+- **Risk Control** 定义止损止盈规则，由 **Position** 执行，独立于持仓状态
+- **Annotation** 按 **AnnotationType** 分类，**Annotation Filter** 控制各类标注在可视化报告中的可见性
 - **LLM Strategy** 调用 **LLM Provider** 获取决策，响应缓存在 **LLM Cache** 中
 - **LLM Strategy** 的决策可能包含 **Annotation**，用于回测报告可视化
 - **Code Strategy** 和 **LLM Strategy** 可通过 **Compare Mode** 对比
 - **Data Fetcher** 从 **DataSource** 获取数据，写入本地存储；回测时 **BacktestEngine** 从本地加载
 - **Checkpoint** 可保存和恢复 **BacktestEngine** 的运行状态，实现断点续传
+- **CaiSenStrategy** 使用 **VolumeAnalyzer** 进行分阶段量能评估，替代简单的均量倍数
+- **MultiTimeframeEngine** 扩展 **BacktestEngine**，同步推进多频率 **Bar** 数据
+- **TimeframeFilter** 过滤 **PatternSignal**，仅放行与大周期方向一致的入场信号
+- **Staged Position Management** 扩展 **Risk Control**，实现分批建仓和动态减仓
+- **Adaptive Optimization** 使用 **Walk-Forward Validation** 验证参数泛化能力
+- **BacktestRunner** 编排 **BacktestEngine** 运行，通过 `on_bar` 钩子收集进度，经 `on_progress` 回调桥接到 **WebSocket** 推送
+- **ProjectConfig** 为 **BacktestRunner**、**Web API**、**CLI** 提供统一的 `data_dir`、`output_dir` 配置，消除硬编码路径
+- **StrategyRegistry** 实现 **Strategy Discovery**，供 **Web API** `/api/strategies` 端点消费，前端渲染策略下拉和配置预设下拉
+- **DataSourceScanner** 扫描 `ProjectConfig.data_dir`，供 **Web API** `/api/data-sources` 端点消费，前端渲染数据源下拉
 
 ## Example dialogue
 
@@ -198,19 +302,15 @@ _参见_: ADR-0007 可视化报告架构
 
 ```
 src/caisen/
-├── core/              # 回测引擎核心（Engine、Config、Bar、Order、Portfolio）
+├── core/              # 回测引擎核心（Engine、MultiTimeframeEngine、Config、Bar、Order、Portfolio、TimeframeSync）
 ├── strategy/          # 策略实现
 │   ├── base.py        # 策略基类 (Strategy)
+│   ├── registry.py    # 策略注册表 (StrategyRegistry)
 │   ├── algorithm/     # 算法策略
 │   │   ├── cai_sen.py      # 蔡森策略
 │   │   ├── detector.py     # 形态检测器基类 (PatternDetector)
-│   │   ├── patterns/      # 形态检测器实现
-│   │   │   ├── w_bottom.py      # W底检测器
-│   │   │   ├── m_top.py         # M头检测器
-│   │   │   ├── head_shoulders.py  # 头肩形态
-│   │   │   ├── triangle.py       # 三角形态
-│   │   │   └── other.py          # 其他形态（旗型、矩形等）
-│   │   └── caisen_components/   # 蔡森组件（聚合器、工厂等）
+│   │   ├── patterns/      # 形态检测器实现（12 个，详见蔡森十二形态）
+│   │   └── caisen_components/   # 蔡森组件（DetectorFactory、SignalAggregator、PositionManager、VolumeAnalyzer、TimeframeFilter）
 │   └── llm/           # LLM 策略实现
 │       ├── strategy.py    # LLMStrategy
 │       ├── client.py      # LLMClient 基类
@@ -222,22 +322,29 @@ src/caisen/
 │   ├── source.py      # DataSource 接口
 │   ├── local_source.py # 本地数据源实现
 │   ├── registry.py    # 数据源注册
+│   ├── scanner.py     # DataSourceScanner（扫描本地数据目录）
 │   └── config.py      # 数据配置
+├── config/            # 项目全局配置
+│   └── project_config.py  # ProjectConfig（读取 configs/project.yaml）
+├── backtest/          # 回测执行层
+│   └── runner.py      # BacktestRunner（带进度回调的完整回测流程）
 ├── result/            # 回测结果处理
 │   ├── types.py       # 数据类型（BacktestResult）
 │   ├── metrics.py     # 绩效指标计算
 │   ├── calculator.py  # 结果计算器
 │   └── persistence.py # 结果持久化
-├── web/               # Web 服务（回测报告查看）
-├── frontend/          # 前端代码（Vite 项目）
-│   ├── src/           # 前端源码
-│   ├── dist/          # 构建输出
-│   └── tests/         # 前端测试
+├── web/               # Web 服务（回测报告查看 + 回测触发 API）
+├── frontend/          # 前端代码（Vite 项目，ES6 模块化，详见 ADR-0010）
+│   └── src/js/
+│       ├── backtest-panel.js  # 新建回测面板（表单、WebSocket 进度、参数渲染）
+│       └── ...（其余模块）
 ├── cli/               # 命令行工具
 └── lint_structure.py  # 目录结构检查
 
 根目录结构：
-├── configs/           # 配置文件（YAML）
+├── configs/                  # 配置文件（YAML）
+│   ├── project.yaml          # 项目全局配置（data_dir、output_dir、api_port）
+│   └── strategies/           # 策略配置（各策略专用 YAML）
 ├── scripts/           # 脚本（回测、测试等）
 ├── tests/             # Python 测试
 ├── docs/              # 文档和 ADR

@@ -23,15 +23,12 @@ llm:
   provider: openai  # 使用 OpenAI 兼容接口
   api_key: dummy  # 本地部署无需真实 key
   base_url: "http://localhost:8080/v1"  # 本地 LLM 服务端点
-  model: Qwen/Qwen2.5-7B-Instruct  # 本地模型名称
-  temperature: 0.3
+  model: taiji  # 本地模型名称
+  temperature: 0.1
+  disable_thinking: true  # 禁用推理模型的 <think> 输出，避免截断
+  max_tokens: 2048  # 推理模型内部 token 消耗大，需显式指定避免 JSON 截断
 
-  # Prompt 配置
-  rules: |
-    支撑位买入，阻力位卖出
-    趋势确认后跟进
-
-  examples: 2
+  # Prompt 使用蔡森专用模板（caisen_pattern.py），无需在此重复规则
 
   cache_enabled: true
   cache_dir: ./cache
