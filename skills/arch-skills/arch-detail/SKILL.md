@@ -1,7 +1,7 @@
 ---
 name: arch-detail
 description: Phase 3 detailed design and multi-language implementation skill. Use after /arch-design to translate ARCHITECTURE.md boundaries into a modular DESIGN.md index + per-module design files + per-method interface contracts. Inspired by Matt Pocock's /to-issues and /tdd. Trigger when user says "/arch-detail", "detail design", "generate DDL", "translate to code", "vertical slice tasks", or asks to map an architecture spec into implementable issues.
-version: 2.4.0
+version: 2.5.0
 ---
 
 # Arch-Detail Skill (Phase 3: Detailed Design & Multi-Language Implementation)

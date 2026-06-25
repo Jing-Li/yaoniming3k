@@ -1,7 +1,7 @@
 ---
 name: arch-review
-description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces persistent REVIEW.md with Architecture Debt tracking, cross-phase routing, and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "is this leaky", or pastes a diff for compliance check.
-version: 2.3.0
+description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces a lightweight REVIEW.md dashboard (active debt + score only) with cross-phase routing and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "is this leaky", or pastes a diff for compliance check.
+version: 2.5.0
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -34,9 +34,9 @@ You are a relentless, highly critical Senior Code Reviewer. Your mission is to a
 
 3. **OBJECTIVE ARCHITECTURAL HEALTH SCORE**: You must output a clear score out of **100%** measuring overall architecture compliance, derived from the rubric in [reference.md](reference.md).
 
-4. **REVIEW.md PERSISTENCE (持久化审查)**: Every review MUST write or update `docs/bc/<bc-slug>/REVIEW.md`. Stdout-only output is FORBIDDEN. The file is a rolling document — append new findings, update statuses, move resolved items to the history section. Before overwriting, copy the previous version to `REVIEW-v{N}.md` as archive.
+4. **REVIEW.md PERSISTENCE (轻量仪表盘)**: Every review MUST write or update `docs/bc/<bc-slug>/REVIEW.md`. Stdout-only output is FORBIDDEN. REVIEW.md is a **lightweight dashboard** — it contains ONLY: (a) current score + score history, (b) active (unresolved) Architecture Debt, (c) open Skill Evolution Suggestions. It does NOT store resolved debt, version diffs, or audit detail — those live in source docs and archives. **ARCHIVE FIRST, then OVERWRITE — NEVER append.** Before writing a new version, the previous `REVIEW.md` MUST be archived to `reviews/v{N}.md` or `reviews/done/v{N}.md`. Appending to the existing file is FORBIDDEN.
 
-5. **VERSION COMPARISON (版本对比)**: Before auditing, load the existing `REVIEW.md` (if any). After scoring, produce a Version Diff Summary showing: new findings, resolved items, regressions, and score delta per axis. First review skips comparison.
+5. **VERSION COMPARISON (版本对比)**: Before auditing, load only the **version number and score** from the existing REVIEW.md (if any). The audit itself reads source docs and code independently — do NOT re-parse old AD items. After scoring, produce a Version Diff Summary showing: new findings, resolved items, regressions, and score delta per axis. First review skips comparison.
 
 6. **ROUTE-BASED DISPATCH (分流派发)**: Every Architecture Debt item MUST carry exactly one Route tag (`/arch-align`, `/arch-design`, `/arch-detail`, `/devtdd`, `/arch-review-self`). No untagged findings allowed. See [reference.md](reference.md) §7 Route Decision Matrix.
 
@@ -142,9 +142,11 @@ List each regression explicitly (a previously resolved item that reappeared).
    - **Phase 4 existing** → `REVIEW.md` (previous review, if exists)
    Halt if `docs/arch/PHASES.md` is missing or no phase is complete.
 
-2. **Load Previous Review**: If `docs/bc/<bc-slug>/REVIEW.md` exists, load it as the baseline. Parse its Architecture Debt table to identify open items that must be re-checked. If it does not exist, this is the first review (v1).
+2. **Load Previous Review**: If `docs/bc/<bc-slug>/REVIEW.md` exists, extract only its version number and last score. The audit itself reads source docs and code independently — do NOT re-parse old AD items. If it does not exist, this is the first review (v1).
 
 3. **Determine Scope**: Either (a) full workspace, (b) specific files/directories, or (c) a diff/PR. Confirm scope in one line before proceeding.
+
+   > **Minimum Audit Constraint**: Regardless of scope — even for "lightweight refactors", "doc cleanup", or "REVIEW.md formatting" — Steps 4, 5, and 6 (Phase-Aware Audit, Cross-Document Consistency Check, Static Audit) **MUST always execute in full**. These are the core audit steps that detect real architectural drift. Only Steps 8-10 (Route, Version Comparison, Write) may be abbreviated when the scope is purely editorial.
 
 4. **Phase-Aware Audit**: Apply audit rules relevant to the completed phases:
    - **Phase 2 rules** (from `ARCHITECTURE.md`): dependency flow, DIP enforcement, package layout, port placement.
@@ -153,28 +155,38 @@ List each regression explicitly (a previously resolved item that reappeared).
    - **Deployment Boundary Audit**: When SYSTEM.md records 2+ independent processes, verify each BC is an **independent module** (own `go.mod`/`build.gradle`/`pyproject.toml`). Check: (a) no cross-module imports between BC modules, (b) no shared `pkg/` or shared `internal/` between BCs, (c) cross-BC ports are split by responsibility (no shared interfaces like `IntentClient`), (d) each BC has its own `cmd/`, `internal/`, `docs/`, `scripts/`.
    Skip rules for phases not yet completed.
 
-5. **Static Audit**: Apply the audit checklist from [reference.md](reference.md) §1. For each finding, classify as Red/Yellow.
+5. **Cross-Document Consistency Check**: Before code-level audit, verify inter-document consistency:
+   - **ARCHITECTURE.md ↔ SYSTEM.md**: Every cross-BC communication arrow in sequence diagrams and Event Contract table MUST match a row in SYSTEM.md §3 Communication Matrix. Flag mismatches (e.g., diagram shows gRPC but matrix declares MQ).
+   - **ARCHITECTURE.md ↔ Code**: Mermaid diagrams must reflect current import graph and adapter names. Grep for adapter/constructor names in code and compare against diagram labels.
+   - **DESIGN.md ↔ ARCHITECTURE.md**: Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1.
+   - **LANGUAGE.md ↔ All docs**: Adapter/port names in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and code.
+   - **Cross-cutting docs ↔ BC docs (X6/X7)**: When `docs/agents/domain.md` or `docs/arch/SYSTEM.md` exist, verify:
+     - `domain.md` file structure diagram reflects each BC's actual `docs/` contents (run `find <bc>/docs -type f` and compare against the listed tree).
+     - `SYSTEM.md` "Last updated" comment describes the most recent change, not a stale historical one.
+   This step catches staleness that individual doc audits miss — documents evolve independently and drift apart. Outer cross-cutting docs are especially vulnerable since no single BC owns them.
 
-6. **Score**: Compute the score per the rubric in [reference.md](reference.md) §2.
+6. **Static Audit**: Apply the audit checklist from [reference.md](reference.md) §1. For each finding, classify as Red/Yellow.
 
-7. **Route & Introspect**: For each finding:
+7. **Score**: Compute the score per the rubric in [reference.md](reference.md) §2.
+
+8. **Route & Introspect**: For each finding:
    a. Assign a Route tag per the decision matrix in [reference.md](reference.md) §7.
    b. Write a Root Cause Analysis per [reference.md](reference.md) §8.
    c. If the root cause points to a skill gap, add a Skill Evolution Suggestion.
 
-8. **Version Comparison**: If a previous REVIEW.md exists:
-   a. Compare current findings against previous Architecture Debt table.
-   b. Mark items that are now resolved → move to Resolved Debt section.
+9. **Version Comparison**: If a previous REVIEW.md exists:
+   a. Compare current findings against the active Architecture Debt in the previous REVIEW.md.
+   b. Mark items that are now resolved (they will NOT appear in the new REVIEW.md).
    c. Identify regressions (previously resolved, now reappeared).
    d. Compute score delta per axis.
 
-9. **Write REVIEW.md & Archive**:
-   a. If previous REVIEW.md exists, copy it to `REVIEW-v{N}.md` as archive (N = old version number).
-   b. Write the new REVIEW.md with incremented version number.
-   c. Render the stdout report (6 sections including Version Diff).
-   d. Do **not** modify blueprint files unless user explicitly authorizes.
+10. **Write REVIEW.md & Archive (ARCHIVE FIRST — HARD PREREQUISITE)**:
+    a. **MANDATORY**: If `REVIEW.md` exists, archive it FIRST (→ `reviews/v{N}.md` or `reviews/done/v{N}.md`). Do NOT proceed to step (b) until archive is confirmed. Appending is FORBIDDEN — always overwrite after archive.
+    b. Write the new REVIEW.md as a **lightweight dashboard**: score history + active debt + open SE items only. No resolved debt table.
+    c. Render the stdout report (6 sections including Version Diff).
+    d. Do **not** modify blueprint files unless user explicitly authorizes.
 
-10. **Optional Apply**: Only if user explicitly says "apply the refactor" / "fix it" / "执行重构", switch to Edit/Write tools. Otherwise stay read-only.
+11. **Optional Apply**: Only if user explicitly says "apply the refactor" / "fix it" / "执行重构", switch to Edit/Write tools. Otherwise stay read-only.
 
 ---
 
@@ -192,11 +204,10 @@ List each regression explicitly (a previously resolved item that reappeared).
    - Phase 1 ✅ → `LANGUAGE.md`, `CONTEXT.md`
    - Phase 2 ✅ → `ARCHITECTURE.md`
    - Phase 3 ✅ → `DESIGN.md` (index) + `design/modules/`
-4. **Load Previous Review**: Read `docs/bc/<bc-slug>/REVIEW.md` if it exists. Parse:
-   - Current version number (for archive naming)
-   - Open Architecture Debt items (to re-check)
+4. **Load Previous Review**: Read `docs/bc/<bc-slug>/REVIEW.md` if it exists. Extract ONLY:
+   - Version number (for archive naming and version bump)
    - Previous score (for delta computation)
-   - Skill Evolution Suggestions with Status 🆕 (to check if any were addressed)
+   Do NOT re-parse old AD items or SE suggestions — the audit reads source docs and code independently. Source documents are the authoritative record; REVIEW.md is a transient dashboard. If REVIEW.md does not exist, this is the first review (v1).
 5. If `docs/arch/PHASES.md` is missing or no phase is complete, **halt** and instruct the user to run `/arch-align` first.
 
 ### On Completion
@@ -205,13 +216,12 @@ List each regression explicitly (a previously resolved item that reappeared).
    a. Check if all AD items in the current `REVIEW.md` have Status = ✅ Resolved.
    b. If **all resolved** → move `REVIEW.md` to `reviews/done/v{N}.md` (closed archive).
    c. If **any unresolved** → move `REVIEW.md` to `reviews/v{N}.md` (active archive).
-2. **Write REVIEW.md**: Write `docs/bc/<bc-slug>/REVIEW.md` with:
-   - Incremented version number
-   - Updated Score History table (append new row)
-   - Updated Architecture Debt table (new + recurring + updated statuses)
-   - Updated Resolved Debt table
-   - Updated Version Diff Summary
-   - Updated Skill Evolution Suggestions
+2. **Write REVIEW.md**: Write `docs/bc/<bc-slug>/REVIEW.md` as a **lightweight dashboard** containing ONLY:
+   - Version header (version number, date, skill version, scope)
+   - Score History table (all historical scores — append new row)
+   - Active Architecture Debt table (only unresolved items with full detail)
+   - Open Skill Evolution Suggestions (only items with Status 🆕 New)
+   Do NOT include: Resolved Debt table, Deployment Boundary Audit, or Version Diff Summary — those belong in archives and stdout only.
 3. **Update PHASES.md**: Set Phase 4 column to `✅ audited YYYY-MM-DD (NN/100) v<N>`.
 4. **Render stdout report**: Output the 6-section report (including Version Diff section).
 5. Do **not** modify any blueprint files unless the user explicitly authorizes.

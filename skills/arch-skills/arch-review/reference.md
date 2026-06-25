@@ -15,8 +15,9 @@ Detailed audit checklists, scoring rubric, per-language red flags, and refactori
 | 1.3 GoF Pattern Rules | — | ✅ | Pattern application, anti-pattern detection |
 | 1.4 Naming & Language Drift | ✅ | ✅ | Cross-reference LANGUAGE.md |
 | 1.5 Documentation Drift Detection | — | ✅ | Cross-check DESIGN.md Task Summary ↔ actual code |
+| 1.6 Cross-Document Consistency | ✅ | ✅ | Inter-document staleness detection (ARCH↔SYSTEM, ARCH↔Code, LANG↔All, Cross-cutting docs↔BC docs) |
 
-When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1 and 1.4. When Phase 3 is also complete, apply all rule groups.
+When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1, 1.4, and 1.6. When Phase 3 is also complete, apply all rule groups.
 
 ### 1.1 Clean Architecture Rules (Phase 2 + 3)
 
@@ -64,7 +65,21 @@ When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1 and 1.4. When 
 |---|------|-----------|------|
 | D1 | DESIGN.md Task Summary status matches actual code | Tasks marked "complete" must have corresponding non-stub source files; implemented code must have a matching task | 🟡 |
 | D2 | DESIGN.md §5 Task Summary not stale | Task table reflects current implementation state (no ghost tasks, no phantom completions) | 🟡 |
-| D3 | Architecture diagrams match actual dependency flow | Mermaid diagrams in ARCHITECTURE.md reflect current import graph | 🟡 |
+| D3 | Architecture diagrams match actual dependency flow | Mermaid diagrams in ARCHITECTURE.md reflect current import graph and adapter/constructor names | 🟡 |
+
+### 1.6 Cross-Document Consistency (All Phases)
+
+These rules catch staleness caused by documents evolving independently. Apply during Step 5 (Cross-Document Consistency Check).
+
+| # | Rule | Detection | Card |
+|---|------|-----------|------|
+| X1 | ARCHITECTURE.md ↔ SYSTEM.md Communication Matrix | Every cross-BC arrow in sequence diagrams and Event Contract table rows must use a protocol declared in SYSTEM.md §3 | 🔴 |
+| X2 | ARCHITECTURE.md ↔ Code adapter names | Adapter class names, constructor names, and port interface names in Mermaid diagrams must match current code | 🟡 |
+| X3 | DESIGN.md ↔ ARCHITECTURE.md package structure | Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1 | 🟡 |
+| X4 | LANGUAGE.md ↔ All docs adapter/port names | Adapter/port names registered in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and module.md files | 🟡 |
+| X5 | ARCHITECTURE.md Consumers / Open Questions vs SYSTEM.md | Every “Consumers” column entry and Open Questions item in ARCHITECTURE.md that references cross-BC communication MUST use a protocol declared in SYSTEM.md §3. Stale references to deprecated protocols (e.g., gRPC when matrix says MQ-only) are flagged | 🟡 |
+| X6 | `docs/agents/domain.md` file structure ↔ actual BC docs | The file structure diagram in `docs/agents/domain.md` must reflect each BC’s actual docs/ contents (phases completed, directories present). Compare listed files against `find <bc>/docs -type f` | 🟡 |
+| X7 | `docs/arch/SYSTEM.md` Last-updated staleness | SYSTEM.md “Last updated” comment must describe the most recent change, not a stale historical one. If the comment references a change that was later superseded, flag it | 🟡 |
 
 ---
 
@@ -78,7 +93,7 @@ When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1 and 1.4. When 
 | Domain Purity | 25 | C1, P1, framework annotations check |
 | Persistence Decoupling | 20 | P1–P6 |
 | Pattern Application | 15 | G1–G5 |
-| Naming Alignment | 10 | N1–N3 |
+| Naming Alignment | 10 | N1–N3, X1–X7 |
 
 ### 2.2 Deduction policy
 
@@ -431,19 +446,19 @@ When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/REVIEW.md` for any S
 
 ### When to Compare
 
-- After scoring (Step 6) and before writing REVIEW.md (Step 9)
+- After scoring (Step 7) and before writing REVIEW.md (Step 10)
 - Only when a previous REVIEW.md exists (skip on first review)
 
 ### Comparison Algorithm
 
-1. **Parse Previous Architecture Debt Table**: Extract all items with Status != ✅ Resolved.
+1. **Parse Previous Architecture Debt Table**: Extract all items with Status != ✅ Resolved from the previous REVIEW.md.
 2. **Match Current Findings to Previous ADs**:
    - Match by: Location + Violation type + Description similarity
    - If matched → mark as 🔄 Recurring (if still open) or ✅ Resolved (if fixed)
    - If no match → mark as 🆕 New
 3. **Identify Regressions**:
-   - Scan previous Resolved Debt table
-   - If any resolved item reappears in current findings → flag as Regression, restore original AD-ID
+   - Compare current findings against previously archived reviews in `reviews/done/`
+   - If any previously resolved item reappears in current findings → flag as Regression, restore original AD-ID
 4. **Compute Score Delta**:
    - For each axis: Current − Previous = Delta
    - Positive = improved, Negative = degraded
@@ -469,8 +484,8 @@ When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/REVIEW.md` for any S
 ### Archive Naming Convention
 
 - Current file: `REVIEW.md` (always at BC root for easy access by other skills)
-- Active archive: `reviews/v{N}.md` — contains unresolved AD items
-- Closed archive: `reviews/done/v{N}.md` — all AD items resolved
+- Active archive: `reviews/v{N}.md` — contains unresolved AD items (full snapshot at time of archiving)
+- Closed archive: `reviews/done/v{N}.md` — all AD items resolved (full snapshot preserved)
 
 ### Archive Lifecycle
 
@@ -480,4 +495,5 @@ When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/REVIEW.md` for any S
    c. If **any AD Status ≠ ✅ Resolved** → move to `reviews/v{N}.md`.
 2. Create `reviews/` and `reviews/done/` directories if they don't exist.
 3. Archives are NEVER deleted — they form an immutable audit trail.
-4. Resolved Debt table in REVIEW.md retains only the last 3 versions; older entries live in archives only.
+4. **REVIEW.md is a lightweight dashboard** — it does NOT contain a Resolved Debt table. Resolved items exist only in archives and in the stdout Version Diff Summary.
+5. Other skills consume REVIEW.md for active debt tracking only — source documents (ARCHITECTURE.md, DESIGN.md, code) are the authoritative record of what was fixed.

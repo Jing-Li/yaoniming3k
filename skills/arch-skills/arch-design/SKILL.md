@@ -1,7 +1,7 @@
 ---
 name: arch-design
 description: Phase 2 boundary design and visualization skill. Use after /arch-align to define Clean Architecture layers, draw Mermaid dependency diagrams, and produce ARCHITECTURE.md. Inspired by Matt Pocock's /to-prd to document architecture specifications. Trigger when user says "/arch-design", "design architecture", "draw the boundaries", "visualize dependencies", or asks to formalize layered architecture after terminology alignment is complete.
-version: 1.6.0
+version: 1.6.2
 ---
 
 # Arch-Design Skill (Phase 2: Boundary Design & Visualization)
@@ -80,7 +80,11 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 
 4. **Generate Diagram and Document**: Draft the `ARCHITECTURE.md` specification and **must draw the Mermaid diagram**. Validate the Mermaid syntax mentally before finalizing.
 
-5. **Hand-off Trigger**: Once the user agrees with the boundaries, update `PHASES.md` (see Manifest Protocol below), then output the following message verbatim to trigger the final phase:
+5. **Cross-BC Communication Consistency Check**: When SYSTEM.md exists (2+ BCs), cross-verify ARCHITECTURE.md runtime interaction diagrams (e.g., sequence diagrams, Event Contract tables) against SYSTEM.md §3 Communication Matrix. Every cross-BC arrow in the diagram must use a protocol declared in the matrix. If SYSTEM.md declares "message-only" (no direct API calls), the diagram must not show direct gRPC/HTTP arrows between BCs. Fix any inconsistency before proceeding.
+
+6. **Post-Rename Global Doc Sync** (when design involves renaming a port, adapter, or domain term): After updating ARCHITECTURE.md, grep the **entire project** for the old name — including `LANGUAGE.md`, `CONTEXT.md`, `SYSTEM.md`, `DESIGN.md`, `design/modules/*/module.md`, `design/modules/*/interfaces/*.md`, and `REVIEW.md`. Fix every stale reference in the same session. This prevents the common drift where ARCHITECTURE.md is updated but companion documents retain the old terminology.
+
+7. **Hand-off Trigger**: Once the user agrees with the boundaries, update `PHASES.md` (see Manifest Protocol below), then output the following message verbatim to trigger the final phase:
 
    > **"架构规格说明已确立并写入 `ARCHITECTURE.md`。`PHASES.md` 已标记 Phase 2 ✅。架构图与边界对齐完成。请确认并输入 `/arch-detail` 开始进行多语言工程落地与详细设计。"**
 

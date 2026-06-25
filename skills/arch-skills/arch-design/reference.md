@@ -290,6 +290,9 @@ Before writing `ARCHITECTURE.md`, silently verify:
 - [ ] When 2+ BCs registered: ARCHITECTURE.md §0 links to SYSTEM.md.
 - [ ] When 2+ BCs with independent processes: Layout D — each BC is an independent module (own `go.mod`, `cmd/`, `internal/`). No shared `pkg/` or cross-module imports. Cross-BC ports are split by responsibility.
 - [ ] When 2+ BCs with independent processes: SYSTEM.md §4 Code Ownership shows module paths (`<bc-slug>/internal/...`), not flat `internal/` paths.
+- [ ] When ARCHITECTURE.md contains runtime interaction diagrams (e.g., §2.2 sequence diagrams): every cross-BC communication arrow in the diagram MUST match a row in SYSTEM.md §3 Communication Matrix (protocol, direction, channel). If SYSTEM.md says "MQ only" but the diagram shows gRPC, flag the inconsistency and fix before writing.
+- [ ] When ARCHITECTURE.md contains an Event Contract table (§6 Cross-BC Event Contract): each row's "Platform Action" column MUST be consistent with SYSTEM.md §3 Communication Matrix — no direct API calls if SYSTEM.md declares message-only communication.
+- [ ] **Post-Rename Doc Sync**: When the design session involved renaming a port, adapter, or domain term, grep the entire project for the old name — LANGUAGE.md, CONTEXT.md, SYSTEM.md, DESIGN.md, design/modules/*/module.md, design/modules/*/interfaces/*.md — and fix every stale reference before writing.
 
 If any check fails, fix the design **before** writing the file.
 

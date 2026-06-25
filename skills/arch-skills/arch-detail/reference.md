@@ -55,6 +55,54 @@ Detailed templates, language-specific golden rules, and protocols for the `arch-
 ## 6. Dependency Injection Wiring (Composition Root)
 
 ## 7. <Language> Diagnosis Checklist (Global)
+
+## 8. Operational Entry Design
+
+Every BC MUST include an operational entry design section covering deployment and runtime management. This prevents the common gap where design documents specify domain logic but leave no path for operators to start, stop, or configure the process.
+
+### 8.1 Environment Variable Schema
+
+Define a table of all environment variables consumed by the Composition Root:
+
+```markdown
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `<BC>_<VAR>` | ✅/❌ | `<default>` | <what it controls> |
+```
+
+Rules:
+- Every variable referenced in the Composition Root code MUST appear in this table.
+- Required variables MUST have explicit validation logic in the config module.
+- Default values MUST be documented.
+
+### 8.2 Config Module
+
+Define a dedicated `internal/config/` package:
+- `Load() (*Config, error)` — reads env vars, validates required fields, fills defaults.
+- Validation failures return domain error sentinels (not raw `os.LookupEnv` errors).
+- Composition Root calls `config.Load()` before creating any adapter.
+
+### 8.3 Startup / Shutdown Scripts
+
+When a sibling BC already has `scripts/` (e.g., `platform/scripts/{start,stop,status}.sh`), the new BC MUST design equivalent scripts:
+
+| Script | Responsibility |
+|--------|----------------|
+| `start.sh` | Compile `cmd/<bc>/main.go` → start process (support `--infra` / `--app` flags) |
+| `stop.sh` | Send SIGINT → wait for graceful shutdown |
+| `status.sh` | Check process liveness + port reachability |
+
+### 8.4 Vertical-Slice Task
+
+Add a dedicated task in DESIGN.md §5 Task Summary for operational entry:
+
+| # | Task | Module | Definition of Done |
+|---|------|--------|--------------------|
+| N | Config + Scripts | config, scripts | Config loads and validates; scripts start/stop process cleanly |
+
+---
+
+## 9. <Language> Diagnosis Checklist (Global)
 ```
 
 **Header requirements**:
@@ -606,6 +654,9 @@ Before delivering, silently verify:
 - [ ] When 2+ BCs registered, DESIGN.md §3 Cross-BC Package Mapping table is present and consistent with sibling BC ARCHITECTURE.md §4 and SYSTEM.md §4.
 - [ ] DESIGN.md §1.2 explicitly states which entities use full Data Mapper vs identity mapping, with justification.
 - [ ] DESIGN.md Task Summary table lists all tasks with links to their module.md.
+- [ ] DESIGN.md includes an Operational Entry Design section (env var schema, config module, startup/shutdown scripts) when a sibling BC has equivalent facilities.
+- [ ] Every environment variable referenced in the Composition Root appears in the env var schema table.
+- [ ] A vertical-slice task exists for config module + scripts implementation.
 - [ ] All cross-reference links (DESIGN.md <-> module.md <-> method.md) are valid relative paths.
 
 If any check fails, fix the design **before** writing files or proposing tasks.

@@ -157,6 +157,23 @@ Run these checks after every GREEN phase. If ANY check fails, enter REFACTOR imm
 - [ ] Package names match ARCHITECTURE.md package layout
 - [ ] Error sentinels follow naming convention: `Err<Concept><Condition>`
 
+### Naming Consistency Scan (Post-Rename Refactoring)
+
+When a refactoring cycle involves renaming a port interface, adapter type, or field (e.g., `IntentClient` → `EventSubscriber`), run this additional scan to catch stale references:
+
+| Check | What to Scan | Example Violation |
+|-------|-------------|-------------------|
+| **Field names match port type** | Struct fields typed by a port interface should use the port's concept name | `intentClient event.EventSubscriber` — field says "intent" but type says "event" |
+| **Adapter class/file names match port** | Adapter type name and file name should reflect the port they implement | `IntentAdapter` implementing `EventSubscriber` — class says "Intent" but port says "Event" |
+| **Host file names match renamed types** | Physical `.go` file names should follow type renames (e.g., `event_adapter.go` → `intent_adapter.go` after `EventAdapter` → `IntentAdapter`) | Type renamed to `IntentAdapter` but file still named `event_adapter.go` |
+| **Constructor names match adapter** | `New<Adapter>()` functions should use the current adapter name | `NewIntentAdapter()` when type is `EventAdapter` |
+| **Variable names in composition root** | `cmd/` variable names should use current adapter terminology | `intentAdapter := rocketmq.NewEventAdapter(...)` — var name stale |
+| **Full-text scan (not just identifiers)** | Run `(?i)\b{old_name}\b` across the entire module — catches stale references in comments, string literals, test messages, and doc prose that identifier-only grep misses | Comment says `// dispatches an event` after `Event` → `Intent` rename |
+| **Design doc references** | DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md — all adapter name references should match code | Doc says `RocketMQIntentAdapter` but code says `RocketMQEventAdapter` |
+| **Cross-BC doc mirrors** | When a term is renamed in one BC, check sibling BCs' LANGUAGE.md Banned Terms / glossary for stale mirrors | Platform BC renamed `Event` → `Intent`, but AYuan LANGUAGE.md Banned Terms still lists `Event` as replacement |
+
+**When to run**: After any REFACTOR cycle that changes a type name, interface name, or file name. Run BOTH identifier-level grep AND full-text `(?i)\b{old}\b` scan across the entire module **and all documentation files**. If any stale reference is found, fix it in the same cycle.
+
 ### Test Placement
 
 - [ ] Test files live alongside source (same package, test suffix convention)
@@ -198,7 +215,21 @@ If a task is partially complete (some DoD items pass, some fail):
 
 After updating a task to ✅, scan DESIGN.md §5:
 - If remaining ☐ tasks exist → report count and suggest next task
-- If zero ☐ tasks remain → output completion message and suggest `/arch-review`
+- If zero ☐ tasks remain → proceed to Post-Implementation Verification
+
+### Post-Implementation Verification
+
+When **all** tasks in DESIGN.md §5 are marked ✅, before outputting the completion message:
+
+1. **Locate the global diagnosis/enforcement checklist** in DESIGN.md (e.g., §8 Go Diagnosis Checklist or any section with unchecked `[ ]` items).
+2. **Verify each item** against the current codebase (grep, build, test).
+3. **Tick satisfied items** `[ ]` → `[x]`. For items intentionally deferred (e.g., MVP simplifications), update the text to reflect current state and mark `[x]`.
+4. **Full-scan naming consistency**: grep all `*.md` files under `docs/` and all `*_test.go` files for stale type/port names that were renamed during implementation (e.g., `IntentPublisher` → `Publisher`, `port/intent/` → `domain/`). Update module.md files, interface contract .md files, and test comments.
+5. **Update SYSTEM.md**: if the BC has been fully implemented (all tasks ✅), update `docs/arch/SYSTEM.md` §2 Process Inventory and §4 BC Code Ownership to reflect the current state (remove "planned" markers, add actual package paths).
+6. **Report**: list any items that could not be verified (potential Architecture Debt).
+7. Only then output the completion message and suggest `/arch-review`.
+
+This step prevents the common gap where per-task DoD checklists are verified but cross-cutting architecture guardrails are left unticked.
 
 ---
 
