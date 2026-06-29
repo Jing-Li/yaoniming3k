@@ -58,6 +58,8 @@ When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1, 1.4, and 1.6.
 | N1 | Every class / table / field / method appears in `LANGUAGE.md` (or its mapping table) | Cross-reference identifier list against dictionary | 🟡 |
 | N2 | English mappings consistent (e.g., 灵簿 always `Census`, never `Registry`) | Search for synonym drift | 🟡 |
 | N3 | Bounded context names not crossed (no `census` package importing `intent` internals) | Inspect cross-context imports | 🔴 |
+| N4 | **Go 文件名必须与主 struct 名对齐**：struct `ABody` → 文件 `abody.go`；struct `AManifest` → 文件 `amanifest.go`；测试文件同理（`abody_test.go`）。命名规范约定的前缀（如 A 前缀）必须反映在文件名中 | Grep 所有 Go 源文件：提取主 struct 名，比较小写形式与文件名是否一致 | 🟡 |
+| N5 | **docs/design/modules/ 目录名必须与 domain struct 名对齐**：struct `ABody` → 目录 `abody/`；struct `AManifest` → 目录 `amanifest/`。使用小写前缀形式 | Compare `ls docs/design/modules/` against domain struct names from LANGUAGE.md | 🟡 |
 
 ### 1.5 Documentation Drift Detection (Phase 3)
 
@@ -80,6 +82,7 @@ These rules catch staleness caused by documents evolving independently. Apply du
 | X5 | ARCHITECTURE.md Consumers / Open Questions vs SYSTEM.md | Every “Consumers” column entry and Open Questions item in ARCHITECTURE.md that references cross-BC communication MUST use a protocol declared in SYSTEM.md §3. Stale references to deprecated protocols (e.g., gRPC when matrix says MQ-only) are flagged | 🟡 |
 | X6 | `docs/agents/domain.md` file structure ↔ actual BC docs | The file structure diagram in `docs/agents/domain.md` must reflect each BC’s actual docs/ contents (phases completed, directories present). Compare listed files against `find <bc>/docs -type f` | 🟡 |
 | X7 | `docs/arch/SYSTEM.md` Last-updated staleness | SYSTEM.md “Last updated” comment must describe the most recent change, not a stale historical one. If the comment references a change that was later superseded, flag it | 🟡 |
+| X8 | **BC `README.md` ↔ Code consistency** | Each BC's README.md must match actual code: (a) directory tree matches current `ls internal/` output (no ghost directories), (b) architecture/component diagrams match current domain struct names and responsibilities, (c) config/env var defaults match `config.go` actual defaults. Run `ls -d internal/*/` and compare against README tree | 🟡 |
 
 ---
 
@@ -93,7 +96,7 @@ These rules catch staleness caused by documents evolving independently. Apply du
 | Domain Purity | 25 | C1, P1, framework annotations check |
 | Persistence Decoupling | 20 | P1–P6 |
 | Pattern Application | 15 | G1–G5 |
-| Naming Alignment | 10 | N1–N3, X1–X7 |
+| Naming Alignment | 10 | N1–N5, X1–X8 |
 
 ### 2.2 Deduction policy
 

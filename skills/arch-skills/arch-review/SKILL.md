@@ -1,7 +1,7 @@
 ---
 name: arch-review
 description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces a lightweight REVIEW.md dashboard (active debt + score only) with cross-phase routing and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "is this leaky", or pastes a diff for compliance check.
-version: 2.5.0
+version: 2.6.0
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -41,6 +41,8 @@ You are a relentless, highly critical Senior Code Reviewer. Your mission is to a
 6. **ROUTE-BASED DISPATCH (分流派发)**: Every Architecture Debt item MUST carry exactly one Route tag (`/arch-align`, `/arch-design`, `/arch-detail`, `/devtdd`, `/arch-review-self`). No untagged findings allowed. See [reference.md](reference.md) §7 Route Decision Matrix.
 
 7. **INTROSPECTION (自省机制)**: Every Architecture Debt item MUST include a Root Cause Analysis explaining WHY the originating phase missed this finding. The bottom of REVIEW.md maintains a "Skill Evolution Suggestions" TODO list targeting the responsible skill. See [reference.md](reference.md) §8 Root Cause Analysis Template.
+
+8. **README SYNC CHECK (README 同步检查)**: During cross-document consistency check (Step 5), verify each BC's `README.md` against actual code. Check: (a) directory tree matches current package layout (no ghost packages like deleted `sensorium/`), (b) architecture/component diagrams match current domain model and responsibilities, (c) config/env var defaults match actual code defaults. Flag as X8 in reference.md §1.6.
 
 ---
 

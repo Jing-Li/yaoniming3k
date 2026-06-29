@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.0.2
+version: 1.4.0
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -39,6 +39,14 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
    Never leave one updated and the other stale.
 
 6. **LANGUAGE-AGNOSTIC PATTERNS**: All guidance describes testing **strategy patterns**, not language-specific syntax. Code uses the project's target language from DESIGN.md header, but test structure principles are universal.
+
+7. **ARCHITECTURE.md SEQUENCE DIAGRAM SYNC**: If a task modifies code behavior (adds/removes/renames methods, changes lifecycle steps, alters interaction sequences), check `ARCHITECTURE.md` for affected sequence diagrams (§2.x Runtime Interaction) and update them to match the new behavior. Never leave sequence diagrams stale after behavioral changes.
+
+8. **SYSTEM.md §4 CODE OWNERSHIP SYNC**: If a task implements or upgrades an adapter, or modifies the composition root, check `docs/arch/SYSTEM.md` §4 BC Code Ownership table. Update the package status label to reflect the actual implementation state (e.g., remove "(stub)" if the adapter is no longer a stub).
+
+9. **DESIGN.md §6 COMPOSITION ROOT EXAMPLE SYNC**: If a task changes constructor signatures, adds/removes composition root steps, or alters the DI wiring order, update `DESIGN.md` §6 Composition Root code example to match the actual `main.go` code. Never let the example drift from reality.
+
+10. **README SYNC**: If a task adds/removes/renames packages, changes env var defaults, alters component responsibilities, or modifies lifecycle behavior, check the BC's `README.md` and root `README.md` for affected sections (directory tree, architecture diagram, config table, startup sequence). Update to match actual code. Never let README drift from implementation.
 
 ---
 
@@ -145,6 +153,11 @@ If any DoD item fails, return to Step 4 for a corrective micro-cycle.
 1. Update `DESIGN.md` §5 Task Summary: change the completed task's `Status` column from `☐` to `✅`
 2. Update `design/modules/<module>/module.md` §7: check all `[ ]` items to `[x]`
 3. Update `docs/arch/PHASES.md` `Last updated` date
+4. **Stub Adapter Tracking Sync**: If the completed task involved implementing or upgrading an adapter (e.g., RocketMQIntentAdapter, LocalFsManifestAdapter), check `DESIGN.md` §10 Stub Adapter Tracking table. If the adapter is still listed as "Stub", update its Status to "Implemented" and clear its TODO Items. This prevents the stub tracking table from drifting behind actual code progress.
+5. **ARCHITECTURE.md Sequence Diagram Sync**: If the completed task changed code behavior (new/removed/renamed methods, new lifecycle steps), scan `ARCHITECTURE.md` §2.x Runtime Interaction diagrams and update any stale sequence diagrams. (Per Hard Constraint #7)
+6. **SYSTEM.md §4 Code Ownership Sync**: If the completed task implemented or upgraded an adapter, update `docs/arch/SYSTEM.md` §4 BC Code Ownership table status label. (Per Hard Constraint #8)
+7. **DESIGN.md §6 Composition Root Example Sync**: If the completed task changed constructor signatures, DI wiring order, or composition root steps, update `DESIGN.md` §6 code example. (Per Hard Constraint #9)
+8. **README Sync**: If the completed task added/removed/renamed packages, changed env var defaults, altered component responsibilities, or modified lifecycle behavior, update BC `README.md` and root `README.md` directory trees, architecture diagrams, and config tables. (Per Hard Constraint #10)
 
 ### Step 7: Hand-off Trigger
 
@@ -210,6 +223,7 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 3. Update `DESIGN.md` §5 Status column for the completed task.
 4. Update `design/modules/<module>/module.md` §7 DoD checkboxes.
 5. Update `docs/arch/PHASES.md` `Last updated` date.
+6. If the task implemented an adapter, update `DESIGN.md` §10 Stub Adapter Tracking (change "Stub" → "Implemented").
 
 ---
 
