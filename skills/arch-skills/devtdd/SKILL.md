@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.5.0
+version: 1.5.1
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -141,7 +141,7 @@ For EACH micro-cycle from Step 3:
    - Scan for structurally identical code blocks across the module — extract shared helpers
    - Delete any dead code revealed by the new implementation (unused fields, unreachable branches, stale imports)
    - Replace any custom utility with standard library equivalent if one exists
-5. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
+5. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Part II Banned Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
 6. Run ALL tests again. All must still pass.
 
 #### Per-Cycle Self-Check

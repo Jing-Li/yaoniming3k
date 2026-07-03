@@ -171,6 +171,8 @@ When a refactoring cycle involves renaming a port interface, adapter type, or fi
 | **Full-text scan (not just identifiers)** | Run `(?i)\b{old_name}\b` across the entire module — catches stale references in comments, string literals, test messages, and doc prose that identifier-only grep misses | Comment says `// dispatches an event` after `Event` → `Intent` rename |
 | **Design doc references** | DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md — all adapter name references should match code | Doc says `RocketMQIntentAdapter` but code says `RocketMQEventAdapter` |
 | **Cross-BC doc mirrors** | When a term is renamed in one BC, check sibling BCs' LANGUAGE.md Banned Terms / glossary for stale mirrors | Platform BC renamed `Event` → `Intent`, but AYuan LANGUAGE.md Banned Terms still lists `Event` as replacement |
+| **Test fake types match current ports** | `*_test.go` fake type names and variable names must use current port terminology, not banned/old names. Scan against LANGUAGE.md Part II Banned Terms. | `fakeManifestStore` when port is `ManifestLoader/ManifestSaver` — "Store" is banned |
+| **Test fake types vs LANGUAGE.md banned terms** | grep `*_test.go` for every term in LANGUAGE.md Part II Banned Terms list (e.g., `Store`, `Kernel`, `ScopePrivate`). Any match in type names, variable names, or function names is a violation | `fakeAOSStore` when banned terms list includes `AOSStore` |
 
 **When to run**: After any REFACTOR cycle that changes a type name, interface name, or file name. Run BOTH identifier-level grep AND full-text `(?i)\b{old}\b` scan across the entire module **and all documentation files**. If any stale reference is found, fix it in the same cycle.
 
