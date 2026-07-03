@@ -1,7 +1,7 @@
 ---
 name: arch-review
 description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces a lightweight REVIEW.md dashboard (active debt + score only) with cross-phase routing and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "is this leaky", or pastes a diff for compliance check.
-version: 2.6.0
+version: 2.7.0
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -176,6 +176,15 @@ List each regression explicitly (a previously resolved item that reappeared).
    b. Write a Root Cause Analysis per [reference.md](reference.md) §8.
    c. If the root cause points to a skill gap, add a Skill Evolution Suggestion.
 
+8.5. **AD Dependency Analysis & Execution Plan**: After routing all ADs, analyze dependencies and generate a structured Execution Plan per [reference.md](reference.md) §12:
+   a. Group ADs by Route.
+   b. Determine Batch ordering using Phase dependency rules (upstream Phases block downstream).
+   c. Mark same-Batch ADs as parallel-capable.
+   d. Assign `Blocked By` field to each AD item.
+   e. If any AD routes to Phase 1-3: increment `Current Cycle` in PHASES.md and mark affected Phases (🔄 redoing / ⏭ invalidated) per Cascade Rules.
+   f. If only `/devtdd` ADs exist: do NOT increment Cycle (Phase 4 internal iteration).
+   g. Output the Execution Plan as part of the Hand-off Trigger.
+
 9. **Version Comparison**: If a previous REVIEW.md exists:
    a. Compare current findings against the active Architecture Debt in the previous REVIEW.md.
    b. Mark items that are now resolved (they will NOT appear in the new REVIEW.md).
@@ -184,7 +193,7 @@ List each regression explicitly (a previously resolved item that reappeared).
 
 10. **Write REVIEW.md & Archive (ARCHIVE FIRST — HARD PREREQUISITE)**:
     a. **MANDATORY**: If `REVIEW.md` exists, archive it FIRST (→ `reviews/v{N}.md` or `reviews/done/v{N}.md`). Do NOT proceed to step (b) until archive is confirmed. Appending is FORBIDDEN — always overwrite after archive.
-    b. Write the new REVIEW.md as a **lightweight dashboard**: score history + active debt + open SE items only. No resolved debt table.
+    b. Write the new REVIEW.md as a **lightweight dashboard**: score history + active debt (with `Blocked By` field) + open SE items + AD Execution Plan. No resolved debt table.
     c. Render the stdout report (6 sections including Version Diff).
     d. Do **not** modify blueprint files unless user explicitly authorizes.
 
@@ -224,7 +233,10 @@ List each regression explicitly (a previously resolved item that reappeared).
    - Active Architecture Debt table (only unresolved items with full detail)
    - Open Skill Evolution Suggestions (only items with Status 🆕 New)
    Do NOT include: Resolved Debt table, Deployment Boundary Audit, or Version Diff Summary — those belong in archives and stdout only.
-3. **Update PHASES.md**: Set Phase 4 column to `✅ audited YYYY-MM-DD (NN/100) v<N>`.
+3. **Update PHASES.md**:
+   - Set Phase 4 column to `✅ audited YYYY-MM-DD (NN/100) v<N>`.
+   - If Execution Plan has ADs routing to Phase 1-3: increment `Current Cycle` header, mark affected Phases per Cascade Rules (🔄 redoing + ⏭ invalidated).
+   - If only `/devtdd` ADs: Phase 4 only, no Cycle increment.
 4. **Render stdout report**: Output the 6-section report (including Version Diff section).
 5. Do **not** modify any blueprint files unless the user explicitly authorizes.
 
@@ -243,9 +255,20 @@ After writing REVIEW.md and rendering the stdout report, output:
 > - `/devtdd`: N 项 (AD-xxx, ...)
 > - `/arch-review-self`: N 项 (SE-xxx, ...)
 >
+> **AD 执行计划 (Cycle C<N>):**
+>
+> Batch 1 (可并行):
+>   - /arch-xxx: 处理 AD-xxx, AD-yyy (简要描述)
+>   - /arch-xxx: 处理 AD-zzz (简要描述)
+>
+> Batch 2 (Batch 1 完成后):
+>   - /arch-xxx: 处理 AD-www (简要描述)
+>
+> 全部 Batch 完成后: 运行 `/arch-review` 验证清零
+>
 > **Skill Evolution Suggestions:** N 条待改进
 >
-> 输入对应 skill 名称处理分流项，或再次 `/arch-review` 进行下轮审查。
+> 按 Batch 顺序执行，同一 Batch 内的 skill 可分别运行。
 
 ---
 
@@ -262,3 +285,4 @@ For detailed audit checklists, scoring rubric, and language-specific red flags, 
 - **§9 Architecture Debt Template** — full AD item structure with all required fields.
 - **§10 Skill Evolution Suggestions Template** — SE item structure and consumption protocol.
 - **§11 Version Comparison Protocol** — how to diff against previous REVIEW.md and archive.
+- **§12 AD Dependency Analysis & Execution Plan** — dependency inference rules, Batch ordering, PHASES.md Cycle update.

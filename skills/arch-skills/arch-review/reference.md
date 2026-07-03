@@ -393,6 +393,7 @@ Full structure for each AD entry in REVIEW.md:
 | **Missed By** | The skill/phase that should have caught this |
 | **Miss Reason** | Category from §8 table |
 | **Status** | 🆕 New / 🔄 Recurring / 🔧 In Progress / ✅ Resolved |
+| **Blocked By** | AD-xxx, AD-yyy (ADs that must complete before this one; empty if independent) |
 | **First Seen** | v<N> (YYYY-MM-DD) |
 | **Last Seen** | v<N> (YYYY-MM-DD) |
 | **Suggested Action** | Concrete next step for the target skill to execute |
@@ -501,3 +502,71 @@ When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/REVIEW.md` for any S
 3. Archives are NEVER deleted — they form an immutable audit trail.
 4. **REVIEW.md is a lightweight dashboard** — it does NOT contain a Resolved Debt table. Resolved items exist only in archives and in the stdout Version Diff Summary.
 5. Other skills consume REVIEW.md for active debt tracking only — source documents (ARCHITECTURE.md, DESIGN.md, code) are the authoritative record of what was fixed.
+
+---
+
+## 12. AD Dependency Analysis & Execution Plan (AD 依赖分析与执行计划)
+
+After routing all ADs (Step 8), arch-review MUST analyze dependencies and produce a structured Execution Plan.
+
+### 12.1 Dependency Inference Rules
+
+| Rule | Description | Example |
+|------|-------------|--------|
+| **Phase order dependency** | ADs routed to an upstream Phase block ADs routed to downstream Phases | `/arch-design` AD blocks `/arch-detail` and `/devtdd` ADs |
+| **Same Route = no blocking** | ADs routed to the same skill have no inter-dependency; batch-processed in one invocation | 3 ADs all routed to `/devtdd` = 1 batch |
+| **File conflict** | If two ADs modify the same file region, mark as blocking | Both AD-060 and AD-061 modify ARCHITECTURE.md §2.3 |
+| **Independent Routes** | Routes targeting different files with no semantic dependency can run in parallel | `/arch-align` (LANGUAGE.md) and `/devtdd` (source code) |
+
+### 12.2 Phase-to-Batch Ordering
+
+Phase order determines Batch sequence:
+
+```
+Phase 1 (/arch-align)  → Batch 1
+Phase 2 (/arch-design) → Batch 1 (if no Phase 1 ADs) or Batch 2
+Phase 3 (/arch-detail) → next available Batch
+Phase 4 (/devtdd)      → next available Batch
+```
+
+ADs targeting the same Phase are grouped into one Batch. ADs targeting different Phases with no upstream dependency can share a Batch (parallel).
+
+### 12.3 Execution Plan Template
+
+Output this after the AD routing table in the Hand-off Trigger:
+
+```markdown
+**AD Execution Plan (Cycle C<N>):**
+
+Batch 1 (parallel):
+  - /arch-align: AD-060 (terminology drift: "Registry" -> "Census")
+  - /arch-design: AD-061, AD-062 (ARCHITECTURE.md sequence diagram + port table)
+  Note: LANGUAGE.md and ARCHITECTURE.md are different files — can run separately
+
+Batch 2 (after Batch 1):
+  - /arch-detail: AD-063 (module.md interface signature sync)
+
+Batch 3 (after Batch 2):
+  - /devtdd: AD-064, AD-065 (code fixes)
+
+After all Batches: run /arch-review to verify zero ADs
+```
+
+### 12.4 Special Scenarios
+
+| Scenario | Handling |
+|----------|--------|
+| 0 ADs (Score 100) | No execution plan; output "All clear" |
+| All ADs route to same skill | Single Batch, single invocation |
+| Only `/devtdd` ADs | Single Batch; no Cycle increment (Phase 4 internal iteration) |
+| `/arch-review-self` SE items | Listed separately; do not block other Batches |
+| Mixed Phase 2 + Phase 4 ADs | Phase 2 = Batch 1, Phase 4 = Batch 2 (sequential) |
+
+### 12.5 PHASES.md Cycle Update
+
+When arch-review generates an Execution Plan:
+
+1. If any AD routes to Phase 1-3 (upstream of devtdd): increment `Current Cycle` in PHASES.md header
+2. Mark affected Phases per Cascade Rules (section 1.4 in PHASES.md template)
+3. If only `/devtdd` ADs exist: do NOT increment Cycle (Phase 4 internal iteration)
+4. Write the new Cycle number and Phase 🔄/⏭ marks atomically with REVIEW.md

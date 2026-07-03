@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.6.0
+version: 1.6.1
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -222,6 +222,10 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 
 1. Read `docs/arch/PHASES.md` to verify target BC has Phase 3 ✅.
    If not, HALT: *"Phase 3 (arch-detail) is not complete for \<bc-slug\>. Run `/arch-detail` first."*
+   **Cycle-Aware Startup Guard**: Check Phase 4 status for the target BC:
+   - **(空) or ✅ complete**: Normal startup (first run or re-run).
+   - **🔄 redoing**: Normal startup — this Phase is expected to be reworked.
+   - **⏭ invalidated**: **HALT**: *"Phase 4 被上游级联作废（⏭ invalidated）。请先运行上游 skill（`/arch-design` 或 `/arch-detail`）完成重做，再重新运行 `/devtdd`。"*
 
 2. **BC Selection Protocol** (when user does not specify a BC):
    - List all registered BCs with Phase 3 ✅.

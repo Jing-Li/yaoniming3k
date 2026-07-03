@@ -1,7 +1,7 @@
 ---
 name: arch-design
 description: Phase 2 boundary design and visualization skill. Use after /arch-align to define Clean Architecture layers, draw Mermaid dependency diagrams, and produce ARCHITECTURE.md. Inspired by Matt Pocock's /to-prd to document architecture specifications. Trigger when user says "/arch-design", "design architecture", "draw the boundaries", "visualize dependencies", or asks to formalize layered architecture after terminology alignment is complete.
-version: 1.7.0
+version: 1.7.1
 ---
 
 # Arch-Design Skill (Phase 2: Boundary Design & Visualization)
@@ -97,7 +97,11 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 ### On Startup
 
 1. Read `docs/arch/PHASES.md` (if it exists).
-1.5. If `docs/bc/<bc-slug>/REVIEW.md` exists, scan for:
+1.5. **Cycle-Aware Startup Guard**: Check Phase 2 status for the target BC:
+   - **(空) or ✅ complete**: Normal startup (first run or re-run).
+   - **🔄 redoing**: Normal startup — this Phase is expected to be reworked.
+   - **⏭ invalidated**: **HALT**: *"Phase 2 被上游 Phase 1 级联作废（⏭ invalidated）。请先运行 `/arch-align` 完成上游重做，再重新运行 `/arch-design`。"*
+1.6. If `docs/bc/<bc-slug>/REVIEW.md` exists, scan for:
    - **Architecture Debt items routed to `/arch-design`** with Status 🆕 or 🔄. These are inconsistencies in ARCHITECTURE.md that downstream skills (`/arch-detail`, `/devtdd`) discovered. Resolve them as part of the current design session.
    - **Skill Evolution Suggestions** targeting `/arch-design` with Status 🆕. Consider incorporating these suggestions.
 2. Verify Phase 1 is marked `✅ complete`. If not, **halt** and instruct the user to run `/arch-align` first.
@@ -111,8 +115,9 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 ### On Completion
 
 1. Update `docs/arch/PHASES.md`:
-   - Set Phase 2 row status to `✅ complete`.
+   - Set Phase 2 row status to `✅ complete` (or `✅ redo C<N>` if this was a redo cycle).
    - Update the `Last updated` date.
+   - **Cascade Rule**: If Phase 3 is currently `⏭ invalidated`, change it to `🔄 redoing` (downstream Phase now needs rework based on updated design). Leave Phase 4 as `⏭` — it will cascade when Phase 3 completes.
    - Preserve other phase rows unchanged.
 2. Output the standard hand-off trigger:
 

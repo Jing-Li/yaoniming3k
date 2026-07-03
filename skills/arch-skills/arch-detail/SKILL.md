@@ -1,7 +1,7 @@
 ---
 name: arch-detail
 description: Phase 3 detailed design and multi-language implementation skill. Use after /arch-design to translate ARCHITECTURE.md boundaries into a modular DESIGN.md index + per-module design files + per-method interface contracts. Inspired by Matt Pocock's /to-issues and /tdd. Trigger when user says "/arch-detail", "detail design", "generate DDL", "translate to code", "vertical slice tasks", or asks to map an architecture spec into implementable issues.
-version: 3.0.0
+version: 3.0.1
 ---
 
 # Arch-Detail Skill (Phase 3: Detailed Design & Multi-Language Implementation)
@@ -132,21 +132,27 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 ### On Startup
 
 1. Read `docs/arch/PHASES.md` (if it exists).
-2. Verify Phase 2 is marked `✅ complete`. If not, **halt** and instruct the user to run `/arch-design` first.
-3. **BC Selection Protocol** (when user does not specify a BC):
+2. **Cycle-Aware Startup Guard**: Check Phase 3 status for the target BC:
+   - **(空) or ✅ complete**: Normal startup (first run or re-run).
+   - **🔄 redoing**: Normal startup — this Phase is expected to be reworked.
+   - **⏭ invalidated**: **HALT**: *"Phase 3 被上游 Phase 2 级联作废（⏭ invalidated）。请先运行 `/arch-design` 完成上游重做，再重新运行 `/arch-detail`。"*
+3. Verify Phase 2 is marked `✅ complete`. If not, **halt** and instruct the user to run `/arch-design` first.
+4. **BC Selection Protocol** (when user does not specify a BC):
    - Read `docs/arch/PHASES.md` and list all registered BCs.
    - If only one BC exists, use it automatically.
    - If multiple BCs exist, ask the user which BC to target.
    - All subsequent file operations use `docs/bc/<bc-slug>/` as the base path.
-4. Verify `docs/bc/<bc-slug>/ARCHITECTURE.md` exists. Only read it (Phase 2 boundaries). Do **not** load any prior `DESIGN.md` unless the user explicitly asks to revise it.
+5. Verify `docs/bc/<bc-slug>/ARCHITECTURE.md` exists. Only read it (Phase 2 boundaries). Do **not** load any prior `DESIGN.md` unless the user explicitly asks to revise it.
 
 ### On Completion
 
 1. Write `docs/bc/<bc-slug>/DESIGN.md` as the index file.
 2. Create `docs/bc/<bc-slug>/design/modules/` hierarchy with per-module `module.md` and per-method `interfaces/<method>.md` files.
 3. Update `docs/arch/PHASES.md`:
-   - Set Phase 3 row status to `✅ complete`.
+   - Set Phase 3 row status to `✅ complete` (or `✅ redo C<N>` if this was a redo cycle).
    - Update the `Last updated` date.
+   - **Cascade Rule**: If Phase 4 is currently `⏭ invalidated`, change it to `🔄 redoing` (downstream Phase now needs rework based on updated detailed design).
+   - Preserve other phase rows unchanged.
 4. `DESIGN.md` header must include:
    - Cross-reference link to `ARCHITECTURE.md` (Phase 2 boundaries).
    - Target language declaration.
