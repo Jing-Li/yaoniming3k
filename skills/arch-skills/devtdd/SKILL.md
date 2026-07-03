@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.4.0
+version: 1.5.0
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -47,6 +47,16 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 9. **DESIGN.md §6 COMPOSITION ROOT EXAMPLE SYNC**: If a task changes constructor signatures, adds/removes composition root steps, or alters the DI wiring order, update `DESIGN.md` §6 Composition Root code example to match the actual `main.go` code. Never let the example drift from reality.
 
 10. **README SYNC**: If a task adds/removes/renames packages, changes env var defaults, alters component responsibilities, or modifies lifecycle behavior, check the BC's `README.md` and root `README.md` for affected sections (directory tree, architecture diagram, config table, startup sequence). Update to match actual code. Never let README drift from implementation.
+
+11. **CODE CRAFTSMANSHIP IRON RULES (代码工艺铁律)**: Every line of production code written during GREEN/REFACTOR MUST comply with these non-negotiable rules. Violations are blockers — fix before proceeding to the next micro-cycle:
+    - **No Magic Strings/Numbers**: Every repeated literal (string or number appearing ≥2 times) MUST be extracted to a named `const` or reference an existing constant. Single-use literals should also be named if they represent domain concepts (e.g., payload strings, subject patterns, file paths, permission bits, timer intervals). "Magic" means: if someone reading the code asks "why this value?", it needs a name.
+    - **DRY via Extraction**: If 2+ code blocks share identical structure (differing only in 1-2 parameters), extract a private helper method. Do NOT copy-paste code across functions. Apply the Rule of Three aggressively for structural duplication (same sequence of operations with different data).
+    - **Dead Code Zero Tolerance**: No unused fields, unused functions, unused imports, unreachable branches, or commented-out code in any GREEN cycle output. Delete immediately. Dead code is technical debt from the moment it's written.
+    - **Standard Library First**: Never write a custom implementation of what the standard library already provides (e.g., don't write `containsStr` when `strings.Contains` exists). Check stdlib docs before writing utility functions.
+    - **Single Responsibility per Helper**: Each extracted helper does ONE thing. Don't create "god helpers" that mix concerns (e.g., a function that both constructs an Intent AND publishes it — separate construction from action unless the combined operation is the abstraction).
+    - **Test Code Same Standards**: Test fakes, helpers, and setup functions follow the same craftsmanship rules. No magic strings in test assertions (use the same constants as production code). Test helper functions must be named descriptively.
+
+    See [reference.md](reference.md) §9 for language-specific examples and decision trees.
 
 ---
 
@@ -116,14 +126,23 @@ For EACH micro-cycle from Step 3:
 1. Write the **minimum** code to make the test pass
 2. No speculative features, no additional abstractions, no "future-proofing"
 3. Implement error mappings specified in the contract §4 Error Mapping
-4. Run **ALL** tests (not just the new one). All must pass.
+4. **Craftsmanship Gate** (before running tests): Scan the code just written for:
+   - Any string/number literal that appears elsewhere in the module → extract to `const` or reference existing
+   - Any code block that duplicates an existing function's structure → call the existing function or extract a shared helper
+   - Any unused field/function/import → delete before committing the cycle
+5. Run **ALL** tests (not just the new one). All must pass.
 
 #### REFACTOR Phase (only when ALL tests are GREEN)
-1. Remove duplication between this cycle and previous cycles
+1. Remove duplication between this cycle and previous cycles (Rule of Three: 3 occurrences → extract)
 2. Extract helpers ONLY when 2+ tests share identical setup
 3. Verify architecture boundary compliance (Hard Constraint #3)
-4. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
-5. Run ALL tests again. All must still pass.
+4. **Craftsmanship Sweep** (Hard Constraint #11 全面扫描):
+   - grep the entire module for the literal values just used — any literal appearing ≥2 times without a `const` is a violation
+   - Scan for structurally identical code blocks across the module — extract shared helpers
+   - Delete any dead code revealed by the new implementation (unused fields, unreachable branches, stale imports)
+   - Replace any custom utility with standard library equivalent if one exists
+5. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
+6. Run ALL tests again. All must still pass.
 
 #### Per-Cycle Self-Check
 
@@ -135,6 +154,10 @@ For EACH micro-cycle from Step 3:
 [ ] No speculative features added
 [ ] Mocks only at system boundaries
 [ ] Architecture boundaries respected (Hard Constraint #3)
+[ ] No magic strings/numbers — all domain literals named as constants (Hard Constraint #11)
+[ ] No duplicated code blocks — helpers extracted for shared patterns (Hard Constraint #11)
+[ ] No dead code — unused fields/functions/imports deleted (Hard Constraint #11)
+[ ] Standard library preferred over custom utilities (Hard Constraint #11)
 ```
 
 ### Step 5: DoD Verification (完成度验证)
@@ -239,3 +262,4 @@ For detailed protocols and checklists, see [reference.md](reference.md):
 - **§6 Cross-Module Task Handling** — primary-module-first strategy.
 - **§7 Idempotency & Resumption** — handling completed tasks and interrupted sessions.
 - **§8 Test Quality Heuristics** — behavior vs implementation, deep modules, refactor signals.
+- **§9 Code Craftsmanship Iron Rules** — constant extraction decision tree, DRY extraction patterns, dead code detection, stdlib preference matrix, test code craftsmanship.

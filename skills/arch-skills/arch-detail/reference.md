@@ -186,6 +186,7 @@ Include code blocks.)
 - The Interface Contracts Index must list **every** method in the port — no omissions.
 - Domain code in module.md must not import infrastructure, proto, or framework types.
 - Vertical-Slice Tasks for this module go here. Cross-module tasks go in the primary module with a cross-reference to the other module.
+- **§3 Upstream Consistency**: If §3 describes runtime behavior (method flows, responsibility assignments, data paths) that refines or changes what ARCHITECTURE.md §2.x says about the same component, you MUST update ARCHITECTURE.md §2.x in the same pass. Also update LANGUAGE.md responsibility tables. Never leave a behavioral inconsistency between documents.
 
 ---
 
@@ -646,6 +647,7 @@ Before delivering, silently verify:
 - [ ] `DESIGN.md` header cross-references `ARCHITECTURE.md` and declares target language.
 - [ ] `docs/arch/PHASES.md` has been updated with Phase 3 ✅ and current date.
 - [ ] Every module in ARCHITECTURE.md's port table has a corresponding `design/modules/<module>/module.md`.
+- [ ] If source code already exists (redo scenario), Redo Protocol (Step 6) was executed: code↔design delta assessed, delta tasks generated, user confirmed before Phase 3 marked complete.
 - [ ] Every method in every port interface has a corresponding `design/modules/<module>/interfaces/<method>.md`.
 - [ ] DESIGN.md Module Index table links to all module.md files with correct relative paths.
 - [ ] Every vertical-slice task references at least one specific interface contract file.
@@ -658,6 +660,12 @@ Before delivering, silently verify:
 - [ ] Every environment variable referenced in the Composition Root appears in the env var schema table.
 - [ ] A vertical-slice task exists for config module + scripts implementation.
 - [ ] All cross-reference links (DESIGN.md <-> module.md <-> method.md) are valid relative paths.
+- [ ] **Post-Write: DESIGN.md line count** is within expected range (not truncated, not appended with stale duplicate content).
+- [ ] **Post-Write: Old terminology grep** — `grep -rn "<banned-term>" design/ DESIGN.md` for every LANGUAGE.md banned synonym returns zero matches.
+- [ ] **Post-Write: File end sanity** — DESIGN.md last 5 lines end cleanly (no truncation mid-sentence, no orphaned table rows).
+- [ ] **Redo: ARCHITECTURE.md Mermaid participant aliases** — every `participant X as <Name>` in ARCHITECTURE.md sequence diagrams uses the current port name (not a banned/old name). Compare against LANGUAGE.md banned list and ARCHITECTURE.md §1.2 port table.
+- [ ] **Redo: Upstream Consistency Gate (行为一致性)** — for each module whose `module.md §3` describes runtime behavior (responsibilities, data flows, method sequences), grep both `ARCHITECTURE.md` and `module.md` for the same component name and verify behavioral descriptions are semantically aligned. Also check `LANGUAGE.md` responsibility tables (§E, §F, etc.) for the same components. Any behavioral mismatch (e.g., ARCHITECTURE.md says "Engine constructs outbox" but module.md says "ABody RunLoop constructs reply Intent") is a **blocker** — update ARCHITECTURE.md §2.x and LANGUAGE.md responsibility tables to match the refined design before proceeding.
+- [ ] **Scope boundary**: arch-detail produces design documents only (DESIGN.md, module.md, interface contracts). It does NOT write source code. Code development is `/devtdd`'s responsibility.
 
 If any check fails, fix the design **before** writing files or proposing tasks.
 
