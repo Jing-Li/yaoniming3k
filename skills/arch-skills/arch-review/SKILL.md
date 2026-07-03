@@ -1,7 +1,7 @@
 ---
 name: arch-review
 description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces a lightweight REVIEW.md dashboard (active debt + score only) with cross-phase routing and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "is this leaky", or pastes a diff for compliance check.
-version: 2.7.0
+version: 2.8.0
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -133,6 +133,30 @@ New findings: N | Resolved: N | Regressions: N
 
 List each regression explicitly (a previously resolved item that reappeared).
 
+### 7. Resolution Verification (AD 修复验证)
+
+If the previous REVIEW.md had any ADs marked ✅ Resolved, output:
+
+```
+Verified N previously resolved ADs:
+  ✅ AD-xxx: <brief description> — fix confirmed
+  ✅ AD-yyy: <brief description> — fix confirmed
+  ⚠️ AD-zzz: REGRESSION — <what reappeared>
+```
+
+If no previously resolved ADs exist, output: "No previously resolved ADs to verify."
+
+### 8. Pipeline Health (跨阶段任务追踪)
+
+Output the open AD/SE counts for ALL BCs:
+
+```
+[ayuan]          AD: N open / SE: N open
+[taiyi-platform] AD: N open / SE: N open
+```
+
+Flag stale debt (open for 2+ review versions) and list specific SE items awaiting adoption.
+
 ---
 
 ## 🚶 Steps to Execute (执行步骤)
@@ -191,10 +215,16 @@ List each regression explicitly (a previously resolved item that reappeared).
    c. Identify regressions (previously resolved, now reappeared).
    d. Compute score delta per axis.
 
+9.5. **Resolution Verification (AD 修复自动验证)**: For each AD in the previous REVIEW.md marked as ✅ Resolved, independently verify the fix is actually in place:
+   a. **Doc inconsistency ADs** (Route: `/arch-design`, `/arch-detail`, `/arch-align`): Re-grep the source files (ARCHITECTURE.md, LANGUAGE.md, DESIGN.md, etc.) for the keywords mentioned in the AD's Description. If the problematic pattern still exists → mark as ⚠️ Regression (new AD referencing the original).
+   b. **Dead code ADs** (Route: `/devtdd`): Check if the function/code at the specified Location still exists. If yes → ⚠️ Regression.
+   c. **Build/test ADs** (Route: `/devtdd`): Run `go build ./... && go vet ./... && go test ./...`. If any fail → ⚠️ Regression.
+   d. **Verification results** are appended to the stdout report §7 (Resolution Verification). If all pass, output "✅ All N resolved ADs verified". If any fail, list each regression with the new AD ID.
+
 10. **Write REVIEW.md & Archive (ARCHIVE FIRST — HARD PREREQUISITE)**:
     a. **MANDATORY**: If `REVIEW.md` exists, archive it FIRST (→ `reviews/v{N}.md` or `reviews/done/v{N}.md`). Do NOT proceed to step (b) until archive is confirmed. Appending is FORBIDDEN — always overwrite after archive.
     b. Write the new REVIEW.md as a **lightweight dashboard**: score history + active debt (with `Blocked By` field) + open SE items + AD Execution Plan. No resolved debt table.
-    c. Render the stdout report (6 sections including Version Diff).
+    c. Render the stdout report (8 sections including Version Diff, Resolution Verification, Pipeline Health).
     d. Do **not** modify blueprint files unless user explicitly authorizes.
 
 11. **Optional Apply**: Only if user explicitly says "apply the refactor" / "fix it" / "执行重构", switch to Edit/Write tools. Otherwise stay read-only.
@@ -219,6 +249,13 @@ List each regression explicitly (a previously resolved item that reappeared).
    - Version number (for archive naming and version bump)
    - Previous score (for delta computation)
    Do NOT re-parse old AD items or SE suggestions — the audit reads source docs and code independently. Source documents are the authoritative record; REVIEW.md is a transient dashboard. If REVIEW.md does not exist, this is the first review (v1).
+4.5. **Pipeline Task Sweep (跨阶段任务追踪)**: For ALL BCs listed in PHASES.md (not just the target BC), scan their REVIEW.md files:
+   - Count open ADs per Route (🆕 New / 🔄 Open, excluding ✅ Resolved).
+   - Count open SEs per Target Skill (🆕 New, excluding ✅ Adopted).
+   - Produce a **Pipeline Health Summary**:
+     - For each BC: `[BC-slug] AD: N open / SE: N open`
+     - Flag any BC with open ADs that have been 🆕 New for 2+ review versions (stale debt).
+   - This summary is output in the Hand-off Trigger §Pipeline Health and stored in REVIEW.md as a footer note.
 5. If `docs/arch/PHASES.md` is missing or no phase is complete, **halt** and instruct the user to run `/arch-align` first.
 
 ### On Completion
@@ -232,12 +269,13 @@ List each regression explicitly (a previously resolved item that reappeared).
    - Score History table (all historical scores — append new row)
    - Active Architecture Debt table (only unresolved items with full detail)
    - Open Skill Evolution Suggestions (only items with Status 🆕 New)
+   - **Pipeline Health Summary** footer (cross-BC open AD/SE counts from Step 4.5)
    Do NOT include: Resolved Debt table, Deployment Boundary Audit, or Version Diff Summary — those belong in archives and stdout only.
 3. **Update PHASES.md**:
    - Set Phase 4 column to `✅ audited YYYY-MM-DD (NN/100) v<N>`.
    - If Execution Plan has ADs routing to Phase 1-3: increment `Current Cycle` header, mark affected Phases per Cascade Rules (🔄 redoing + ⏭ invalidated).
    - If only `/devtdd` ADs: Phase 4 only, no Cycle increment.
-4. **Render stdout report**: Output the 6-section report (including Version Diff section).
+4. **Render stdout report**: Output the 7-section report (including Version Diff section and §7 Resolution Verification).
 5. Do **not** modify any blueprint files unless the user explicitly authorizes.
 
 ---
@@ -267,6 +305,14 @@ After writing REVIEW.md and rendering the stdout report, output:
 > 全部 Batch 完成后: 运行 `/arch-review` 验证清零
 >
 > **Skill Evolution Suggestions:** N 条待改进
+>
+> **Resolution Verification (v<N-1> ADs):**
+> - ✅ All N resolved ADs verified — 修复确认有效
+> - ⚠️ N regressions detected: AD-xxx (原 AD-yyy 回归), ...
+>
+> **Pipeline Health (跨阶段任务追踪):**
+> - `[ayuan]` AD: 0 open / SE: 2 open (SE-022 → /arch-design, SE-023 → /devtdd)
+> - `[taiyi-platform]` AD: 0 open / SE: 0 open
 >
 > 按 Batch 顺序执行，同一 Batch 内的 skill 可分别运行。
 

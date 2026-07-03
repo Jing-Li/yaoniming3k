@@ -1,7 +1,7 @@
 ---
 name: arch-design
 description: Phase 2 boundary design and visualization skill. Use after /arch-align to define Clean Architecture layers, draw Mermaid dependency diagrams, and produce ARCHITECTURE.md. Inspired by Matt Pocock's /to-prd to document architecture specifications. Trigger when user says "/arch-design", "design architecture", "draw the boundaries", "visualize dependencies", or asks to formalize layered architecture after terminology alignment is complete.
-version: 1.7.1
+version: 1.7.2
 ---
 
 # Arch-Design Skill (Phase 2: Boundary Design & Visualization)
@@ -104,6 +104,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 1.6. If `docs/bc/<bc-slug>/REVIEW.md` exists, scan for:
    - **Architecture Debt items routed to `/arch-design`** with Status 🆕 or 🔄. These are inconsistencies in ARCHITECTURE.md that downstream skills (`/arch-detail`, `/devtdd`) discovered. Resolve them as part of the current design session.
    - **Skill Evolution Suggestions** targeting `/arch-design` with Status 🆕. Consider incorporating these suggestions.
+   - **Full-Text Grep Scan Protocol** (when resolving doc inconsistency ADs): After making a fix, grep the **entire ARCHITECTURE.md and LANGUAGE.md** for the keywords that were corrected (e.g., `outbox`, `inbox`, `Engine.*构造`). Ensure ALL occurrences are fixed, not just the specific lines mentioned in the AD. This prevents the recurring pattern where point-fix leaves 8+ residual occurrences elsewhere in the documents.
 2. Verify Phase 1 is marked `✅ complete`. If not, **halt** and instruct the user to run `/arch-align` first.
 3. **BC Selection Protocol** (when user does not specify a BC):
    - Read `docs/arch/PHASES.md` and list all registered BCs.
