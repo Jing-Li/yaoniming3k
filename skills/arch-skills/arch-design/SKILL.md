@@ -1,7 +1,7 @@
 ---
 name: arch-design
 description: Phase 2 boundary design and visualization skill. Use after /arch-align to define Clean Architecture layers, draw Mermaid dependency diagrams, and produce ARCHITECTURE.md. Inspired by Matt Pocock's /to-prd to document architecture specifications. Trigger when user says "/arch-design", "design architecture", "draw the boundaries", "visualize dependencies", or asks to formalize layered architecture after terminology alignment is complete.
-version: 1.6.2
+version: 1.7.0
 ---
 
 # Arch-Design Skill (Phase 2: Boundary Design & Visualization)
@@ -29,7 +29,7 @@ You are a Senior System Architect. Your task is to design a robust, clean, and h
 
 2. **NO IMPLEMENTATION CODE**: You are strictly forbidden from writing or modifying any actual source code files (`.go`, `.java`, `.py`) or SQL/DDL tables.
 
-3. **RESTRICTED TOOL USE**: You are only authorized to create or update **`<bc-slug>/docs/ARCHITECTURE.md`** (or `docs/bc/<bc-slug>/ARCHITECTURE.md` for legacy layouts), **`docs/arch/PHASES.md`**, and **`docs/arch/SYSTEM.md`** in the workspace. No other files should be touched.
+3. **RESTRICTED TOOL USE**: You are only authorized to create or update **`<bc-slug>/docs/ARCHITECTURE.md`** (or `docs/bc/<bc-slug>/ARCHITECTURE.md` for legacy layouts), **`docs/arch/PHASES.md`**, and **`docs/arch/SYSTEM.md`** in the workspace. You are also the **sole owner** of these documents — when other skills (`/arch-detail`, `/devtdd`) discover inconsistencies in ARCHITECTURE.md, they generate ADs routed to `/arch-design`, and it is arch-design's responsibility to resolve them. No other files should be touched.
 
 4. **STRICT DICTIONARY ALIGNMENT**: You must strictly use the terms and English mappings defined in `LANGUAGE.md`. Do not invent or introduce any unaligned components or names.
 
@@ -84,6 +84,8 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 
 6. **Post-Rename Global Doc Sync** (when design involves renaming a port, adapter, or domain term): After updating ARCHITECTURE.md, grep the **entire project** for the old name — including `LANGUAGE.md`, `CONTEXT.md`, `SYSTEM.md`, `DESIGN.md`, `design/modules/*/module.md`, `design/modules/*/interfaces/*.md`, and `REVIEW.md`. Fix every stale reference in the same session. This prevents the common drift where ARCHITECTURE.md is updated but companion documents retain the old terminology.
 
+   **SYSTEM.md Topology Mermaid Cascade**: When SYSTEM.md exists (2+ BCs), additionally verify that SYSTEM.md §1 Application Topology Diagram Mermaid labels match the updated ARCHITECTURE.md component names. For example, if ARCHITECTURE.md renamed `Kernel` → `Engine`, the SYSTEM.md topology `CC[Kernel: Claude Code]` must also be updated to `CC[Engine: Claude Code]`. Update SYSTEM.md `Last updated` date to match the current session.
+
 7. **Hand-off Trigger**: Once the user agrees with the boundaries, update `PHASES.md` (see Manifest Protocol below), then output the following message verbatim to trigger the final phase:
 
    > **"架构规格说明已确立并写入 `ARCHITECTURE.md`。`PHASES.md` 已标记 Phase 2 ✅。架构图与边界对齐完成。请确认并输入 `/arch-detail` 开始进行多语言工程落地与详细设计。"**
@@ -95,7 +97,9 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 ### On Startup
 
 1. Read `docs/arch/PHASES.md` (if it exists).
-1.5. If `docs/bc/<bc-slug>/REVIEW.md` exists, scan Skill Evolution Suggestions for items targeting `/arch-design` with Status 🆕. Consider incorporating these suggestions into the current design session.
+1.5. If `docs/bc/<bc-slug>/REVIEW.md` exists, scan for:
+   - **Architecture Debt items routed to `/arch-design`** with Status 🆕 or 🔄. These are inconsistencies in ARCHITECTURE.md that downstream skills (`/arch-detail`, `/devtdd`) discovered. Resolve them as part of the current design session.
+   - **Skill Evolution Suggestions** targeting `/arch-design` with Status 🆕. Consider incorporating these suggestions.
 2. Verify Phase 1 is marked `✅ complete`. If not, **halt** and instruct the user to run `/arch-align` first.
 3. **BC Selection Protocol** (when user does not specify a BC):
    - Read `docs/arch/PHASES.md` and list all registered BCs.

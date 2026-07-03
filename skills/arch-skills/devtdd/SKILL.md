@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.5.1
+version: 1.6.0
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -40,7 +40,7 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 6. **LANGUAGE-AGNOSTIC PATTERNS**: All guidance describes testing **strategy patterns**, not language-specific syntax. Code uses the project's target language from DESIGN.md header, but test structure principles are universal.
 
-7. **ARCHITECTURE.md SEQUENCE DIAGRAM SYNC**: If a task modifies code behavior (adds/removes/renames methods, changes lifecycle steps, alters interaction sequences), check `ARCHITECTURE.md` for affected sequence diagrams (§2.x Runtime Interaction) and update them to match the new behavior. Never leave sequence diagrams stale after behavioral changes.
+7. **ARCHITECTURE.md SEQUENCE DIAGRAM SYNC (via AD)**: If a task modifies code behavior (adds/removes/renames methods, changes lifecycle steps, alters interaction sequences), check `ARCHITECTURE.md` for affected sequence diagrams (§2.x Runtime Interaction). If diagrams are stale, generate an **Architecture Debt (AD)** routed to `/arch-design` — devtdd does NOT directly modify ARCHITECTURE.md (owned by `/arch-design`). Include: stale diagram location, current code behavior, suggested diagram update.
 
 8. **SYSTEM.md §4 CODE OWNERSHIP SYNC**: If a task implements or upgrades an adapter, or modifies the composition root, check `docs/arch/SYSTEM.md` §4 BC Code Ownership table. Update the package status label to reflect the actual implementation state (e.g., remove "(stub)" if the adapter is no longer a stub).
 
@@ -57,6 +57,8 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
     - **Test Code Same Standards**: Test fakes, helpers, and setup functions follow the same craftsmanship rules. No magic strings in test assertions (use the same constants as production code). Test helper functions must be named descriptively.
 
     See [reference.md](reference.md) §9 for language-specific examples and decision trees.
+
+12. **DOCUMENT OWNERSHIP BOUNDARIES**: devtdd is the **sole owner** of source code and test files. It may update `DESIGN.md` §5 task status and `module.md` §7 DoD checkboxes (owned by `/arch-detail`), but must NOT modify design content (entity definitions, port signatures, task descriptions). For `ARCHITECTURE.md`, `SYSTEM.md`, and `LANGUAGE.md` — devtdd may only **read** them; if inconsistencies are found during implementation, generate an AD routed to the appropriate owner skill (`/arch-design` for ARCHITECTURE.md/SYSTEM.md, `/arch-align` for LANGUAGE.md).
 
 ---
 
@@ -177,7 +179,7 @@ If any DoD item fails, return to Step 4 for a corrective micro-cycle.
 2. Update `design/modules/<module>/module.md` §7: check all `[ ]` items to `[x]`
 3. Update `docs/arch/PHASES.md` `Last updated` date
 4. **Stub Adapter Tracking Sync**: If the completed task involved implementing or upgrading an adapter (e.g., RocketMQIntentAdapter, LocalFsManifestAdapter), check `DESIGN.md` §10 Stub Adapter Tracking table. If the adapter is still listed as "Stub", update its Status to "Implemented" and clear its TODO Items. This prevents the stub tracking table from drifting behind actual code progress.
-5. **ARCHITECTURE.md Sequence Diagram Sync**: If the completed task changed code behavior (new/removed/renamed methods, new lifecycle steps), scan `ARCHITECTURE.md` §2.x Runtime Interaction diagrams and update any stale sequence diagrams. (Per Hard Constraint #7)
+5. **ARCHITECTURE.md Sequence Diagram AD**: If the completed task changed code behavior (new/removed/renamed methods, new lifecycle steps), scan `ARCHITECTURE.md` §2.x Runtime Interaction diagrams. If stale, generate an AD routed to `/arch-design`. (Per Hard Constraint #7)
 6. **SYSTEM.md §4 Code Ownership Sync**: If the completed task implemented or upgraded an adapter, update `docs/arch/SYSTEM.md` §4 BC Code Ownership table status label. (Per Hard Constraint #8)
 7. **DESIGN.md §6 Composition Root Example Sync**: If the completed task changed constructor signatures, DI wiring order, or composition root steps, update `DESIGN.md` §6 code example. (Per Hard Constraint #9)
 8. **README Sync**: If the completed task added/removed/renamed packages, changed env var defaults, altered component responsibilities, or modified lifecycle behavior, update BC `README.md` and root `README.md` directory trees, architecture diagrams, and config tables. (Per Hard Constraint #10)

@@ -316,15 +316,16 @@ If scope is ambiguous (e.g., monorepo with multiple bounded contexts), ask exact
 
 ## 7. Route Decision Matrix (分流决策矩阵)
 
-Every Architecture Debt item MUST be assigned exactly one Route. Use this table:
+Every Architecture Debt item MUST be assigned exactly one Route. Use this table — route by **document ownership**, not by problem type:
 
-| Finding Type | Route | Rationale | Example |
-|-------------|-------|-----------|---------|
-| Terminology drift / BC boundary shift / glossary gap | `/arch-align` | Requires re-aligning ubiquitous language | Code uses "Registry" but LANGUAGE.md says "Census" |
-| Structural violation: DIP / package layout / port placement | `/arch-design` | Requires redesigning architectural boundaries | Domain imports infrastructure package |
-| Design gap: missing interface / missing DDL / module omission | `/arch-detail` | Requires supplementing detailed design | No Data Mapper for a persisted entity |
-| Code implementation issue: missing file / missing test / TODO stub | `/devtdd` | Direct TDD fix via vertical slice | Port interface has no adapter implementation |
-| Skill self-defect: checklist missing a rule / rubric gap | `/arch-review-self` | Update arch-review's own reference.md | No check for Go `embed` misuse in §1.1 |
+| Finding Type | Route | Document Owner | Example |
+|-------------|-------|---------------|--------|
+| Terminology drift / BC boundary shift / glossary gap | `/arch-align` | LANGUAGE.md, CONTEXT.md | Code uses "Registry" but LANGUAGE.md says "Census" |
+| ARCHITECTURE.md inconsistency / sequence diagram drift / port table mismatch | `/arch-design` | ARCHITECTURE.md, SYSTEM.md | ARCHITECTURE.md says "Engine constructs outbox" but code says "ABody RunLoop" |
+| Structural violation: DIP / package layout / port placement | `/arch-design` | ARCHITECTURE.md | Domain imports infrastructure package |
+| Design gap: missing interface / missing DDL / module omission | `/arch-detail` | DESIGN.md, module.md, interfaces/ | No Data Mapper for a persisted entity |
+| Code implementation issue: missing file / missing test / TODO stub | `/devtdd` | source code, test files | Port interface has no adapter implementation |
+| Skill self-defect: checklist missing a rule / rubric gap | `/arch-review-self` | REVIEW.md, reference.md | No check for Go `embed` misuse in §1.1 |
 
 ### Priority When Multiple Routes Apply
 

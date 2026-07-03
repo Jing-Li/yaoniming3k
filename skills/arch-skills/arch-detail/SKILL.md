@@ -1,7 +1,7 @@
 ---
 name: arch-detail
 description: Phase 3 detailed design and multi-language implementation skill. Use after /arch-design to translate ARCHITECTURE.md boundaries into a modular DESIGN.md index + per-module design files + per-method interface contracts. Inspired by Matt Pocock's /to-issues and /tdd. Trigger when user says "/arch-detail", "detail design", "generate DDL", "translate to code", "vertical slice tasks", or asks to map an architecture spec into implementable issues.
-version: 2.7.0
+version: 3.0.0
 ---
 
 # Arch-Detail Skill (Phase 3: Detailed Design & Multi-Language Implementation)
@@ -47,7 +47,7 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 6. **CROSS-BC CODE BOUNDARY AWARENESS**: When `docs/arch/PHASES.md` lists 2+ BCs with independent processes, DESIGN.md §3 Package Layout MUST reflect that each BC is an **independent module** (own `go.mod`/`build.gradle`/`pyproject.toml`). The Cross-BC Package Mapping table shows packages within this BC's module (`<bc-slug>/internal/...`). No shared packages — cross-BC communication is via messages only. Each BC defines only the port methods it consumes.
 
-7. **ARCHITECTURE.md ↔ MODULE.md BEHAVIORAL CONSISTENCY (Upstream Consistency Gate)**: `arch-detail` produces detailed design only (DESIGN.md / module.md / interface contracts) — it does NOT write code. However, it MUST ensure that every behavioral description in `module.md §3` (Application Layer / runtime behavior) is semantically consistent with the corresponding description in `ARCHITECTURE.md §2.x` (Runtime Interaction). If the detailed design refines, transfers, or removes a runtime responsibility (e.g., shifting outbox construction from Engine to ABody RunLoop, removing inbox writes), `arch-detail` MUST simultaneously update `ARCHITECTURE.md §2.x` to match — maintaining cross-document consistency is arch-detail's own responsibility, not the downstream `/devtdd`'s or `/arch-review`'s. Never leave a behavioral inconsistency between ARCHITECTURE.md and module.md.
+7. **DOCUMENT OWNERSHIP & UPSTREAM CONSISTENCY GATE**: `arch-detail` is the **sole owner** of `DESIGN.md`, `design/modules/*/module.md`, and `design/modules/*/interfaces/*.md`. It produces detailed design only — it does NOT write source code (that is `/devtdd`'s job) and does NOT modify `ARCHITECTURE.md` or `LANGUAGE.md` (owned by `/arch-design` and `/arch-align` respectively). When writing `module.md §3` (runtime behavior), arch-detail MUST compare against `ARCHITECTURE.md §2.x`. If any semantic conflict exists (e.g., ARCHITECTURE.md says "Engine constructs outbox" but the refined design says "ABody RunLoop constructs reply Intent"), arch-detail MUST output the inconsistency as an **Architecture Debt (AD)** routed to `/arch-design` — it must NOT directly modify ARCHITECTURE.md. The AD should include: the conflicting component name, ARCHITECTURE.md's current description, module.md's refined description, and suggested resolution.
 
 ---
 
@@ -99,8 +99,8 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
       - `Location` (file:line), `Code State` (what exists), `Design State` (what should exist), `Severity` (Critical/Warning), `Suggested Fix`
    3. **Generate refactoring tasks** or append to existing Task Summary rows: if the delta is significant (3+ Critical items), create dedicated "Code Alignment" tasks in DESIGN.md §5 with Status ☐. If minor (≤2 Warning items), append DoD items to existing tasks.
    4. **Scan ARCHITECTURE.md Mermaid participant aliases**: grep `ARCHITECTURE.md` for `participant .* as .*` declarations. Compare each alias against the current port names in LANGUAGE.md and the ARCHITECTURE.md port table (§1.2). Flag and fix any alias that uses a banned/old name (e.g., `AOSStore` when the current port is `AOSLoader/AOSSaver/AOSChecker`).
-   5. **Upstream Consistency Gate — PRE** (写入前校验): Before writing any `module.md §3` that describes runtime behavior (responsibilities, method flows, data paths), grep `ARCHITECTURE.md` for the same component and read all §2.x sections that describe its runtime behavior. Diff the intended module.md §3 behavior against ARCHITECTURE.md §2.x. If any semantic conflict exists (e.g., ARCHITECTURE.md says "Engine constructs outbox" but module.md §3 will say "ABody RunLoop constructs reply Intent"), plan to update ARCHITECTURE.md §2.x in the same pass.
-   6. **Upstream Consistency Gate — POST** (写入后修正): After writing all module.md files, for each module whose §3 refined, transferred, or removed a runtime responsibility, update the corresponding `ARCHITECTURE.md §2.x` section to match. This includes: RunLoop flows, method responsibility tables, port requirement tables (§1.3), and constraint notes. Also update `LANGUAGE.md` responsibility tables if they describe the same behavior.
+   5. **Upstream Consistency Gate — PRE** (写入前校验): Before writing any `module.md §3` that describes runtime behavior (responsibilities, method flows, data paths), grep `ARCHITECTURE.md` for the same component and read all §2.x sections that describe its runtime behavior. Diff the intended module.md §3 behavior against ARCHITECTURE.md §2.x. If any semantic conflict exists, record it for AD generation in the POST step.
+   6. **Upstream Consistency Gate — POST** (写入后生成 AD): After writing all module.md files, for each module whose §3 refined, transferred, or removed a runtime responsibility compared to ARCHITECTURE.md §2.x, generate an **Architecture Debt (AD)** routed to `/arch-design`. The AD MUST include: (a) component name, (b) ARCHITECTURE.md current description, (c) module.md refined description, (d) impact assessment. Also check `LANGUAGE.md` responsibility tables — if they describe the same behavior and conflict, include in the same AD. Output all generated ADs to the user and recommend running `/arch-design` to resolve before `/devtdd`.
    7. **Output the delta summary** to the user and recommend `/devtdd` to execute the alignment tasks before proceeding.
    8. **Do NOT mark Phase 3 complete** until the user confirms whether to proceed with the delta tasks or defer them.
 
@@ -110,13 +110,20 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
    1. **Line count check**: `wc -l DESIGN.md` — confirm the line count is within the expected range (not truncated, not appended with stale content). If the file was rewritten, verify the old content is fully gone (no residual duplicate sections).
    2. **Old terminology grep**: `grep -rn "<banned-term>" design/ DESIGN.md` for every term listed in LANGUAGE.md's banned/deprecated synonyms section. Any match is a blocker — fix before proceeding.
    3. **File end sanity**: Read the last 5 lines of DESIGN.md to confirm the file ends cleanly (no truncation mid-sentence, no orphaned markdown table rows).
-   4. **Behavioral consistency check** (Upstream Consistency Gate 验证): For each module whose §3 describes runtime behavior, grep both `ARCHITECTURE.md` and the module's `module.md` for the same component name. Verify that behavioral descriptions (responsibility assignments, data flow sequences, port requirements) are semantically aligned. Any mismatch is a **blocker** — fix before proceeding. Also check `LANGUAGE.md` responsibility tables for the same components.
+   4. **Upstream Consistency AD check**: For each module whose §3 describes runtime behavior, grep both `ARCHITECTURE.md` and the module's `module.md` for the same component name. If behavioral descriptions are semantically misaligned and no AD has been generated yet, generate one now routed to `/arch-design`. This is a **blocker** — the AD must be output to the user before proceeding.
 
 8. **Update PHASES.md**: Mark Phase 3 as `✅ complete` in `docs/arch/PHASES.md` and update the `Last updated` date. If the Redo Protocol (Step 6) produced delta tasks, note this in the PHASES.md update (e.g., `✅ complete (redo: N delta tasks pending)`).
 
 9. **Hand-off Trigger**: Once the user confirms the design, output:
 
-   > **"详细设计已写入 `DESIGN.md`（索引）+ `design/modules/`（模块级设计 + 接口契约 + 垂直切片任务）。`PHASES.md` 已标记 Phase 3 ✅。架构设计管线全部完成。可输入 `/arch-review` 执行架构审计（产出 `REVIEW.md` 持久化审查报告 + Architecture Debt 分流），或 `/devtdd` 针对某个 task 开始红绿重构（task 定义在 `design/modules/<module>/module.md` 底部）。"**
+   > **"详细设计已写入 `DESIGN.md`（索引）+ `design/modules/`（模块级设计 + 接口契约 + 垂直切片任务）。`PHASES.md` 已标记 Phase 3 ✅。架构设计管线全部完成。"**
+   >
+   > **如果 Redo Protocol 产出了 Upstream Consistency AD:**
+   > - `/arch-design`: N 项 (AD-xxx, ...)
+   > 建议先运行 `/arch-design` 解决 AD 后再执行 `/devtdd`。
+   >
+   > **否则:**
+   > 可输入 `/devtdd` 针对某个 task 开始红绿重构（task 定义在 `design/modules/<module>/module.md` 底部），或 `/arch-review` 执行架构审计。
 
 ---
 

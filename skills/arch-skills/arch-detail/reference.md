@@ -186,7 +186,7 @@ Include code blocks.)
 - The Interface Contracts Index must list **every** method in the port — no omissions.
 - Domain code in module.md must not import infrastructure, proto, or framework types.
 - Vertical-Slice Tasks for this module go here. Cross-module tasks go in the primary module with a cross-reference to the other module.
-- **§3 Upstream Consistency**: If §3 describes runtime behavior (method flows, responsibility assignments, data paths) that refines or changes what ARCHITECTURE.md §2.x says about the same component, you MUST update ARCHITECTURE.md §2.x in the same pass. Also update LANGUAGE.md responsibility tables. Never leave a behavioral inconsistency between documents.
+- **§3 Upstream Consistency (AD Generation)**: If §3 describes runtime behavior (method flows, responsibility assignments, data paths) that refines or changes what ARCHITECTURE.md §2.x says about the same component, you MUST generate an **Architecture Debt (AD)** routed to `/arch-design`. Do NOT directly modify ARCHITECTURE.md or LANGUAGE.md — they are owned by `/arch-design` and `/arch-align` respectively. The AD must include: component name, ARCHITECTURE.md current description, module.md refined description, and suggested resolution.
 
 ---
 
@@ -664,7 +664,7 @@ Before delivering, silently verify:
 - [ ] **Post-Write: Old terminology grep** — `grep -rn "<banned-term>" design/ DESIGN.md` for every LANGUAGE.md banned synonym returns zero matches.
 - [ ] **Post-Write: File end sanity** — DESIGN.md last 5 lines end cleanly (no truncation mid-sentence, no orphaned table rows).
 - [ ] **Redo: ARCHITECTURE.md Mermaid participant aliases** — every `participant X as <Name>` in ARCHITECTURE.md sequence diagrams uses the current port name (not a banned/old name). Compare against LANGUAGE.md banned list and ARCHITECTURE.md §1.2 port table.
-- [ ] **Redo: Upstream Consistency Gate (行为一致性)** — for each module whose `module.md §3` describes runtime behavior (responsibilities, data flows, method sequences), grep both `ARCHITECTURE.md` and `module.md` for the same component name and verify behavioral descriptions are semantically aligned. Also check `LANGUAGE.md` responsibility tables (§E, §F, etc.) for the same components. Any behavioral mismatch (e.g., ARCHITECTURE.md says "Engine constructs outbox" but module.md says "ABody RunLoop constructs reply Intent") is a **blocker** — update ARCHITECTURE.md §2.x and LANGUAGE.md responsibility tables to match the refined design before proceeding.
+- [ ] **Redo: Upstream Consistency AD Generation (行为一致性)** — for each module whose `module.md §3` describes runtime behavior (responsibilities, data flows, method sequences), grep both `ARCHITECTURE.md` and `module.md` for the same component name and verify behavioral descriptions are semantically aligned. Also check `LANGUAGE.md` responsibility tables (§E, §F, etc.) for the same components. Any behavioral mismatch (e.g., ARCHITECTURE.md says "Engine constructs outbox" but module.md says "ABody RunLoop constructs reply Intent") is a **blocker** — generate an Architecture Debt (AD) routed to `/arch-design` with full details (component name, current vs refined description, impact). Do NOT directly modify ARCHITECTURE.md or LANGUAGE.md.
 - [ ] **Scope boundary**: arch-detail produces design documents only (DESIGN.md, module.md, interface contracts). It does NOT write source code. Code development is `/devtdd`'s responsibility.
 
 If any check fails, fix the design **before** writing files or proposing tasks.

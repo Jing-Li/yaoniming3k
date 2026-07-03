@@ -17,7 +17,7 @@ Write this to `docs/arch/PHASES.md`. Replace `<YYYY-MM-DD>` with today's date. T
 
 ## Bounded Contexts
 
-| BC | Slug | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
+| BC | Slug | Phase 1 (Align) | Phase 2 (Design) | Phase 3 (Detail) | Phase 4 (Implement + Audit) |
 |----|------|---------|---------|---------|---------|
 
 ---
@@ -29,9 +29,10 @@ Each BC's outputs live in `docs/bc/<slug>/`:
 | Phase | Skill | Output Files |
 |-------|-------|-------------|
 | 1 — Concept Alignment | `/arch-align` | `LANGUAGE.md`, `CONTEXT.md` |
-| 2 — Boundary Design | `/arch-design` | `ARCHITECTURE.md` |
+| 2 — Boundary Design | `/arch-design` | `ARCHITECTURE.md` + `docs/arch/SYSTEM.md` (when 2+ BCs) |
 | 3 — Detailed Design | `/arch-detail` | `DESIGN.md`, `design/modules/` |
-| 4 — Architecture Audit | `/arch-review` | Report to stdout |
+| 4a — Implementation | `/devtdd` | source code + test files; updates `DESIGN.md` task status |
+| 4b — Architecture Audit | `/arch-review` | `REVIEW.md` (current) + `reviews/` (active archives) + `reviews/done/` (closed archives) |
 
 ---
 
@@ -51,9 +52,10 @@ Each skill **must** update this file upon completion:
 | Skill | On Startup | On Completion |
 |-------|-----------|---------------|
 | `/arch-align` | Read PHASES.md; if Phase 2+ exists for target BC, warn | Create `docs/bc/<slug>/` dir; write Phase 1 files; update PHASES.md |
-| `/arch-design` | Read PHASES.md; verify target BC Phase 1 ✅ | Write `ARCHITECTURE.md`; update PHASES.md |
-| `/arch-detail` | Read PHASES.md; verify target BC Phase 2 ✅ | Write `DESIGN.md` + `design/modules/`; update PHASES.md |
-| `/arch-review` | Read PHASES.md; determine completed phases | Update Phase 4 column |
+| `/arch-design` | Read PHASES.md; verify target BC Phase 1 ✅; scan REVIEW.md for ADs routed to `/arch-design` | Write `ARCHITECTURE.md`; update PHASES.md |
+| `/arch-detail` | Read PHASES.md; verify target BC Phase 2 ✅ | Write `DESIGN.md` + `design/modules/`; update PHASES.md; generate ADs for upstream inconsistencies |
+| `/devtdd` | Read PHASES.md; verify target BC Phase 3 ✅; scan REVIEW.md for ADs routed to `/devtdd` | Update `DESIGN.md` task status; write source code + tests; update PHASES.md |
+| `/arch-review` | Read PHASES.md; determine completed phases | Update Phase 4 column; write REVIEW.md; route ADs by document ownership |
 
 ## BC Selection Protocol
 
