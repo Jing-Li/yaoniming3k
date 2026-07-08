@@ -8,6 +8,8 @@ class TaijiRequest(BaseModel):
     text: str
     sessionId: int = 0
     files: List[dict] = []
+    thinking: bool = False
+    webSearch: bool = False
 
 
 class TaijiResponseChunk(BaseModel):

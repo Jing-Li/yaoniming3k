@@ -507,7 +507,7 @@ class TaijiProvider(BaseProvider):
             "accept": "text/event-stream",
             "content-type": "application/json",
             "authorization": self.api_key,
-            "x-app-version": "2.16.0",
+            "x-app-version": "3.2.0",
         }
 
         cookies = {}
@@ -699,7 +699,7 @@ class TaijiProvider(BaseProvider):
             "accept": "text/event-stream",
             "content-type": "application/json",
             "authorization": self.api_key,
-            "x-app-version": "2.16.0",
+            "x-app-version": "3.2.0",
         }
 
         cookies = {}
