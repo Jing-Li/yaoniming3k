@@ -1,5 +1,5 @@
 /**
- * Caisen Visualization - Chart Config Tests
+ * Caisen Visualization - Chart Builder Tests
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -10,9 +10,9 @@ import {
     processAnnotations,
     processTrades,
     getAnnotationRenderer
-} from '../../src/caisen/visualization/js/chart-config.js';
+} from '../../src/caisen/frontend/src/js/chart-builder.js';
 
-describe('chart-config.js', () => {
+describe('chart-builder.js', () => {
     // Sample data for testing
     const sampleBars = [
         { timestamp: '2024-01-01T00:00:00', open: 100, close: 105, low: 99, high: 107, volume: 1000 },

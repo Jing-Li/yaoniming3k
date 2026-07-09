@@ -115,6 +115,18 @@
   letter-spacing: 0.08em;
 }
 
+.hero-stat .value[data-trend="up"] {
+  background: none;
+  color: var(--color-up);
+  -webkit-text-fill-color: var(--color-up);
+}
+
+.hero-stat .value[data-trend="down"] {
+  background: none;
+  color: var(--color-down);
+  -webkit-text-fill-color: var(--color-down);
+}
+
 /* ===== Strategy Groups ===== */
 .strategy-section {
   margin-bottom: var(--spacing-2xl);
@@ -344,6 +356,12 @@
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .strategy-header {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: var(--spacing-md);
@@ -368,6 +386,26 @@
 
   .hero-stat .value {
     font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-lg);
+  }
+
+  .hero {
+    padding: var(--spacing-md) 0;
+  }
+
+  .hero h1 {
+    font-size: var(--font-size-lg);
+    letter-spacing: 0.2em;
+  }
+
+  .hero p {
+    font-size: var(--font-size-xs);
   }
 }
 

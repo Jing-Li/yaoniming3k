@@ -132,3 +132,11 @@ class StrategyRegistry:
             except Exception:
                 continue  # 跳过导入失败的策略
         return results
+
+    @staticmethod
+    def get_module_path(strategy_name: str) -> str | None:
+        """根据策略类名返回其模块路径，未注册时返回 None。"""
+        for module_path, class_name, *_ in _BUILTIN_STRATEGIES:
+            if class_name == strategy_name:
+                return module_path
+        return None

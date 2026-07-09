@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>回测详情 - 策微 CeWei</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,12 +29,23 @@
             </div>
         </div>
 
+        <!-- Anchor Navigation -->
+        <nav class="page-nav" aria-label="页面导航">
+            <a class="page-nav__link" href="#metrics-panel">指标</a>
+            <a class="page-nav__link" href="#section-kline">K线</a>
+            <a class="page-nav__link" href="#section-equity">净值</a>
+            <a class="page-nav__link" href="#section-drawdown">回撤</a>
+            <a class="page-nav__link" href="#section-heatmap">月度</a>
+            <a class="page-nav__link" href="#section-distribution">分布</a>
+            <a class="page-nav__link" href="#section-trades">交易</a>
+        </nav>
+
         <!-- Metrics Panel -->
         <div class="metrics-panel" id="metrics-panel">
             <div class="metric-card metric-card-feature">
                 <div class="label">总收益率</div>
                 <div class="value metric-value-large" id="total-return">-</div>
-                <div id="sparkline-container" style="width:100%;height:40px;margin-top:var(--spacing-sm,8px);"></div>
+                <div id="sparkline-container" class="metric-sparkline"></div>
             </div>
             <div class="metric-card">
                 <div class="label">年化收益率</div>
@@ -62,18 +74,18 @@
         </div>
 
         <!-- K-Line Chart -->
-        <div class="chart-container">
+        <div class="chart-container" id="section-kline">
             <div class="chart-header">
                 <h2>K线走势</h2>
                 <div class="chart-controls">
                     <div class="date-filter">
-                        <label>从</label>
+                        <label for="start-date">从</label>
                         <input type="date" id="start-date">
-                        <label>到</label>
+                        <label for="end-date">到</label>
                         <input type="date" id="end-date">
                         <button onclick="applyDateFilter()">筛选</button>
                     </div>
-                    <button id="btn-zoom" onclick="toggleZoom()">缩放</button>
+                    <button id="btn-zoom" aria-pressed="false" onclick="toggleZoom()">缩放</button>
                     <button onclick="resetZoom()">重置</button>
                 </div>
             </div>
@@ -84,18 +96,18 @@
         </div>
 
         <!-- Equity Curve -->
-        <div class="chart-container">
+        <div class="chart-container" id="section-equity">
             <div class="chart-header">
                 <h2>净值曲线</h2>
                 <div class="chart-controls">
-                    <button onclick="toggleEquity()">隐藏/显示</button>
+                    <button id="btn-equity" aria-pressed="true" onclick="toggleEquity()">隐藏/显示</button>
                 </div>
             </div>
             <div class="chart-wrapper equity-chart" id="equity-chart"></div>
         </div>
 
         <!-- Drawdown Chart -->
-        <div class="chart-container">
+        <div class="chart-container" id="section-drawdown">
             <div class="chart-header">
                 <h2>回撤分析</h2>
             </div>
@@ -103,7 +115,7 @@
         </div>
 
         <!-- Monthly Returns Heatmap -->
-        <div class="chart-container">
+        <div class="chart-container" id="section-heatmap">
             <div class="chart-header">
                 <h2>月度收益</h2>
             </div>
@@ -111,7 +123,7 @@
         </div>
 
         <!-- Trade Distribution -->
-        <div class="chart-container">
+        <div class="chart-container" id="section-distribution">
             <div class="chart-header">
                 <h2>盈亏分布</h2>
             </div>
@@ -119,10 +131,10 @@
         </div>
 
         <!-- Trades Table -->
-        <div class="trades-panel">
-            <div class="trades-header" style="display:flex;justify-content:space-between;align-items:center;gap:var(--spacing-md);flex-wrap:wrap;margin-bottom:var(--spacing-md);">
-                <h2 style="margin:0;border:none;padding:0;">交易记录</h2>
-                <div id="trades-summary" class="trades-summary" style="display:flex;gap:var(--spacing-lg);font-size:var(--font-size-xs);color:var(--text-muted);"></div>
+        <div class="trades-panel" id="section-trades">
+            <div class="trades-header">
+                <h2>交易记录</h2>
+                <div id="trades-summary" class="trades-summary"></div>
             </div>
             <table class="trades-table">
                 <thead>
@@ -138,7 +150,7 @@
                 <tbody id="trades-body">
                 </tbody>
             </table>
-            <div class="pagination" id="trades-pagination" style="display:flex;justify-content:center;align-items:center;gap:var(--spacing-xs,4px);margin-top:var(--spacing-md,16px);flex-wrap:wrap;"></div>
+            <div class="pagination-bar" id="trades-pagination"></div>
         </div>
     </div>
 

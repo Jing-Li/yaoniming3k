@@ -4,6 +4,18 @@
  */
 
 /**
+ * Escape HTML special characters to prevent XSS injection.
+ * @param {any} str - Value to escape (coerced to string)
+ * @returns {string} Escaped string safe for innerHTML insertion
+ */
+export function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    const s = String(str);
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return s.replace(/[&<>"']/g, c => map[c]);
+}
+
+/**
  * Format numeric value for display
  * @param {number|null|undefined} value - Value to format
  * @param {string} type - Format type: 'percent', 'currency', 'ratio'
@@ -117,21 +129,6 @@ export function filterValidMarkLines(markLines) {
 }
 
 /**
- * Pattern colors map
- */
-export const PATTERN_COLORS = {
-    head_and_shoulders_bottom: '#9f7aea',
-    head_and_shoulders_top: '#ed8936',
-    w_bottom: '#48bb78',
-    m_top: '#fc8181',
-    triangle_ascending: '#60a5fa',
-    triangle_descending: '#f6ad55',
-    flag: '#f687b3',
-    double_top: '#b794f4',
-    double_bottom: '#68d391'
-};
-
-/**
  * Find bar by timestamp with fuzzy matching (within 1 hour for intraday data)
  * @param {Object[]} bars - Array of bar objects
  * @param {string|number} timestamp - Timestamp to search for
@@ -162,7 +159,7 @@ export function findBarByTimestamp(bars, timestamp) {
  * @returns {Object} Filtered data copy
  */
 export function applyDateFilterToData(data, startDate, endDate) {
-    const filteredData = JSON.parse(JSON.stringify(data));
+    const filteredData = structuredClone(data);
 
     if (startDate) {
         const start = new Date(startDate);

@@ -178,7 +178,7 @@ export function renderEquityChart() {
  */
 function handleChartError(option) {
     try {
-        const fallbackOption = JSON.parse(JSON.stringify(option));
+        const fallbackOption = structuredClone(option);
         fallbackOption.series[0].markPoint = { data: [] };
         fallbackOption.series[0].markLine = { data: [] };
 
@@ -203,7 +203,8 @@ export function toggleZoom() {
     const isZoomEnabled = appState.toggleZoom();
     const btn = document.getElementById('btn-zoom');
     if (btn) {
-        btn.classList.toggle('active', isZoomEnabled);
+        btn.classList.toggle('is-active', isZoomEnabled);
+        btn.setAttribute('aria-pressed', String(isZoomEnabled));
     }
     renderKLineChart();
 }
@@ -232,6 +233,11 @@ export function toggleEquity() {
     if (wrapper) {
         wrapper.style.display = isVisible ? 'block' : 'none';
     }
+    const btn = document.getElementById('btn-equity');
+    if (btn) {
+        btn.classList.toggle('is-active', !isVisible);
+        btn.setAttribute('aria-pressed', String(isVisible));
+    }
 }
 
 /**
@@ -241,7 +247,8 @@ export function toggleMA() {
     const show = appState.toggleMA();
     const btn = document.getElementById('btn-ma');
     if (btn) {
-        btn.classList.toggle('active', show);
+        btn.classList.toggle('is-active', show);
+        btn.setAttribute('aria-pressed', String(show));
     }
     renderKLineChart();
 }

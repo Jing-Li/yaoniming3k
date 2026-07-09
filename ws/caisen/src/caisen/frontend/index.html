@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>策微 CeWei</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -23,24 +24,22 @@
         </div>
 
         <!-- Search Bar -->
-        <div class="search-bar" style="display:flex;justify-content:center;margin:var(--spacing-lg,24px) 0;">
-            <div style="position:relative;width:100%;max-width:520px;">
-                <span style="position:absolute;left:var(--spacing-md,16px);top:50%;transform:translateY(-50%);color:var(--text-muted,#64748b);font-size:var(--font-size-base,16px);pointer-events:none;">⌕</span>
+        <div class="search-bar">
+            <div class="search-bar__wrap">
+                <span class="search-bar__icon" aria-hidden="true">⌕</span>
                 <input
-                    type="text"
+                    type="search"
                     id="search-input"
-                    placeholder="搜索策略名称..."
+                    placeholder="搜索策略名称或标的..."
                     class="search-input"
                     autocomplete="off"
-                    style="width:100%;padding:var(--spacing-md,12px) var(--spacing-md,16px) var(--spacing-md,12px) calc(var(--spacing-md,16px) * 2 + 12px);background:var(--glass-bg,rgba(15,23,42,0.7));-webkit-backdrop-filter:blur(var(--glass-blur,12px));backdrop-filter:blur(var(--glass-blur,12px));border:1px solid var(--glass-border,rgba(255,255,255,0.08));border-radius:var(--radius-full,9999px);color:var(--text-primary,#f8fafc);font-size:var(--font-size-sm,14px);outline:none;transition:border-color var(--transition-normal,250ms) ease, box-shadow var(--transition-normal,250ms) ease;"
-                    onfocus="this.style.borderColor='var(--border-hover, rgba(96,165,250,0.35))';this.style.boxShadow='var(--shadow-glow-primary, 0 0 32px rgba(96,165,250,0.25))';"
-                    onblur="this.style.borderColor='var(--glass-border, rgba(255,255,255,0.08))';this.style.boxShadow='none';"
+                    aria-label="搜索策略名称或标的代码"
                 >
             </div>
         </div>
 
         <!-- Main Content: New Backtest Panel + Runs List -->
-        <div style="display:flex;gap:var(--spacing-xl,32px);align-items:flex-start;flex-wrap:wrap;">
+        <div class="main-content-flex">
 
         <!-- New Backtest Panel -->
         <section id="backtest-panel" class="backtest-panel">
@@ -96,7 +95,7 @@
         </section>
 
         <!-- Runs List -->
-        <main id="runs-container" style="flex:1;min-width:0;">
+        <main id="runs-container" class="main-content-area">
             <!-- Loading State -->
             <div class="loading-state">
                 <div class="spinner"></div>

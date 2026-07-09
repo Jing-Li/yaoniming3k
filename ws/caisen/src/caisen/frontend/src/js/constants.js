@@ -93,10 +93,10 @@ export const ANNOTATION_TYPES = {
 };
 
 /**
- * Debug configuration
+ * Debug configuration — auto-disabled in production builds via Vite env.
  */
 export const DEBUG_CONFIG = {
-    enabled: true,
+    enabled: import.meta.env.DEV === true,
     log: function(...args) {
         if (this.enabled) console.log('[DEBUG]', new Date().toISOString(), ...args);
     },

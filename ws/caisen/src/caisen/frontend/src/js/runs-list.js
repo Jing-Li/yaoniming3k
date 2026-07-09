@@ -7,6 +7,7 @@ import { formatValue, formatTimestamp } from './components.js';
 import { appState } from './app-state.js';
 import { getStrategyDisplayName } from './constants.js';
 import { renderVersionCompare, disposeVersionCompare } from './version-compare.js';
+import { escapeHtml } from './utils.js';
 
 // ==================== Module State ====================
 
@@ -66,15 +67,6 @@ function getMetricDisplay(metrics, key, defaultValue = '-') {
         };
     }
     return { value: val, class: 'neutral' };
-}
-
-/**
- * Resolve the inline color for a metric "class".
- */
-function metricColor(cls) {
-    if (cls === 'positive') return 'var(--color-up, #10b981)';
-    if (cls === 'negative') return 'var(--color-down, #ef4444)';
-    return 'var(--text-secondary, #cbd5e1)';
 }
 
 /**
@@ -188,7 +180,7 @@ function renderHeroStats(runs) {
             <span class="label">策略数量</span>
         </div>
         <div class="hero-stat">
-            <span class="value" style="color: ${avgReturn >= 0 ? 'var(--color-up)' : 'var(--color-down)'}">${formatValue(avgReturn, 'percent')}</span>
+            <span class="value" data-trend="${avgReturn >= 0 ? 'up' : 'down'}">${formatValue(avgReturn, 'percent')}</span>
             <span class="label">平均收益率</span>
         </div>
     `;
@@ -220,21 +212,27 @@ function renderRunCard(run) {
         : '';
     const versionLabel = _versionIndex.get(run.run_id) || 'v0';
 
+    const safeRunId = escapeHtml(run.run_id);
+    const safeStrategy = escapeHtml(run.strategy_name);
+    const safeSymbol = escapeHtml(run.symbol || '—');
+    const safeFreq = escapeHtml(run.freq || '1d');
+    const safeVersionAttr = escapeHtml(versionLabel);
+
     return `
         <article class="run-card${incompleteCls}"
                  tabindex="0"
                  role="button"
-                 data-run-id="${run.run_id}"
-                 onclick="window.navigateToRun('${run.run_id}')"
-                 onkeydown="if(event.key==='Enter'||event.key===' ') window.navigateToRun('${run.run_id}')"
-                 aria-label="查看 ${run.strategy_name} ${versionLabel} 回测详情">
+                 data-run-id="${safeRunId}"
+                 onclick="window.navigateToRun('${safeRunId}')"
+                 onkeydown="if(event.key==='Enter'||event.key===' ') window.navigateToRun('${safeRunId}')"
+                 aria-label="查看 ${safeStrategy} ${safeVersionAttr} 回测详情">
             <header class="card-header">
-                <div class="card-version" aria-label="版本号 ${versionLabel}">
-                    <span class="card-version__tag">${versionLabel}</span>
+                <div class="card-version" aria-label="版本号 ${safeVersionAttr}">
+                    <span class="card-version__tag">${safeVersionAttr}</span>
                     <span class="card-version__time">${formatRelativeTime(run.created_at)}</span>
                 </div>
                 <div class="card-badges">
-                    <span class="card-badge">${run.symbol || '—'}</span>
+                    <span class="card-badge">${safeSymbol}</span>
                     ${incompleteBadge}
                 </div>
             </header>
@@ -242,27 +240,24 @@ function renderRunCard(run) {
             <div class="card-meta">
                 <span class="meta-item">
                     <span class="meta-icon">⏱️</span>
-                    ${run.freq || '1d'}
+                    ${safeFreq}
                 </span>
-                <span class="meta-item meta-item--mono" title="${run.run_id}">
+                <span class="meta-item meta-item--mono" title="${safeRunId}">
                     <span class="meta-icon">🔖</span>
-                    ${run.run_id}
+                    ${safeRunId}
                 </span>
             </div>
 
-            <div class="card-sparkline" data-run-id="${run.run_id}"
-                 style="width:120px;height:40px;margin:var(--spacing-sm, 8px) 0;
-                        align-self:flex-start;opacity:0.85;">
-            </div>
+            <div class="card-sparkline" data-run-id="${safeRunId}"></div>
 
             <div class="card-metrics">
                 <div class="card-metric">
                     <span class="metric-label">总收益率</span>
-                    <span class="metric-value" style="color:${metricColor(totalReturn.class)};">${totalReturn.value}</span>
+                    <span class="metric-value" data-trend="${totalReturn.class === 'positive' ? 'up' : totalReturn.class === 'negative' ? 'down' : ''}">${totalReturn.value}</span>
                 </div>
                 <div class="card-metric">
                     <span class="metric-label">最大回撤</span>
-                    <span class="metric-value" style="color:${metricColor(maxDrawdown.class)};">${maxDrawdown.value}</span>
+                    <span class="metric-value" data-trend="${maxDrawdown.class === 'positive' ? 'up' : maxDrawdown.class === 'negative' ? 'down' : ''}">${maxDrawdown.value}</span>
                 </div>
                 <div class="card-metric">
                     <span class="metric-label">交易次数</span>
@@ -270,7 +265,7 @@ function renderRunCard(run) {
                 </div>
                 <div class="card-metric">
                     <span class="metric-label">夏普比率</span>
-                    <span class="metric-value" style="color:${metricColor(sharpe.class)};">${sharpe.value}</span>
+                    <span class="metric-value" data-trend="${sharpe.class === 'positive' ? 'up' : sharpe.class === 'negative' ? 'down' : ''}">${sharpe.value}</span>
                 </div>
             </div>
 
@@ -292,6 +287,8 @@ function renderStrategySection(strategyName, runs) {
     const displayName = getStrategyDisplayName(strategyName);
     const isMapped = displayName && displayName !== strategyName;
     const safeStrategyAttr = encodeURIComponent(strategyName);
+    const safeDisplayName = escapeHtml(displayName);
+    const safeRawName = escapeHtml(strategyName);
     const canCompare = runs.length >= 2;
 
     return `
@@ -299,8 +296,8 @@ function renderStrategySection(strategyName, runs) {
             <header class="strategy-header">
                 <div class="strategy-icon">${icon}</div>
                 <div class="strategy-title-group">
-                    <h2 class="strategy-title">${displayName}</h2>
-                    ${isMapped ? `<span class="strategy-subname" title="${strategyName}">${strategyName}</span>` : ''}
+                    <h2 class="strategy-title">${safeDisplayName}</h2>
+                    ${isMapped ? `<span class="strategy-subname" title="${safeRawName}">${safeRawName}</span>` : ''}
                 </div>
                 <span class="strategy-count">${runs.length} 个版本</span>
                 <button class="compare-btn"
@@ -328,17 +325,31 @@ function renderStrategySection(strategyName, runs) {
 }
 
 /**
- * Render loading state
+ * Render loading state (skeleton cards)
  */
 function renderLoading() {
     const container = document.getElementById('runs-container');
     if (container) {
-        container.innerHTML = `
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <p>加载回测记录...</p>
+        const cards = Array.from({ length: 3 }, () => `
+            <div class="skeleton-card">
+                <div class="skeleton-line skeleton-line--lg"></div>
+                <div style="height:var(--spacing-sm)"></div>
+                <div class="skeleton-line skeleton-line--md"></div>
+                <div style="height:var(--spacing-xs)"></div>
+                <div class="skeleton-line skeleton-line--sm"></div>
+                <div class="skeleton-metrics">
+                    <div class="skeleton-metric">
+                        <div class="skeleton-line skeleton-line--sm"></div>
+                        <div class="skeleton-line skeleton-line--md"></div>
+                    </div>
+                    <div class="skeleton-metric">
+                        <div class="skeleton-line skeleton-line--sm"></div>
+                        <div class="skeleton-line skeleton-line--md"></div>
+                    </div>
+                </div>
             </div>
-        `;
+        `).join('');
+        container.innerHTML = `<div class="skeleton-grid">${cards}</div>`;
     }
 }
 

@@ -122,7 +122,7 @@ class MetricsCalculator:
         return np.sqrt(250) * returns.mean() / returns.std()
 
     def _calc_trades_stats(self, result: "BacktestResult") -> dict:
-        """计算交易统计"""
+        """计算交易统计（支持多头和空头配对）"""
         from ..core.order import Side
 
         trades = result.trades
@@ -137,7 +137,7 @@ class MetricsCalculator:
                 "total_trades": 0,
             }
 
-        # 配对交易
+        # 配对交易：支持多头（BUY→SELL）和空头（SELL→BUY）
         position = None
         wins = 0
         losses = 0
@@ -145,18 +145,34 @@ class MetricsCalculator:
         total_loss = 0.0
 
         for trade in sorted(trades, key=lambda t: t.timestamp):
-            if trade.side == Side.BUY:
-                if position is None:
-                    position = {"price": trade.price, "qty": trade.quantity, "commission": trade.commission}
-            elif trade.side == Side.SELL and position:
-                profit = (trade.price - position["price"]) * position["qty"] - trade.commission - position.get("commission", 0)
-                if profit > 0:
-                    wins += 1
-                    total_profit += profit
-                else:
-                    losses += 1
-                    total_loss += abs(profit)
-                position = None
+            if position is None:
+                # 开仓
+                position = {
+                    "side": trade.side,
+                    "price": trade.price,
+                    "qty": trade.quantity,
+                    "commission": trade.commission,
+                }
+            else:
+                # 平仓：方向相反时配对
+                if (position["side"] == Side.BUY and trade.side == Side.SELL) or \
+                   (position["side"] == Side.SELL and trade.side == Side.BUY):
+                    if position["side"] == Side.BUY:
+                        # 多头：卖价 - 买价
+                        profit = (trade.price - position["price"]) * position["qty"] \
+                                 - trade.commission - position["commission"]
+                    else:
+                        # 空头：卖价 - 买价（反向）
+                        profit = (position["price"] - trade.price) * position["qty"] \
+                                 - trade.commission - position["commission"]
+
+                    if profit > 0:
+                        wins += 1
+                        total_profit += profit
+                    else:
+                        losses += 1
+                        total_loss += abs(profit)
+                    position = None
 
         total_closed = wins + losses
 

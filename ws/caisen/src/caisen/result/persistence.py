@@ -1,6 +1,7 @@
 """Result (回测结果) 持久化"""
 
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
@@ -22,22 +23,18 @@ def _generate_run_id(strategy_name: str, output_dir: str) -> str:
     date_str = datetime.now().strftime("%Y%m%d")
     base_name = f"{strategy_name}_{date_str}"
 
-    # 查找已有的 run_id，统计同日同名策略数量
+    # 用正则精确匹配 {base_name}_{数字} 格式的目录
+    pattern = re.compile(rf"^{re.escape(base_name)}_(\d+)$")
+
     runs_dir = Path(output_dir)
     max_seq = 0
     if runs_dir.exists():
         for path in runs_dir.iterdir():
-            if path.is_dir() and path.name.startswith(base_name):
-                # 提取序号
-                parts = path.name.split("_")
-                if len(parts) >= 3:
-                    try:
-                        seq = int(parts[-1])
-                        max_seq = max(max_seq, seq)
-                    except ValueError:
-                        pass
+            if path.is_dir():
+                m = pattern.match(path.name)
+                if m:
+                    max_seq = max(max_seq, int(m.group(1)))
 
-    # 新的序号
     new_seq = max_seq + 1
     return f"{base_name}_{new_seq}"
 

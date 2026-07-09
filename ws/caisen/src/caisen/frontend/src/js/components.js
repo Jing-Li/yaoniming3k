@@ -5,6 +5,10 @@
 
 import { appState } from './app-state.js';
 import { PATTERN_COLORS } from './constants.js';
+import { escapeHtml, formatValue, formatTimestamp, calculateAnnualReturn } from './utils.js';
+
+// Re-export for backward compatibility (other modules import from here)
+export { formatValue, formatTimestamp, calculateAnnualReturn };
 
 // ==================== Module State (pagination & sorting) ====================
 
@@ -16,53 +20,6 @@ let _currentPage = 1;
 let _sortField = 'timestamp';
 let _sortDir = 'desc';
 let _sparklineChart = null;
-
-/**
- * Format numeric value for display
- */
-export function formatValue(value, type = 'percent') {
-    if (value === null || value === undefined || isNaN(value)) return '-';
-    if (type === 'percent') {
-        return (value * 100).toFixed(2) + '%';
-    } else if (type === 'currency') {
-        return value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    } else if (type === 'ratio') {
-        if (!isFinite(value)) return '∞';
-        return value.toFixed(2);
-    }
-    return value.toFixed(2);
-}
-
-/**
- * Format timestamp to locale string
- */
-export function formatTimestamp(ts) {
-    const date = new Date(ts);
-    return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-}
-
-/**
- * Calculate annual return
- */
-export function calculateAnnualReturn(rawData) {
-    if (!rawData || !rawData.equity_curve || rawData.equity_curve.length < 2) return 0;
-    const equity = rawData.equity_curve;
-    const initial = equity[0].equity;
-    const final = equity[equity.length - 1].equity;
-    if (initial <= 0) return 0;
-
-    const days = equity.length;
-    const freq = rawData.meta?.freq || '1d';
-    const years = days / (freq === '1h' ? 250 * 24 : freq === '5m' ? 250 * 48 : 250);
-
-    return Math.pow(final / initial, 1 / years) - 1;
-}
 
 /**
  * Build trend arrow HTML for a numeric value.
@@ -196,7 +153,6 @@ export function renderMetrics() {
         const el = document.getElementById(id);
         if (el && !el.classList.contains('metric-value-large')) {
             el.classList.add('metric-value-large');
-            el.style.fontSize = el.style.fontSize || 'var(--font-size-2xl, 1.875rem)';
         }
     });
 
@@ -331,36 +287,21 @@ export function renderPagination(totalItems, container, onChange) {
     if (totalPages > 1) push(totalPages);
     pages.sort((a, b) => a - b);
 
-    const btnStyle = (active, disabled) => `
-        min-width:34px;height:34px;padding:0 10px;
-        display:inline-flex;align-items:center;justify-content:center;
-        background:${active ? 'var(--gradient-primary, linear-gradient(135deg,#3b82f6,#8b5cf6))' : 'var(--glass-bg, rgba(15,23,42,0.7))'};
-        color:${active ? '#fff' : 'var(--text-secondary, #cbd5e1)'};
-        border:1px solid ${active ? 'transparent' : 'var(--glass-border, rgba(255,255,255,0.08))'};
-        border-radius:var(--radius-sm, 6px);
-        font-size:var(--font-size-sm, 14px);
-        font-weight:${active ? '600' : '500'};
-        font-feature-settings:"tnum" 1;
-        cursor:${disabled ? 'not-allowed' : 'pointer'};
-        opacity:${disabled ? '0.4' : '1'};
-        transition:all var(--transition-fast, 150ms) ease;
-    `;
-
     const parts = [];
-    parts.push(`<button class="page-btn page-prev" ${_currentPage === 1 ? 'disabled' : ''} style="${btnStyle(false, _currentPage === 1)}" aria-label="上一页">‹</button>`);
+    parts.push(`<button class="page-btn page-prev" ${_currentPage === 1 ? 'disabled' : ''} aria-label="上一页">‹</button>`);
 
     let prev = 0;
     for (const p of pages) {
         if (p - prev > 1) {
-            parts.push(`<span style="padding:0 6px;color:var(--text-muted, #64748b);">…</span>`);
+            parts.push(`<span class="page-ellipsis">…</span>`);
         }
-        parts.push(`<button class="page-btn page-num" data-page="${p}" style="${btnStyle(p === _currentPage, false)}">${p}</button>`);
+        parts.push(`<button class="page-btn page-num${p === _currentPage ? ' is-active' : ''}" data-page="${p}">${p}</button>`);
         prev = p;
     }
 
-    parts.push(`<button class="page-btn page-next" ${_currentPage === totalPages ? 'disabled' : ''} style="${btnStyle(false, _currentPage === totalPages)}" aria-label="下一页">›</button>`);
+    parts.push(`<button class="page-btn page-next" ${_currentPage === totalPages ? 'disabled' : ''} aria-label="下一页">›</button>`);
 
-    const info = `<span style="margin-left:var(--spacing-md, 12px);color:var(--text-muted, #64748b);font-size:var(--font-size-xs, 12px);font-feature-settings:'tnum' 1;">第 ${_currentPage} / ${totalPages} 页 · 共 ${totalItems} 条</span>`;
+    const info = `<span class="page-info">第 ${_currentPage} / ${totalPages} 页 · 共 ${totalItems} 条</span>`;
     container.innerHTML = parts.join('') + info;
 
     // Wire events
@@ -409,19 +350,12 @@ function updateSortIndicators() {
         const key = th.dataset.sortKey;
         const icon = th.querySelector('.sort-icon');
         if (!icon) return;
-        th.style.cursor = 'pointer';
-        th.style.userSelect = 'none';
         if (key === _sortField) {
             icon.textContent = _sortDir === 'asc' ? ' ▲' : ' ▼';
-            icon.style.color = 'var(--color-neutral, #3b82f6)';
-            icon.style.fontSize = '0.7em';
-            th.style.color = 'var(--text-primary, #f8fafc)';
+            th.classList.add('is-sorted');
         } else {
             icon.textContent = ' ⇅';
-            icon.style.color = 'var(--text-muted, #64748b)';
-            icon.style.opacity = '0.4';
-            icon.style.fontSize = '0.7em';
-            th.style.color = '';
+            th.classList.remove('is-sorted');
         }
     });
 }
@@ -689,17 +623,30 @@ export function initDateInputs() {
 }
 
 /**
- * Show error state
+ * Show error state — non-destructive: appends error overlay instead of
+ * overwriting the entire .container, so the page can recover after retry.
  */
 export function showError(message) {
-    document.querySelector('.container').innerHTML = `
-        <div class="error">
-            <div class="error-icon">!</div>
-            <div>加载数据失败</div>
-            <div style="font-size: 14px; color: #718096;">${message}</div>
-            <button onclick="location.reload()">重试</button>
-        </div>
+    // Remove any previous error overlay first
+    const prev = document.getElementById('global-error-overlay');
+    if (prev) prev.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'global-error-overlay';
+    overlay.className = 'error';
+    overlay.innerHTML = `
+        <div class="error-icon">!</div>
+        <div>加载数据失败</div>
+        <div style="font-size: 14px; color: #718096;">${escapeHtml(message)}</div>
+        <button onclick="this.parentElement.remove()">关闭</button>
     `;
+
+    const container = document.querySelector('.container');
+    if (container) {
+        container.prepend(overlay);
+    } else {
+        document.body.prepend(overlay);
+    }
 }
 
 /**

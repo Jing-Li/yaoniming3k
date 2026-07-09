@@ -7,7 +7,8 @@ from typing import List
 try:
     from caisen.core.bar import Bar
 except ImportError:
-    Bar = None  # 类型标注，不强制依赖
+    # caisen 包未安装时 Bar 为 None；子类应在返回 Bar 前检查并抛出明确错误
+    Bar = None  # type: ignore
 
 
 class DataSource(ABC):

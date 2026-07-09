@@ -12,6 +12,7 @@ import { buildFilterPanel } from './annotation-filter.js';
 import { renderHeatmapChart } from './heatmap-chart.js';
 import { renderDrawdownChart } from './drawdown-chart.js';
 import { renderTradeDistribution } from './trade-distribution.js';
+import { escapeHtml } from './utils.js';
 
 // ==================== Data Cache ====================
 const dataCache = new Map();
@@ -81,22 +82,25 @@ async function loadRunsList() {
 
         const runsList = document.getElementById('runs-list');
         if (data.runs && data.runs.length > 0) {
-            runsList.innerHTML = data.runs.map(run => `
-                <div class="run-item" onclick="loadRun('${run.run_id}')">
+            runsList.innerHTML = data.runs.map(run => {
+                const safeId = escapeHtml(run.run_id);
+                const safeName = escapeHtml(run.strategy_name);
+                return `
+                <div class="run-item" onclick="loadRun('${safeId}')">
                     <div class="run-info">
-                        <div class="run-id">${run.strategy_name}</div>
-                        <div class="run-meta">${run.run_id} · ${new Date(run.created_at).toLocaleString('zh-CN')}</div>
+                        <div class="run-id">${safeName}</div>
+                        <div class="run-meta">${safeId} · ${new Date(run.created_at).toLocaleString('zh-CN')}</div>
                     </div>
                     <div class="run-actions">
-                        <button class="run-btn" onclick="event.stopPropagation(); loadRun('${run.run_id}')">查看</button>
+                        <button class="run-btn" onclick="event.stopPropagation(); loadRun('${safeId}')">查看</button>
                     </div>
                 </div>
-            `).join('');
+            `;}).join('');
         } else {
             runsList.innerHTML = '<div class="no-runs">暂无回测记录</div>';
         }
     } catch (error) {
-        document.getElementById('runs-list').innerHTML = `<div class="no-runs">加载失败: ${error.message}</div>`;
+        document.getElementById('runs-list').innerHTML = `<div class="no-runs">加载失败: ${escapeHtml(error.message)}</div>`;
     }
 }
 
@@ -219,7 +223,7 @@ export async function loadData() {
         }
 
         appState.setRawData(rawData);
-        appState.setFilteredData(JSON.parse(JSON.stringify(rawData)));
+        appState.setFilteredData(structuredClone(rawData));
 
         hideRunsList();
         renderAll();
@@ -254,7 +258,7 @@ export function applyDateFilter() {
 
     if (!rawData) return;
 
-    const filteredData = JSON.parse(JSON.stringify(rawData));
+    const filteredData = structuredClone(rawData);
 
     if (startDate) {
         const start = new Date(startDate);

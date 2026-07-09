@@ -1,25 +1,36 @@
 """caisen-data CLI"""
 
+import logging
 import click
 from pathlib import Path
 from datetime import datetime, date, timedelta
 import pandas as pd
-import os
 
 from .sources.akshare import AKShareDataSource
 
+logger = logging.getLogger("caisen_data.cli")
+
 # 默认数据目录
-DEFAULT_DATA_DIR = "/home/user/data"
+DEFAULT_DATA_DIR = "/Users/weimiao/Desktop/jing/projects/github/yaoniming3k/ws/data"
+
+_ONE_DAY = timedelta(days=1)
 
 
-@click.group()
-def cli():
-    """caisen-data 数据抓取工具"""
-    pass
+def parse_date_range_from_filename(filename: Path) -> tuple[date, date] | None:
+    """从 parquet 文件名解析日期范围，如 20240101_20240630.parquet -> (date, date)"""
+    try:
+        parts = filename.stem.split("_")
+        if len(parts) >= 2:
+            start = datetime.strptime(parts[0], "%Y%m%d").date()
+            end = datetime.strptime(parts[1], "%Y%m%d").date()
+            return start, end
+    except ValueError:
+        logger.debug("无法解析文件名: %s", filename.name)
+    return None
 
 
 def get_existing_range(data_dir: Path) -> tuple[date | None, date | None]:
-    """获取已有数据的时间范围"""
+    """通过文件名获取已有数据的时间范围（无需读取文件内容）"""
     if not data_dir.exists():
         return None, None
 
@@ -31,21 +42,65 @@ def get_existing_range(data_dir: Path) -> tuple[date | None, date | None]:
     max_date = None
 
     for pf in parquet_files:
-        try:
-            df = pd.read_parquet(pf)
-            if "timestamp" in df.columns:
-                df["ts"] = pd.to_datetime(df["timestamp"])
-                file_min = df["ts"].min().date()
-                file_max = df["ts"].max().date()
-
-                if min_date is None or file_min < min_date:
-                    min_date = file_min
-                if max_date is None or file_max > max_date:
-                    max_date = file_max
-        except Exception:
-            continue
+        result = parse_date_range_from_filename(pf)
+        if result:
+            file_start, file_end = result
+            if min_date is None or file_start < min_date:
+                min_date = file_start
+            if max_date is None or file_end > max_date:
+                max_date = file_end
 
     return min_date, max_date
+
+
+def normalize_ranges(ranges: list[tuple[date, date]]) -> list[tuple[date, date]]:
+    """合并重叠或相邻的日期范围"""
+    if not ranges:
+        return []
+    sorted_ranges = sorted(ranges, key=lambda x: x[0])
+    merged: list[tuple[date, date]] = [sorted_ranges[0]]
+    for start, end in sorted_ranges[1:]:
+        last_start, last_end = merged[-1]
+        if start <= last_end + _ONE_DAY:
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def find_range_gaps(
+    requested_start: date,
+    requested_end: date,
+    existing_ranges: list[tuple[date, date]],
+) -> list[tuple[date, date]]:
+    """计算请求范围中缺失的日期区间
+
+    Args:
+        requested_start: 请求的开始日期
+        requested_end: 请求的结束日期
+        existing_ranges: 已有的日期范围列表
+
+    Returns:
+        缺失的日期区间列表（无缺失时返回空列表）
+    """
+    if not existing_ranges:
+        return [(requested_start, requested_end)]
+
+    sorted_ranges = sorted(existing_ranges, key=lambda x: x[0])
+    gaps: list[tuple[date, date]] = []
+    current = requested_start
+
+    for exist_start, exist_end in sorted_ranges:
+        if current < exist_start:
+            gap_end = min(exist_start - _ONE_DAY, requested_end)
+            if gap_end >= current:
+                gaps.append((current, gap_end))
+        current = max(current, exist_end + _ONE_DAY)
+
+    if current <= requested_end:
+        gaps.append((current, requested_end))
+
+    return gaps
 
 
 def merge_parquet_files(data_dir: Path) -> pd.DataFrame:
@@ -54,16 +109,24 @@ def merge_parquet_files(data_dir: Path) -> pd.DataFrame:
     if not parquet_files:
         return pd.DataFrame()
 
-    dfs = []
-    for pf in parquet_files:
-        df = pd.read_parquet(pf)
-        dfs.append(df)
-
+    dfs = [pd.read_parquet(pf) for pf in parquet_files]
     combined = pd.concat(dfs, ignore_index=True)
-    # 去重，按 timestamp
     combined = combined.drop_duplicates(subset=["timestamp"])
     combined = combined.sort_values("timestamp").reset_index(drop=True)
     return combined
+
+
+def _get_datasource(source: str):
+    """根据名称获取数据源实例，不支持时返回 None"""
+    if source == "akshare":
+        return AKShareDataSource()
+    return None
+
+
+@click.group()
+def cli():
+    """caisen-data 数据抓取工具"""
+    pass
 
 
 @cli.command()
@@ -80,71 +143,99 @@ def fetch(symbol: str, start: str, end: str, freq: str, output_dir: str, source:
     start_date = datetime.strptime(start, "%Y-%m-%d").date()
     end_date = datetime.strptime(end, "%Y-%m-%d").date()
 
-    # 确保输出目录存在
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-
-    # 检查已有数据
     data_dir = output_path / symbol / freq
 
-    # --force 模式：直接删除旧文件，重新下载
+    # --force 模式：删除旧文件，全量重新下载
     if force and data_dir.exists():
+        logger.info("Force 模式，删除已有文件...")
         click.echo("Force mode: removing existing files...")
         for f in data_dir.glob("*.parquet"):
+            logger.debug("删除: %s", f.name)
             f.unlink()
 
+    # 计算已有数据范围（基于文件名，无需读取内容）
     existing_start, existing_end = get_existing_range(data_dir)
 
-    if existing_start and existing_end:
-        # 有已有数据，检查是否需要更新
-        if start_date >= existing_start and end_date <= existing_end:
-            click.echo(f"Found existing data: {existing_start} to {existing_end}")
-            # 获取实际数据范围（可能更宽）
-            actual_df = merge_parquet_files(data_dir)
-            if not actual_df.empty:
-                actual_start = pd.to_datetime(actual_df["timestamp"]).min().date()
-                actual_end = pd.to_datetime(actual_df["timestamp"]).max().date()
-                if start_date >= actual_start and end_date <= actual_end:
-                    click.echo(f"Data is up to date ({len(actual_df)} bars).")
-                    return
-
-        # 计算实际需要下载的范围
-        new_start = start_date
-        if existing_start and start_date <= existing_start:
-            # 已有数据比请求的更早，跳过已存在的部分
-            click.echo(f"Found existing data: {existing_start} to {existing_end}")
-            # 仍然下载，因为 akshare 可能需要完整历史
-            new_start = start_date
-
-    click.echo(f"Fetching {symbol} from {start} to {end} ({freq})...")
-
-    # 加载数据
-    if source == "akshare":
-        ds = AKShareDataSource()
+    if force or (existing_start is None):
+        # 全量下载
+        missing_ranges = [(start_date, end_date)]
     else:
-        click.echo(f"Unknown source: {source}")
+        # 增量：计算缺失区间
+        existing_ranges = [(existing_start, existing_end)]
+        missing_ranges = find_range_gaps(start_date, end_date, existing_ranges)
+
+        if not missing_ranges:
+            click.echo(
+                f"数据已是最新 ({existing_start} ~ {existing_end})，无需更新。"
+            )
+            logger.info("数据已是最新，跳过下载")
+            return
+
+        logger.info("缺失区间: %s", missing_ranges)
+        click.echo(f"已有数据: {existing_start} ~ {existing_end}")
+        for gap_s, gap_e in missing_ranges:
+            click.echo(f"  缺失区间: {gap_s} ~ {gap_e}")
+
+    # 获取数据源
+    ds = _get_datasource(source)
+    if ds is None:
+        click.echo(f"未知数据源: {source}")
+        logger.error("未知数据源: %s", source)
         return
 
-    bars = ds.load(symbol, start_date, end_date, freq)
-    click.echo(f"Loaded {len(bars)} bars")
+    # 下载所有缺失区间
+    new_dfs: list[pd.DataFrame] = []
+    for gap_start, gap_end in missing_ranges:
+        click.echo(f"正在获取 {symbol} {gap_start} ~ {gap_end} ({freq})...")
+        logger.info("获取 %s %s ~ %s (%s)", symbol, gap_start, gap_end, freq)
+        try:
+            # 优先使用 DataFrame 接口（避免 Bar 对象转换开销）
+            if hasattr(ds, "load_stock_df") and hasattr(ds, "load_futures_df"):
+                from .sources.akshare import FUTURES_MAIN_CONTRACT
 
-    if not bars:
-        click.echo("No data loaded.")
+                if symbol in FUTURES_MAIN_CONTRACT:
+                    df = ds.load_futures_df(symbol, gap_start, gap_end, freq)
+                else:
+                    df = ds.load_stock_df(symbol, gap_start, gap_end, freq)
+            else:
+                # 回退：通过 Bar 对象转换
+                bars = ds.load(symbol, gap_start, gap_end, freq)
+                if not bars:
+                    logger.warning("区间 %s ~ %s 无数据", gap_start, gap_end)
+                    continue
+                df = pd.DataFrame(
+                    [
+                        {
+                            "timestamp": b.timestamp.isoformat(),
+                            "symbol": b.symbol,
+                            "freq": b.freq,
+                            "open": b.open,
+                            "high": b.high,
+                            "low": b.low,
+                            "close": b.close,
+                            "volume": b.volume,
+                        }
+                        for b in bars
+                    ]
+                )
+
+            if not df.empty:
+                new_dfs.append(df)
+                click.echo(f"  获取到 {len(df)} 条数据")
+        except Exception as e:
+            logger.error("获取数据失败 (%s ~ %s): %s", gap_start, gap_end, e)
+            click.echo(f"  获取失败: {e}")
+
+    if not new_dfs:
+        click.echo("未能获取到任何数据。")
         return
 
-    # 转换为 DataFrame
-    new_df = pd.DataFrame([{
-        "timestamp": b.timestamp.isoformat(),
-        "symbol": b.symbol,
-        "freq": b.freq,
-        "open": b.open,
-        "high": b.high,
-        "low": b.low,
-        "close": b.close,
-        "volume": b.volume,
-    } for b in bars])
+    new_df = pd.concat(new_dfs, ignore_index=True)
 
-    # 合并已有数据（如果存在）
+    # 合并已有数据
+    combined: pd.DataFrame
     if data_dir.exists():
         existing_files = list(data_dir.glob("*.parquet"))
         existing_df = merge_parquet_files(data_dir)
@@ -152,12 +243,13 @@ def fetch(symbol: str, start: str, end: str, freq: str, output_dir: str, source:
             combined = pd.concat([existing_df, new_df], ignore_index=True)
             combined = combined.drop_duplicates(subset=["timestamp"])
             combined = combined.sort_values("timestamp").reset_index(drop=True)
-            click.echo(f"Merged: {len(existing_df)} existing + {len(new_df)} new = {len(combined)} total")
-
-            # 删除旧的分段文件（ADR-0001: 多文件合并为单个文件）
+            click.echo(
+                f"合并: {len(existing_df)} 条旧 + {len(new_df)} 条新 = {len(combined)} 条"
+            )
+            # 删除旧的分段文件（ADR-0001: 合并为单个文件）
             for f in existing_files:
+                logger.debug("删除旧文件: %s", f.name)
                 f.unlink()
-                click.echo(f"  Removed: {f.name}")
         else:
             combined = new_df
     else:
@@ -176,32 +268,39 @@ def fetch(symbol: str, start: str, end: str, freq: str, output_dir: str, source:
     file_path = data_dir / f"{actual_start}_{actual_end}.parquet"
     combined.to_parquet(file_path, index=False)
 
-    # 输出实际数据范围
-    click.echo(f"Saved to {file_path} ({len(combined)} bars)")
-    click.echo(f"Data range: {actual_start[:4]}-{actual_start[4:6]}-{actual_start[6:]} to {actual_end[:4]}-{actual_end[4:6]}-{actual_end[6:]}")
+    click.echo(f"已保存到 {file_path} ({len(combined)} 条数据)")
+    click.echo(
+        f"数据范围: {actual_start[:4]}-{actual_start[4:6]}-{actual_start[6:]}"
+        f" ~ {actual_end[:4]}-{actual_end[4:6]}-{actual_end[6:]}"
+    )
+    logger.info("保存完成: %s (%d 条)", file_path, len(combined))
 
 
 @cli.command()
 @click.option("--source", default="akshare", help="数据源")
 def list_symbols(source: str):
     """列出可用标的"""
+    ds = _get_datasource(source)
+    if ds is None:
+        click.echo(f"未知数据源: {source}")
+        return
 
-    if source == "akshare":
-        ds = AKShareDataSource()
+    try:
         symbols = ds.list_symbols()
-        click.echo(f"Found {len(symbols)} symbols:")
+        click.echo(f"共 {len(symbols)} 个标的:")
         for s in symbols[:20]:
             click.echo(f"  {s}")
         if len(symbols) > 20:
-            click.echo(f"  ... and {len(symbols) - 20} more")
-    else:
-        click.echo(f"Unknown source: {source}")
+            click.echo(f"  ... 还有 {len(symbols) - 20} 个")
+    except Exception as e:
+        logger.error("列出标的失败: %s", e)
+        click.echo(f"获取失败: {e}")
 
 
 @cli.command()
 def list_sources():
     """列出可用数据源"""
-    click.echo("Available datasources:")
+    click.echo("可用数据源:")
     click.echo("  akshare - A股、期货免费数据源")
 
 
@@ -211,3 +310,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

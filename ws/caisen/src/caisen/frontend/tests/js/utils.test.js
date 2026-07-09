@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { formatValue, formatTimestamp, calculateAnnualReturn, isFiniteNum, isValidCoordPoint, isValidCoord, filterValidMarkPoints, filterValidMarkLines, PATTERN_COLORS, findBarByTimestamp, applyDateFilterToData } from '../../src/js/utils.js';
+import { formatValue, formatTimestamp, calculateAnnualReturn, isFiniteNum, isValidCoordPoint, isValidCoord, filterValidMarkPoints, filterValidMarkLines, findBarByTimestamp, applyDateFilterToData } from '../../src/js/utils.js';
+import { PATTERN_COLORS } from '../../src/js/constants.js';
 
 describe('utils', () => {
   describe('formatValue', () => {

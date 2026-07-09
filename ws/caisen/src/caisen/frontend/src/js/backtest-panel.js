@@ -259,9 +259,38 @@ function _connectWebSocket(runId, reqBody) {
   console.log('[BacktestPanel] WebSocket 连接', url);
   const ws = new WebSocket(url);
 
-  ws.onopen = () => console.log('[BacktestPanel] WebSocket 已连接');
+  // Connection timeout: abort if not connected within 10 s
+  const CONNECT_TIMEOUT_MS = 10_000;
+  const IDLE_TIMEOUT_MS = 60_000;
+  let connectTimer = setTimeout(() => {
+    if (ws.readyState === WebSocket.CONNECTING) {
+      console.error('[BacktestPanel] WebSocket 连接超时');
+      ws.close();
+      _showError('WebSocket 连接超时，请检查后端服务');
+    }
+  }, CONNECT_TIMEOUT_MS);
+
+  // Idle timeout: reset on every message
+  let idleTimer = setTimeout(() => {
+    console.error('[BacktestPanel] WebSocket 无响应超时');
+    ws.close();
+    _showError('回测无响应，请检查后端服务');
+  }, IDLE_TIMEOUT_MS);
+
+  ws.onopen = () => {
+    clearTimeout(connectTimer);
+    console.log('[BacktestPanel] WebSocket 已连接');
+  };
 
   ws.onmessage = (event) => {
+    // Reset idle timer on every message
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      console.error('[BacktestPanel] WebSocket 无响应超时');
+      ws.close();
+      _showError('回测无响应，请检查后端服务');
+    }, IDLE_TIMEOUT_MS);
+
     let msg;
     try {
       msg = JSON.parse(event.data);
@@ -274,20 +303,26 @@ function _connectWebSocket(runId, reqBody) {
     if (result.action === 'progress') {
       _updateProgress(result.payload);
     } else if (result.action === 'redirect') {
+      clearTimeout(idleTimer);
       console.log('[BacktestPanel] 回测完成，跳转', result.payload);
       location.href = result.payload;
     } else if (result.action === 'error') {
+      clearTimeout(idleTimer);
       console.error('[BacktestPanel] 回测失败', result.payload);
       _showError(result.payload);
     }
   };
 
   ws.onerror = (e) => {
+    clearTimeout(connectTimer);
+    clearTimeout(idleTimer);
     console.error('[BacktestPanel] WebSocket 错误', e);
     _showError('WebSocket 连接失败');
   };
 
   ws.onclose = (e) => {
+    clearTimeout(connectTimer);
+    clearTimeout(idleTimer);
     console.log('[BacktestPanel] WebSocket 关闭，code:', e.code);
   };
 }

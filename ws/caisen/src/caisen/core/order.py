@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 import uuid
 
 
@@ -27,7 +28,7 @@ class Order:
     position_pct: float = 0  # 仓位比例（0-1），0表示全仓
     order_type: str = "MARKET"  # 市价单
     order_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: datetime = None
+    timestamp: Optional[datetime] = None
     # 止盈止损
     stop_loss: float = 0  # 止损价
     target: float = 0  # 目标价

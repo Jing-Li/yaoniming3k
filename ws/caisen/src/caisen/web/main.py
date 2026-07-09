@@ -1,15 +1,13 @@
 """可视化报告 Web 服务"""
 
 import json
+import logging
 import queue
 import re
 import sys
 import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
-
-# 添加 src/caisen 到路径，使 result 模块可导入
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +21,22 @@ from caisen.result.persistence import ResultPersister
 from caisen.strategy.registry import StrategyRegistry
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+logger = logging.getLogger(__name__)
+
+
+def _safe_resolve(base_dir: Path, user_input: str) -> Path:
+    """安全解析路径，防止路径遍历攻击。
+
+    Raises:
+        HTTPException(400): 路径包含遍历字符或逃逸出 base_dir
+    """
+    if ".." in user_input or "/" in user_input or "\\" in user_input:
+        raise HTTPException(status_code=400, detail="非法路径字符")
+    resolved = (base_dir / user_input).resolve()
+    if not str(resolved).startswith(str(base_dir.resolve())):
+        raise HTTPException(status_code=400, detail="路径逃逸出允许范围")
+    return resolved
 
 
 class RunRequest(BaseModel):
@@ -112,7 +126,7 @@ def create_app() -> FastAPI:
                     config_name=req.config_name,
                 )
             except Exception:
-                pass  # 进度通过 WebSocket 下发，这里静默
+                logger.exception("回测后台执行失败: strategy=%s symbol=%s", req.strategy_name, req.symbol)
 
         threading.Thread(target=_bg, daemon=True).start()
         return {"run_id": run_id_placeholder}
@@ -171,6 +185,7 @@ def create_app() -> FastAPI:
     @app.get("/api/runs/{run_id}")
     async def get_run(run_id: str):
         """获取回测结果详情"""
+        _safe_resolve(Path(output_dir), run_id)  # 路径校验
         result = ResultPersister.load(run_id, output_dir)
         if not result:
             raise HTTPException(status_code=404, detail=f"Run '{run_id}' 未找到")
@@ -179,6 +194,7 @@ def create_app() -> FastAPI:
     @app.get("/api/runs/{run_id}/visualization")
     async def get_visualization(run_id: str):
         """获取可视化数据 (data.json)"""
+        _safe_resolve(Path(output_dir), run_id)  # 路径校验
         data = ResultPersister.load_visualization(run_id, output_dir)
         if not data:
             raise HTTPException(status_code=404, detail=f"可视化数据未找到: {run_id}")
@@ -187,7 +203,7 @@ def create_app() -> FastAPI:
     @app.get("/api/runs/{run_id}/data.json")
     async def get_data_json(run_id: str):
         """直接获取 data.json 文件"""
-        run_dir = Path(output_dir) / run_id
+        run_dir = _safe_resolve(Path(output_dir), run_id)
         data_path = run_dir / "data.json"
         if not data_path.exists():
             raise HTTPException(status_code=404, detail="data.json 未找到")
@@ -214,7 +230,7 @@ def create_app() -> FastAPI:
     async def get_js_file(filename: str):
         """提供 JS 模块文件"""
         js_dir = Path(__file__).parent.parent / "frontend" / "src" / "js"
-        js_path = js_dir / filename
+        js_path = _safe_resolve(js_dir, filename)
         if not js_path.exists():
             raise HTTPException(status_code=404, detail=f"JS file not found: {filename}")
         return FileResponse(js_path, media_type="application/javascript")
@@ -223,7 +239,7 @@ def create_app() -> FastAPI:
     async def get_css_file(filename: str):
         """提供 CSS 文件"""
         css_dir = Path(__file__).parent.parent / "frontend" / "src" / "css"
-        css_path = css_dir / filename
+        css_path = _safe_resolve(css_dir, filename)
         if not css_path.exists():
             raise HTTPException(status_code=404, detail=f"CSS file not found: {filename}")
         return FileResponse(css_path, media_type="text/css")

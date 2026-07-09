@@ -172,7 +172,8 @@ class BacktestEngine:
                 position.quantity += quantity
                 if abs(position.quantity) < 1e-6:
                     del self.portfolio.positions[symbol]
-                position.avg_cost = 0
+                else:
+                    position.avg_cost = execution_price
             else:
                 # 追加多头
                 total_cost = position.avg_cost * position.quantity + execution_price * quantity

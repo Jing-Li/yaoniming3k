@@ -3,7 +3,7 @@
 
 # 本地行情数据根目录（存放 Parquet 文件）
 # 结构: {data_dir}/{symbol}/{freq}/*.parquet
-data_dir: /home/user/data
+data_dir: /Users/weimiao/Desktop/jing/projects/github/yaoniming3k/ws/data
 
 # 回测结果输出目录
 output_dir: ./runs

@@ -175,6 +175,18 @@
 .metric-card .value.negative { color: var(--color-down); }
 .metric-card .value.neutral  { color: var(--color-neutral); }
 
+/* Metric sparkline container */
+.metric-sparkline {
+  width: 100%;
+  height: 40px;
+  margin-top: var(--spacing-sm, 8px);
+}
+
+/* Large metric value modifier */
+.metric-value-large {
+  font-size: var(--font-size-2xl, 1.875rem);
+}
+
 /* ===== Trades Section / Table ===== */
 .trades-section,
 .trades-panel {
@@ -303,6 +315,16 @@
 .trade-distribution-chart { height: 260px; }
 
 /* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .chart-wrapper {
+    height: 420px;
+  }
+
+  .chart-container {
+    min-height: 440px;
+  }
+}
+
 @media (max-width: 768px) {
   .header,
   .report-header {
@@ -343,5 +365,45 @@
   .trades-section .trades-table,
   .trades-panel .trades-table {
     max-height: 360px;
+  }
+
+  .equity-chart,
+  .drawdown-chart { height: 180px; }
+  .heatmap-chart,
+  .trade-distribution-chart { height: 220px; }
+}
+
+@media (max-width: 480px) {
+  .chart-container {
+    padding: var(--spacing-sm);
+    min-height: 300px;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+
+  .metrics-grid,
+  .metrics-panel {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .metric-card {
+    padding: var(--spacing-sm);
+  }
+
+  .metric-card .value {
+    font-size: var(--font-size-lg);
+  }
+
+  .trades-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .trades-summary {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
   }
 }

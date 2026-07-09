@@ -48,11 +48,6 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
 ]
 
-# 自定义规则：禁止在根目录放置业务代码
-[tool.ruff.lint.custom]
-[dictionary-struct-check]
-init-modules = ["src/caisen/core", "src/caisen/strategy", "src/caisen/data", "src/caisen/result", "src/caisen/visualization", "src/caisen/cli"]
-
 [tool.vitest]
 testDirectory = "tests/js"
 

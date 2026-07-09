@@ -123,17 +123,7 @@ def _load_params_from_config(config_name: str) -> dict:
 
 def _instantiate_strategy(strategy_name: str, params: dict) -> Strategy:
     """从注册表找到策略类并实例化。"""
-    registry = {s["name"]: s for s in StrategyRegistry.list_strategies()}
-    if strategy_name not in registry:
-        raise BacktestError(f"策略不存在：{strategy_name}")
-
-    # 根据类型找到对应模块
-    _MODULE_MAP = {
-        "CaiSenStrategy": "caisen.strategy.algorithm.cai_sen",
-        "MACrossStrategy": "caisen.strategy.algorithm.ma_cross",
-        "LLMStrategy": "caisen.strategy.llm.strategy",
-    }
-    module_path = _MODULE_MAP.get(strategy_name)
+    module_path = StrategyRegistry.get_module_path(strategy_name)
     if module_path is None:
         raise BacktestError(f"策略模块未注册：{strategy_name}")
 

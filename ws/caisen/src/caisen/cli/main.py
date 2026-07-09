@@ -1,13 +1,13 @@
 """CLI 主入口"""
 
+import os
 import click
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from ..config.project_config import ProjectConfig
 from ..core.config import Config, BacktestConfig
-from ..data.config import DataConfig
 from ..core.bar import Bar
 from ..core.engine import BacktestEngine
 from ..strategy.base import Strategy
@@ -39,7 +39,7 @@ def generate_mock_bars(symbol: str, count: int) -> list:
     bars = []
     price = 100
     for i in range(count):
-        timestamp = datetime(2024, 1, 1) + __import__('datetime').timedelta(days=i)
+        timestamp = datetime(2024, 1, 1) + timedelta(days=i)
         change = random.uniform(-0.02, 0.025)
         open_price = price
         close_price = price * (1 + change)
@@ -272,7 +272,7 @@ def report(run_id: str, port: int, host: str, output_dir: str, backend_port: int
     # 启动前端 (Vite dev server)
     frontend_dir = Path(__file__).parent.parent / "frontend"
     vite_env = {
-        **__import__('os').environ,
+        **os.environ,
         'VITE_API_PROXY': f'http://localhost:{backend_port}',
     }
     vite_process = subprocess.Popen(
