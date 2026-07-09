@@ -1,14 +1,28 @@
+"""Taiji LLM Provider 实现。
+
+将 OpenAI Chat Completions 请求转发至 Taiji 后端，
+处理 SSE 响应解析、tool_calls 提取、think 标签分离和 token 计数。
+"""
+from __future__ import annotations
+
 import json
 import logging
 import re
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 
 import httpx
 
 from ..config import settings
+from ..exceptions import (
+    ProviderError,
+    TaijiBusinessError,
+    TaijiHTTPError,
+    TaijiRequestError,
+    TaijiTimeoutError,
+)
 from ..models.openai import (
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -17,6 +31,9 @@ from ..models.openai import (
     ChatCompletionStreamResponse,
     ChatCompletionStreamChoice,
     ChatCompletionDelta,
+    ToolCall,
+    ToolCallFunction,
+    ToolDefinition,
     Usage,
 )
 from ..models.taiji import TaijiRequest
@@ -27,16 +44,25 @@ logger_resp = logging.getLogger("provider_response")
 
 
 class TaijiProvider(BaseProvider):
-    def __init__(self):
-        self._tokenizer = None
-        self.base_url = settings.TAIJI_BASE_URL.rstrip("/")
-        self.api_key = settings.TAIJI_API_KEY
-        self.max_text_length = settings.TAIJI_MAX_TEXT_LENGTH
-        self.content_fields = [f.strip() for f in settings.TAIJI_CONTENT_FIELDS.split(",") if f.strip()]
-        self.session_id = settings.TAIJI_SESSION_ID
-        self.session_cookie = settings.TAIJI_SESSION_COOKIE
+    """Taiji LLM Provider。
 
-    def _get_tokenizer(self):
+    将 OpenAI Chat Completions 请求转换为 Taiji API 调用，
+    支持非流式和流式两种模式。
+    """
+
+    def __init__(self) -> None:
+        self._tokenizer: Any = None
+        self.base_url: str = settings.TAIJI_BASE_URL.rstrip("/")
+        self.api_key: str = settings.TAIJI_API_KEY
+        self.max_text_length: int = settings.TAIJI_MAX_TEXT_LENGTH
+        self.content_fields: list[str] = settings.content_fields_list
+        self.session_id: int = settings.TAIJI_SESSION_ID
+        self.session_cookie: str = settings.TAIJI_SESSION_COOKIE
+
+    async def close(self) -> None:
+        """释放资源（当前无持久连接，预留接口）。"""
+
+    def _get_tokenizer(self) -> Any:
         """Lazy load tiktoken encoder."""
         if self._tokenizer is None:
             try:
@@ -49,7 +75,14 @@ class TaijiProvider(BaseProvider):
         return self._tokenizer
 
     def _count_tokens(self, text: str) -> int:
-        """Count tokens in text using tiktoken, fallback to char-based estimation."""
+        """Count tokens in text using tiktoken, fallback to char-based estimation.
+
+        Args:
+            text: 要计数的文本。
+
+        Returns:
+            估算的 token 数量。
+        """
         tokenizer = self._get_tokenizer()
         if tokenizer:
             return len(tokenizer.encode(text))
@@ -60,8 +93,15 @@ class TaijiProvider(BaseProvider):
             other_chars = len(text) - chinese_chars
             return max(1, chinese_chars // 2 + other_chars // 4)
 
-    def _count_messages_tokens(self, messages: list) -> int:
-        """Count total tokens in a list of ChatMessage objects."""
+    def _count_messages_tokens(self, messages: list[Any]) -> int:
+        """Count total tokens in a list of ChatMessage objects.
+
+        Args:
+            messages: ChatMessage 对象列表。
+
+        Returns:
+            所有消息的总 token 数。
+        """
         total = 0
         for msg in messages:
             # Count role and content
@@ -79,7 +119,7 @@ class TaijiProvider(BaseProvider):
                     total += self._count_tokens(tc.function.arguments or "")
         return total
 
-    def _build_tools_prompt(self, tools: list, tool_choice: str = "auto") -> str:
+    def _build_tools_prompt(self, tools: list[ToolDefinition], tool_choice: str = "auto") -> str:
         """将 OpenAI tools 定义转换为 taiji 可理解的 XML/DSML 格式指令。"""
         lines = []
 
@@ -163,7 +203,13 @@ class TaijiProvider(BaseProvider):
 
         return "\n".join(lines)
 
-    def _build_text(self, messages: list, tools: list = None, context_tokens: int = 0) -> tuple[str, int]:
+    def _build_text(
+        self,
+        messages: list[Any],
+        tools: list[ToolDefinition] | None = None,
+        tool_choice: str = "auto",
+        context_tokens: int = 0,
+    ) -> tuple[str, int]:
         """
         将 OpenAI messages 数组转换为 taiji 的纯文本。
         
@@ -191,8 +237,7 @@ class TaijiProvider(BaseProvider):
         
         # Inject tools prompt if present
         if tools:
-            tool_choice_val = "auto"
-            system_parts.append(f"[System]: {self._build_tools_prompt(tools, tool_choice_val)}")
+            system_parts.append(f"[System]: {self._build_tools_prompt(tools, tool_choice)}")
         
         # Calculate system parts length
         system_text = "\n".join(system_parts)
@@ -272,7 +317,7 @@ class TaijiProvider(BaseProvider):
         final_text = "\n".join(result_parts)
         return final_text, len(final_text)
 
-    def _extract_json_block(self, text: str, key: str) -> Optional[str]:
+    def _extract_json_block(self, text: str, key: str) -> str | None:
         """从文本中提取包含指定 key 的完整 JSON 对象（支持嵌套）。"""
         idx = text.find(key)
         if idx == -1:
@@ -302,22 +347,56 @@ class TaijiProvider(BaseProvider):
             end += 1
         return None
 
-    def _parse_tool_calls(self, text: str) -> list:
+    def _parse_tool_calls(self, text: str) -> list[ToolCall]:
         """
-        解析模型输出中的 XML 格式 tool_calls。
+        解析模型输出中的 tool_calls。
         返回 ToolCall 对象列表；如果未检测到则返回空列表。
         
-        支持两种 XML 变体：
-        1. DSML: <｜｜DSML｜｜tool_calls><｜｜DSML｜｜invoke name="func">
+        支持三种格式：
+        1. DSML XML: <｜｜DSML｜｜tool_calls><｜｜DSML｜｜invoke name="func">
         2. 标准 XML: <tool_calls><invoke name="func">
+        3. JSON: {"tool_calls": [{"id": "...", "function": {...}}]}
         """
         if not text:
             return []
         
-        # 委托给 XML 解析方法
-        return self._parse_xml_tool_calls_format(text)
+        # 优先尝试 XML 解析
+        xml_result = self._parse_xml_tool_calls_format(text)
+        if xml_result:
+            return xml_result
+        
+        # JSON 回退：{"tool_calls": [...]}
+        return self._parse_json_tool_calls(text)
 
-    def _parse_xml_tool_calls_format(self, text: str) -> list:
+    def _parse_json_tool_calls(self, text: str) -> list[ToolCall]:
+        """解析 JSON 格式的 tool_calls: {"tool_calls": [...]}"""
+        block = self._extract_json_block(text, "tool_calls")
+        if not block:
+            return []
+        try:
+            obj = json.loads(block)
+            raw_tcs = obj.get("tool_calls") if isinstance(obj, dict) else None
+            if not isinstance(raw_tcs, list):
+                return []
+            result = []
+            for raw_tc in raw_tcs:
+                if not isinstance(raw_tc, dict):
+                    continue
+                func = raw_tc.get("function") or {}
+                tc_id = raw_tc.get("id") or f"call_{uuid.uuid4().hex[:8]}"
+                result.append(ToolCall(
+                    id=tc_id,
+                    type=raw_tc.get("type", "function"),
+                    function=ToolCallFunction(
+                        name=func.get("name", ""),
+                        arguments=func.get("arguments", "{}"),
+                    ),
+                ))
+            return result
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return []
+
+    def _parse_xml_tool_calls_format(self, text: str) -> list[ToolCall]:
         """
         解析 XML 格式的 tool_calls。
         支持两种变体：
@@ -326,8 +405,6 @@ class TaijiProvider(BaseProvider):
         """
         if not text:
             return []
-        
-        from ..models.openai import ToolCallFunction, ToolCall
         
         # 定义要匹配的 XML 模式
         patterns = [
@@ -404,7 +481,24 @@ class TaijiProvider(BaseProvider):
         
         return validated
 
-    def _extract_content(self, data_obj: dict) -> str:
+    def _strip_tool_calls_from_content(self, content: str) -> str:
+        """从文本中移除 XML/JSON 格式的 tool_calls 块，返回清理后的文本。"""
+        xml_patterns = [
+            r'<｜｜DSML｜｜tool_calls>.*?(?:<｜｜DSML｜｜/tool_calls>|$)',
+            r'<tool_calls>.*?(?:</tool_calls>|$)',
+        ]
+        for pattern in xml_patterns:
+            content = re.sub(pattern, '', content, flags=re.DOTALL)
+        content = content.strip()
+
+        if content.startswith('{'):
+            json_block = self._extract_json_block(content, 'tool_calls')
+            if json_block:
+                content = content.replace(json_block, '').strip()
+
+        return content
+
+    def _extract_content(self, data_obj: dict[str, Any]) -> str:
         """按优先级从 taiji 响应 JSON 中提取文本内容。"""
         for field in self.content_fields:
             if field in data_obj:
@@ -414,7 +508,7 @@ class TaijiProvider(BaseProvider):
         # 兜底：返回整个 JSON 字符串
         return json.dumps(data_obj, ensure_ascii=False)
 
-    def _strip_think_tags(self, text: str) -> tuple[str, Optional[str]]:
+    def _strip_think_tags(self, text: str) -> tuple[str, str | None]:
         """去除模型思考过程 <think>...</think>，返回 (cleaned_text, reasoning_content)。
         当 reasoning_content 为空时返回 None。"""
         pattern = re.compile(r"<think>(.*?)</think>", re.DOTALL)
@@ -423,7 +517,120 @@ class TaijiProvider(BaseProvider):
         cleaned = pattern.sub("", text).strip()
         return cleaned, reasoning if reasoning else None
 
-    def _parse_sse_body(self, body: str) -> tuple[str, str, dict]:
+    def _prepare_request(self, req: ChatCompletionRequest, request_id: str) -> dict[str, Any]:
+        """构建 taiji API 请求的公共参数（非流式/流式共用）。"""
+        original_prompt_tokens = self._count_messages_tokens(req.messages)
+
+        # Resolve tool_choice: str or ToolChoice object -> str
+        tool_choice = "auto"
+        if req.tool_choice is not None:
+            tool_choice = req.tool_choice if isinstance(req.tool_choice, str) else "auto"
+
+        text, text_length = self._build_text(req.messages, req.tools, tool_choice=tool_choice)
+
+        if text_length > self.max_text_length:
+            logger_req.warning(
+                f"Text length {text_length} exceeds max_text_length {self.max_text_length}, forcing hard truncation",
+                extra={"request_id": request_id}
+            )
+            text = text[:self.max_text_length - 100] + "\n...(hard truncated)"
+            text_length = len(text)
+
+        logger_req.debug(
+            f"Built text length: {text_length:,} chars (limit: {self.max_text_length:,})",
+            extra={"request_id": request_id}
+        )
+
+        extra_params = {}
+        if req.temperature is not None:
+            extra_params["temperature"] = req.temperature
+        if req.max_tokens is not None:
+            extra_params["max_tokens"] = req.max_tokens
+        if req.top_p is not None:
+            extra_params["top_p"] = req.top_p
+        if req.presence_penalty is not None:
+            extra_params["presence_penalty"] = req.presence_penalty
+        if req.frequency_penalty is not None:
+            extra_params["frequency_penalty"] = req.frequency_penalty
+
+        taiji_req = TaijiRequest(text=text, sessionId=self.session_id, files=[], **extra_params)
+
+        headers = {
+            "accept": "text/event-stream",
+            "content-type": "application/json",
+            "authorization": self.api_key,
+            "x-app-version": "3.2.0",
+            "origin": self.base_url,
+            "referer": f"{self.base_url}/chat",
+            "user-agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+        }
+
+        cookies = {}
+        if self.session_cookie:
+            cookies["server_name_session"] = self.session_cookie
+
+        url = f"{self.base_url}/api/chat/completions"
+
+        log_headers = {k: v for k, v in headers.items() if k.lower() != "authorization"}
+        logger_req.debug(
+            "Calling taiji API",
+            extra={
+                "request_id": request_id,
+                "extra": {
+                    "url": url,
+                    "method": "POST",
+                    "headers": log_headers,
+                    "cookies": cookies,
+                    "body": taiji_req.model_dump(),
+                },
+            },
+        )
+
+        client = httpx.AsyncClient(timeout=60.0, cookies=cookies)
+        return {
+            "client": client,
+            "url": url,
+            "headers": headers,
+            "taiji_req": taiji_req,
+            "original_prompt_tokens": original_prompt_tokens,
+        }
+
+    def _build_stream_delta(
+        self, completion_id: str, created: int, model: str, role_sent: list[bool],
+        content: str | None = None, reasoning_content: str | None = None,
+        tool_calls: list[ToolCall] | None = None,
+    ) -> str:
+        """构建流式 delta 响应 JSON 字符串。role_sent 用 list 包装以便修改。"""
+        delta = ChatCompletionDelta()
+        if not role_sent[0]:
+            delta.role = "assistant"
+            role_sent[0] = True
+        if content:
+            delta.content = content
+        if reasoning_content:
+            delta.reasoning_content = reasoning_content
+        if tool_calls:
+            delta.tool_calls = tool_calls
+        return ChatCompletionStreamResponse(
+            id=completion_id, created=created, model=model,
+            choices=[ChatCompletionStreamChoice(delta=delta, finish_reason=None)],
+        ).model_dump_json(ensure_ascii=False)
+
+    def _build_finish_chunk(
+        self, completion_id: str, created: int, model: str, finish_reason: str, usage: Usage,
+    ) -> str:
+        """构建流式结束 chunk JSON 字符串。"""
+        return ChatCompletionStreamResponse(
+            id=completion_id, created=created, model=model,
+            choices=[ChatCompletionStreamChoice(delta=ChatCompletionDelta(), finish_reason=finish_reason)],
+            usage=usage,
+        ).model_dump_json(ensure_ascii=False)
+
+    def _parse_sse_body(self, body: str) -> tuple[str, str | None, dict[str, Any]]:
         """解析 taiji 返回的 SSE 文本，提取并拼接所有 data 行内容。
         返回 (content, reasoning_content, token_info) 元组。
         token_info 包含 promptTokens, completionTokens, useTokens 等信息。"""
@@ -461,90 +668,21 @@ class TaijiProvider(BaseProvider):
         return cleaned, reasoning, token_info
 
     async def chat_completions(self, req: ChatCompletionRequest, request_id: str) -> ChatCompletionResponse:
-        # Calculate prompt_tokens based on ORIGINAL messages (before truncation)
-        # This ensures hermes-agent sees the true request size and triggers compact when needed
-        original_prompt_tokens = self._count_messages_tokens(req.messages)
-        
-        # Build text with smart truncation to stay within TAIJI_MAX_TEXT_LENGTH
-        text, text_length = self._build_text(req.messages, req.tools)
-        
-        # Safety check: ensure text doesn't exceed limit (with logging)
-        if text_length > self.max_text_length:
-            logger_req.warning(
-                f"Text length {text_length} exceeds max_text_length {self.max_text_length}, forcing hard truncation",
-                extra={"request_id": request_id}
-            )
-            text = text[:self.max_text_length - 100] + "\n...(hard truncated)"
-            text_length = len(text)
+        prep = self._prepare_request(req, request_id)
+        client = prep["client"]
+        original_prompt_tokens = prep["original_prompt_tokens"]
 
-        # Log the actual text length being sent
-        logger_req.debug(
-            f"Built text length: {text_length:,} chars (limit: {self.max_text_length:,})",
-            extra={"request_id": request_id}
-        )
-
-        # 构建 taiji 请求，透传 OpenAI 参数
-        extra_params = {}
-        if req.temperature is not None:
-            extra_params["temperature"] = req.temperature
-        if req.max_tokens is not None:
-            extra_params["max_tokens"] = req.max_tokens
-        if req.top_p is not None:
-            extra_params["top_p"] = req.top_p
-        if req.presence_penalty is not None:
-            extra_params["presence_penalty"] = req.presence_penalty
-        if req.frequency_penalty is not None:
-            extra_params["frequency_penalty"] = req.frequency_penalty
-
-        taiji_req = TaijiRequest(
-            text=text,
-            sessionId=self.session_id,
-            files=[],
-            **extra_params,
-        )
-
-        headers = {
-            "accept": "text/event-stream",
-            "content-type": "application/json",
-            "authorization": self.api_key,
-            "x-app-version": "3.2.0",
-        }
-
-        cookies = {}
-        if self.session_cookie:
-            cookies["server_name_session"] = self.session_cookie
-
-        url = f"{self.base_url}/api/chat/completions"
-
-        # 日志：调用 taiji 的 request
-        log_headers = {k: v for k, v in headers.items() if k.lower() != "authorization"}
-        logger_req.debug(
-            "Calling taiji API",
-            extra={
-                "request_id": request_id,
-                "extra": {
-                    "url": url,
-                    "method": "POST",
-                    "headers": log_headers,
-                    "cookies": cookies,
-                    "body": taiji_req.model_dump(),
-                },
-            },
-        )
-
-        # 每次请求创建新的 client，避免 event loop / 连接复用问题
-        client = httpx.AsyncClient(timeout=60.0, cookies=cookies)
         start = time.perf_counter()
         try:
             response = await client.post(
-                url,
-                headers=headers,
-                json=taiji_req.model_dump(),
+                prep["url"],
+                headers=prep["headers"],
+                json=prep["taiji_req"].model_dump(),
             )
         except httpx.TimeoutException as exc:
-            raise Exception(f"Taiji API timeout: {exc}")
+            raise TaijiTimeoutError(str(exc)) from exc
         except httpx.HTTPError as exc:
-            raise Exception(f"Taiji API request failed: {exc}")
+            raise TaijiRequestError(str(exc)) from exc
         finally:
             await client.aclose()
 
@@ -566,9 +704,7 @@ class TaijiProvider(BaseProvider):
         )
 
         if response.status_code != 200:
-            raise Exception(
-                f"Taiji API error: HTTP {response.status_code} - {body_text[:500]}"
-            )
+            raise TaijiHTTPError(response.status_code, body_text)
 
         content, reasoning_content, token_info = self._parse_sse_body(body_text)
 
@@ -579,21 +715,14 @@ class TaijiProvider(BaseProvider):
                 err_obj = json.loads(content)
                 if err_obj.get("err") or err_obj.get("msg") or err_obj.get("code", 0) != 0:
                     err_msg = err_obj.get("msg") or err_obj.get("err") or json.dumps(err_obj)
-                    raise Exception(f"Taiji business error: {err_msg}")
+                    raise TaijiBusinessError(err_msg)
             except json.JSONDecodeError:
                 pass
 
         # 检测是否包含 tool_calls
         raw_tool_calls = self._parse_tool_calls(content)
         if raw_tool_calls:
-            # Remove XML-style tool_calls from content (DSML, standard XML)
-            xml_patterns = [
-                r'<｜｜DSML｜｜tool_calls>.*?(?:<｜｜DSML｜｜/tool_calls>|$)',
-                r'<tool_calls>.*?(?:</tool_calls>|$)',
-            ]
-            for pattern in xml_patterns:
-                content = re.sub(pattern, '', content, flags=re.DOTALL)
-            content = content.strip()
+            content = self._strip_tool_calls_from_content(content)
             
             # If content is empty or only whitespace after removal, set to None
             if not content or not content.strip():
@@ -653,102 +782,32 @@ class TaijiProvider(BaseProvider):
     async def stream_chat_completions(
         self, req: ChatCompletionRequest, request_id: str
     ) -> AsyncGenerator[str, None]:
-        # Calculate prompt_tokens based on ORIGINAL messages (before truncation)
-        # This ensures hermes-agent sees the true request size and triggers compact when needed
-        original_prompt_tokens = self._count_messages_tokens(req.messages)
-        
-        # Build text with smart truncation to stay within TAIJI_MAX_TEXT_LENGTH
-        text, text_length = self._build_text(req.messages, req.tools)
-        
-        # Safety check: ensure text doesn't exceed limit (with logging)
-        if text_length > self.max_text_length:
-            logger_req.warning(
-                f"Text length {text_length} exceeds max_text_length {self.max_text_length}, forcing hard truncation",
-                extra={"request_id": request_id}
-            )
-            text = text[:self.max_text_length - 100] + "\n...(hard truncated)"
-            text_length = len(text)
-
-        # Log the actual text length being sent
-        logger_req.debug(
-            f"Built text length: {text_length:,} chars (limit: {self.max_text_length:,})",
-            extra={"request_id": request_id}
-        )
-
-        # 构建 taiji 请求，透传 OpenAI 参数
-        extra_params = {}
-        if req.temperature is not None:
-            extra_params["temperature"] = req.temperature
-        if req.max_tokens is not None:
-            extra_params["max_tokens"] = req.max_tokens
-        if req.top_p is not None:
-            extra_params["top_p"] = req.top_p
-        if req.presence_penalty is not None:
-            extra_params["presence_penalty"] = req.presence_penalty
-        if req.frequency_penalty is not None:
-            extra_params["frequency_penalty"] = req.frequency_penalty
-
-        taiji_req = TaijiRequest(
-            text=text,
-            sessionId=self.session_id,
-            files=[],
-            **extra_params,
-        )
-
-        headers = {
-            "accept": "text/event-stream",
-            "content-type": "application/json",
-            "authorization": self.api_key,
-            "x-app-version": "3.2.0",
-        }
-
-        cookies = {}
-        if self.session_cookie:
-            cookies["server_name_session"] = self.session_cookie
-
-        url = f"{self.base_url}/api/chat/completions"
-
-        log_headers = {k: v for k, v in headers.items() if k.lower() != "authorization"}
-        logger_req.debug(
-            "Calling taiji API (streaming)",
-            extra={
-                "request_id": request_id,
-                "extra": {
-                    "url": url,
-                    "method": "POST",
-                    "headers": log_headers,
-                    "cookies": cookies,
-                    "body": taiji_req.model_dump(),
-                },
-            },
-        )
+        prep = self._prepare_request(req, request_id)
+        client = prep["client"]
+        original_prompt_tokens = prep["original_prompt_tokens"]
 
         completion_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
         created = int(datetime.now(timezone.utc).timestamp())
-        role_sent = False
+        role_sent = [False]  # list so _build_stream_delta can mutate
         total_content = ""
         total_reasoning = ""
-        token_info = {}  # Store token information from taiji API
+        token_info = {}
         think_buffer = ""
         think_closed = False
         has_tools = bool(req.tools)
         content_buffer: list[str] = []
-        reasoning_buffer: list[str] = []
 
-        client = httpx.AsyncClient(timeout=60.0, cookies=cookies)
         start = time.perf_counter()
         try:
             async with client.stream(
                 "POST",
-                url,
-                headers=headers,
-                json=taiji_req.model_dump(),
+                prep["url"],
+                headers=prep["headers"],
+                json=prep["taiji_req"].model_dump(),
             ) as response:
                 if response.status_code != 200:
                     body = await response.aread()
-                    raise Exception(
-                        f"Taiji API error: HTTP {response.status_code} - {body.decode()[:500]}"
-                    )
+                    raise TaijiHTTPError(response.status_code, body.decode())
 
                 async for line in response.aiter_lines():
                     line = line.strip()
@@ -783,7 +842,7 @@ class TaijiProvider(BaseProvider):
                         # Check for business errors
                         if obj.get("err") or obj.get("msg") or obj.get("code", 0) != 0:
                             err_msg = obj.get("msg") or obj.get("err") or json.dumps(obj)
-                            raise Exception(f"Taiji business error: {err_msg}")
+                            raise TaijiBusinessError(err_msg)
                         continue
 
                     chunk_text = self._extract_content(obj)
@@ -799,28 +858,10 @@ class TaijiProvider(BaseProvider):
                             
                             if "</think>" not in chunk_text:
                                 # think 未结束，发送当前 chunk 作为 reasoning_content
-                                delta = ChatCompletionDelta()
-                                if not role_sent:
-                                    delta.role = "assistant"
-                                    role_sent = True
-                                # 提取 <think> 之后的内容
                                 start_pos = chunk_text.find("<think>") + len("<think>")
                                 reasoning_part = chunk_text[start_pos:]
-                                delta.reasoning_content = reasoning_part
                                 total_reasoning += reasoning_part
-
-                                stream_resp = ChatCompletionStreamResponse(
-                                    id=completion_id,
-                                    created=created,
-                                    model=req.model,
-                                    choices=[
-                                        ChatCompletionStreamChoice(
-                                            delta=delta,
-                                            finish_reason=None,
-                                        )
-                                    ],
-                                )
-                                yield stream_resp.model_dump_json(ensure_ascii=False)
+                                yield self._build_stream_delta(completion_id, created, req.model, role_sent, reasoning_content=reasoning_part)
                                 continue
                             else:
                                 # think 在同一 chunk 内开始并结束
@@ -842,25 +883,8 @@ class TaijiProvider(BaseProvider):
                                 remaining = full_reasoning[already_sent_len:] if already_sent_len < len(full_reasoning) else ""
                                 
                                 if remaining:
-                                    delta = ChatCompletionDelta()
-                                    if not role_sent:
-                                        delta.role = "assistant"
-                                        role_sent = True
-                                    delta.reasoning_content = remaining
                                     total_reasoning = full_reasoning
-
-                                    stream_resp = ChatCompletionStreamResponse(
-                                        id=completion_id,
-                                        created=created,
-                                        model=req.model,
-                                        choices=[
-                                            ChatCompletionStreamChoice(
-                                                delta=delta,
-                                                finish_reason=None,
-                                            )
-                                        ],
-                                    )
-                                    yield stream_resp.model_dump_json(ensure_ascii=False)
+                                    yield self._build_stream_delta(completion_id, created, req.model, role_sent, reasoning_content=remaining)
                                 else:
                                     total_reasoning = full_reasoning
                                 
@@ -870,25 +894,8 @@ class TaijiProvider(BaseProvider):
                                 think_buffer = ""
                             else:
                                 # 仍在 think 中，发送当前 chunk 作为 reasoning
-                                delta = ChatCompletionDelta()
-                                if not role_sent:
-                                    delta.role = "assistant"
-                                    role_sent = True
-                                delta.reasoning_content = chunk_text
                                 total_reasoning += chunk_text
-
-                                stream_resp = ChatCompletionStreamResponse(
-                                    id=completion_id,
-                                    created=created,
-                                    model=req.model,
-                                    choices=[
-                                        ChatCompletionStreamChoice(
-                                            delta=delta,
-                                            finish_reason=None,
-                                        )
-                                    ],
-                                )
-                                yield stream_resp.model_dump_json(ensure_ascii=False)
+                                yield self._build_stream_delta(completion_id, created, req.model, role_sent, reasoning_content=chunk_text)
                                 continue
                         # else: 没有 think_buffer 且当前 chunk 不含 <think>，当作普通内容处理
 
@@ -897,24 +904,7 @@ class TaijiProvider(BaseProvider):
                     if extra_reasoning:
                         total_reasoning += extra_reasoning
                         if not has_tools:
-                            delta = ChatCompletionDelta()
-                            if not role_sent:
-                                delta.role = "assistant"
-                                role_sent = True
-                            delta.reasoning_content = extra_reasoning
-
-                            stream_resp = ChatCompletionStreamResponse(
-                                id=completion_id,
-                                created=created,
-                                model=req.model,
-                                choices=[
-                                    ChatCompletionStreamChoice(
-                                        delta=delta,
-                                        finish_reason=None,
-                                    )
-                                ],
-                            )
-                            yield stream_resp.model_dump_json(ensure_ascii=False)
+                            yield self._build_stream_delta(completion_id, created, req.model, role_sent, reasoning_content=extra_reasoning)
                     
                     chunk_text = cleaned_chunk
                     if not chunk_text:
@@ -926,32 +916,12 @@ class TaijiProvider(BaseProvider):
                         # 当存在 tools 时，先缓冲内容，待流结束后统一判断是否为 tool_call
                         content_buffer.append(chunk_text)
                     else:
-                        delta = ChatCompletionDelta()
-                        if not role_sent:
-                            delta.role = "assistant"
-                            role_sent = True
-                        if chunk_text:
-                            delta.content = chunk_text
-                        if extra_reasoning:
-                            delta.reasoning_content = extra_reasoning
-
-                        stream_resp = ChatCompletionStreamResponse(
-                            id=completion_id,
-                            created=created,
-                            model=req.model,
-                            choices=[
-                                ChatCompletionStreamChoice(
-                                    delta=delta,
-                                    finish_reason=None,
-                                )
-                            ],
-                        )
-                        yield stream_resp.model_dump_json(ensure_ascii=False)
+                        yield self._build_stream_delta(completion_id, created, req.model, role_sent, content=chunk_text, reasoning_content=extra_reasoning)
 
         except httpx.TimeoutException as exc:
-            raise Exception(f"Taiji API timeout: {exc}")
+            raise TaijiTimeoutError(str(exc)) from exc
         except httpx.HTTPError as exc:
-            raise Exception(f"Taiji API request failed: {exc}")
+            raise TaijiRequestError(str(exc)) from exc
         finally:
             await client.aclose()
 
@@ -984,127 +954,29 @@ class TaijiProvider(BaseProvider):
         )
 
         # 流结束后处理 tool_calls 判定
+        raw_tool_calls = []
         if has_tools:
             raw_tool_calls = self._parse_tool_calls(total_content)
             if raw_tool_calls:
-                # Remove XML-style tool_calls from total_content for clean output
-                remaining_text = total_content
-                
-                xml_patterns = [
-                    r'<｜｜DSML｜｜tool_calls>.*?(?:<｜｜DSML｜｜/tool_calls>|$)',
-                    r'<tool_calls>.*?(?:</tool_calls>|$)',
-                ]
-                for pattern in xml_patterns:
-                    remaining_text = re.sub(pattern, '', remaining_text, flags=re.DOTALL)
-                remaining_text = remaining_text.strip()
+                # Remove tool_calls from total_content for clean output
+                remaining_text = self._strip_tool_calls_from_content(total_content)
                 
                 # If there's remaining text content after removing tool_calls, send it first
                 if remaining_text:
-                    delta = ChatCompletionDelta()
-                    if not role_sent:
-                        delta.role = "assistant"
-                        role_sent = True
-                    delta.content = remaining_text
-                    
-                    stream_resp = ChatCompletionStreamResponse(
-                        id=completion_id,
-                        created=created,
-                        model=req.model,
-                        choices=[
-                            ChatCompletionStreamChoice(
-                                delta=delta,
-                                finish_reason=None,
-                            )
-                        ],
-                    )
-                    yield stream_resp.model_dump_json(ensure_ascii=False)
+                    yield self._build_stream_delta(completion_id, created, req.model, role_sent, content=remaining_text)
                 
                 # Then output tool_calls delta
-                delta = ChatCompletionDelta()
-                if not role_sent:
-                    delta.role = "assistant"
-                    role_sent = True
-                delta.tool_calls = raw_tool_calls
-
-                stream_resp = ChatCompletionStreamResponse(
-                    id=completion_id,
-                    created=created,
-                    model=req.model,
-                    choices=[
-                        ChatCompletionStreamChoice(
-                            delta=delta,
-                            finish_reason=None,
-                        )
-                    ],
-                )
-                yield stream_resp.model_dump_json(ensure_ascii=False)
-
-                finish_chunk = ChatCompletionStreamResponse(
-                    id=completion_id,
-                    created=created,
-                    model=req.model,
-                    choices=[
-                        ChatCompletionStreamChoice(
-                            delta=ChatCompletionDelta(),
-                            finish_reason="tool_calls",
-                        )
-                    ],
-                    usage=usage,
-                )
-                yield finish_chunk.model_dump_json(ensure_ascii=False)
+                yield self._build_stream_delta(completion_id, created, req.model, role_sent, tool_calls=raw_tool_calls)
+                yield self._build_finish_chunk(completion_id, created, req.model, "tool_calls", usage)
             else:
                 # 非 tool_call，将缓冲的内容一次性输出
                 for chunk_text in content_buffer:
-                    delta = ChatCompletionDelta()
-                    if not role_sent:
-                        delta.role = "assistant"
-                        role_sent = True
-                    delta.content = chunk_text
-
-                    stream_resp = ChatCompletionStreamResponse(
-                        id=completion_id,
-                        created=created,
-                        model=req.model,
-                        choices=[
-                            ChatCompletionStreamChoice(
-                                delta=delta,
-                                finish_reason=None,
-                            )
-                        ],
-                    )
-                    yield stream_resp.model_dump_json(ensure_ascii=False)
-
-                finish_chunk = ChatCompletionStreamResponse(
-                    id=completion_id,
-                    created=created,
-                    model=req.model,
-                    choices=[
-                        ChatCompletionStreamChoice(
-                            delta=ChatCompletionDelta(),
-                            finish_reason="stop",
-                        )
-                    ],
-                    usage=usage,
-                )
-                yield finish_chunk.model_dump_json(ensure_ascii=False)
+                    yield self._build_stream_delta(completion_id, created, req.model, role_sent, content=chunk_text)
+                yield self._build_finish_chunk(completion_id, created, req.model, "stop", usage)
         else:
-            # 发送 finish chunk with usage
-            finish_chunk = ChatCompletionStreamResponse(
-                id=completion_id,
-                created=created,
-                model=req.model,
-                choices=[
-                    ChatCompletionStreamChoice(
-                        delta=ChatCompletionDelta(),
-                        finish_reason="stop",
-                    )
-                ],
-                usage=usage,
-            )
-            yield finish_chunk.model_dump_json(ensure_ascii=False)
+            yield self._build_finish_chunk(completion_id, created, req.model, "stop", usage)
 
-        # Log tool call parsing result for debugging
-        parsed_tool_calls = self._parse_tool_calls(total_content) if has_tools else []
+        # Log streaming response summary
         logger_resp.debug(
             "Taiji API response (streaming)",
             extra={
@@ -1114,11 +986,10 @@ class TaijiProvider(BaseProvider):
                     "total_content_length": len(total_content),
                     "total_reasoning_length": len(total_reasoning),
                     "has_tools": has_tools,
-                    "parsed_tool_calls_count": len(parsed_tool_calls),
+                    "parsed_tool_calls_count": len(raw_tool_calls),
                     "total_content_preview": total_content[:500] if total_content else None,
                     "total_reasoning_preview": total_reasoning[:500] if total_reasoning else None,
-                    "content_buffer_size": len(content_buffer) if has_tools else 0,
-                    "tool_call_detected": len(parsed_tool_calls) > 0 if has_tools else False,
+                    "tool_call_detected": bool(raw_tool_calls),
                 },
             },
         )

@@ -1,24 +1,55 @@
-import os
+"""应用配置模块。
+
+所有配置项通过环境变量读取，支持 .env 文件和默认值兜底。
+使用 pydantic BaseSettings 实现自动类型验证。
+"""
+from __future__ import annotations
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Settings:
-    TAIJI_BASE_URL: str = os.getenv("TAIJI_BASE_URL", "https://ai.avuuq.cn")
-    TAIJI_API_KEY: str = os.getenv("TAIJI_API_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE4MTEwLCJzaWduIjoiODUyMmY5NjhhY2RhMmViZWY3YzlkMTc5NTdhZDA5ZjYiLCJyb2xlIjoidXNlciIsImV4cCI6MTc4NDEyMDMzMCwibmJmIjoxNzgyODI0MzMwLCJpYXQiOjE3ODI4MjQzMzB9.Ob1Rn-l3rXktgCHUztqbqcIvcQjXHzsfxKuDhY2ck2E")
-    # 实测 taiji 单条 text 最大字符数约 830000
-    # 保守设置 800000，确保稳定返回
-    TAIJI_MAX_TEXT_LENGTH: int = int(os.getenv("TAIJI_MAX_TEXT_LENGTH", "800000"))
+class Settings(BaseSettings):
+    """应用全局配置。
+
+    读取顺序：环境变量 > .env 文件 > 默认值。
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # --- Taiji 后端 ---
+    TAIJI_BASE_URL: str = "https://ai.avuuq.cn"
+    TAIJI_API_KEY: str = ""
+    # 实测 taiji 单条 text 最大字符数约 830000；保守设置 800000
+    TAIJI_MAX_TEXT_LENGTH: int = Field(default=800000, ge=1000)
     # 从 taiji SSE 响应中提取文本内容的字段名（逗号分隔，按优先级尝试）
-    # 实测 taiji 用 "data" 字段承载内容
-    TAIJI_CONTENT_FIELDS: str = os.getenv("TAIJI_CONTENT_FIELDS", "data,content,text,message,answer,result")
-    # 实测 taiji 需要有效的 sessionId 和 server_name_session cookie
-    TAIJI_SESSION_ID: int = int(os.getenv("TAIJI_SESSION_ID", "658084"))
-    TAIJI_SESSION_COOKIE: str = os.getenv("TAIJI_SESSION_COOKIE", "e9e45cbd765af2994b95bcfbb589995d")
+    TAIJI_CONTENT_FIELDS: str = "data,content,text,message,answer,result"
+    # taiji 会话标识
+    TAIJI_SESSION_ID: int = 0
+    TAIJI_SESSION_COOKIE: str = ""
 
-    # Provider 自身认证（可选）：若设置，客户端请求需携带 Authorization: Bearer <token>
-    API_KEY: str = os.getenv("API_KEY", "")
+    # --- Provider 认证（可选）---
+    API_KEY: str = ""
 
-    APP_HOST: str = os.getenv("APP_HOST", "0.0.0.0")
-    APP_PORT: int = int(os.getenv("APP_PORT", "8080"))
+    # --- 服务监听 ---
+    APP_HOST: str = "0.0.0.0"
+    APP_PORT: int = Field(default=8080, ge=1, le=65535)
+
+    # --- 模型能力（通过 /v1/models 暴露）---
+    MODEL_CONTEXT_LENGTH: int = Field(default=200000, ge=1)
+    MODEL_MAX_COMPLETION_TOKENS: int = Field(default=4096, ge=1)
+
+    # --- CORS ---
+    CORS_ORIGINS: str = "*"
+
+    @property
+    def content_fields_list(self) -> list[str]:
+        """解析 TAIJI_CONTENT_FIELDS 为列表。"""
+        return [f.strip() for f in self.TAIJI_CONTENT_FIELDS.split(",") if f.strip()]
 
 
 settings = Settings()
