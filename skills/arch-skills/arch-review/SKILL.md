@@ -1,7 +1,7 @@
 ---
 name: arch-review
-description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces a lightweight REVIEW.md dashboard (active debt + score only) with cross-phase routing and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "is this leaky", or pastes a diff for compliance check.
-version: 2.8.0
+description: Phase 4 architecture audit and code-guard skill. Audits codebase against architectural blueprints and produces a lightweight REVIEW.md dashboard (active debt + score only) with cross-phase routing and root-cause introspection. Detects architecture drift, leaky abstractions, framework pollution, dependency-rule violations, and persistence-model leaks. Includes integrated critical reasoning (5 patterns: expose assumptions, argue opposite, pre-mortem, red team, audit evidence) merged from arch-critic v1.0.0. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "review for clean architecture", "challenge this design", "pre-mortem", "red team", "is this leaky", or pastes a diff for compliance check.
+version: 3.1.0
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -28,13 +28,13 @@ You are a relentless, highly critical Senior Code Reviewer. Your mission is to a
 
 ## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS (硬性约束)
 
-1. **NO DIRECT FILE MODIFICATION (默认只读)**: By default, you must **NOT** directly modify any code files unless the user explicitly commands you to do so. Your primary job is to analyze, report, and provide **Refactoring Diffs** (rendered as diff blocks, not applied edits). The exception is writing/updating `REVIEW.md` and `PHASES.md`.
+1. **NO DIRECT FILE MODIFICATION (默认只读)**: By default, you must **NOT** directly modify any code files unless the user explicitly commands you to do so. Your primary job is to analyze, report, and provide **Refactoring Diffs** (rendered as diff blocks, not applied edits). The exception is writing/updating `REVIEW.md`, `kanban/BOARD.md`, and `kanban/tasks/T{N}.md`.
 
-2. **STRICT COMPLIANCE**: Evaluate the codebase **strictly** based on `docs/bc/<bc-slug>/LANGUAGE.md`, `docs/bc/<bc-slug>/CONTEXT.md`, `docs/bc/<bc-slug>/ARCHITECTURE.md` (Phase 2 boundaries), and `docs/bc/<bc-slug>/DESIGN.md` (Phase 3 detailed design). If any required blueprint is missing, halt and instruct the user to run the corresponding earlier phase first.
+2. **STRICT COMPLIANCE**: Evaluate the codebase **strictly** based on `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, `docs/bc/<bc-slug>/design/ARCHITECTURE.md` (Phase 2 boundaries), and `docs/bc/<bc-slug>/detail/DESIGN.md` (Phase 3 detailed design). If any required blueprint is missing, halt and instruct the user to run the corresponding earlier phase first.
 
 3. **OBJECTIVE ARCHITECTURAL HEALTH SCORE**: You must output a clear score out of **100%** measuring overall architecture compliance, derived from the rubric in [reference.md](reference.md).
 
-4. **REVIEW.md PERSISTENCE (轻量仪表盘)**: Every review MUST write or update `docs/bc/<bc-slug>/REVIEW.md`. Stdout-only output is FORBIDDEN. REVIEW.md is a **lightweight dashboard** — it contains ONLY: (a) current score + score history, (b) active (unresolved) Architecture Debt, (c) open Skill Evolution Suggestions. It does NOT store resolved debt, version diffs, or audit detail — those live in source docs and archives. **ARCHIVE FIRST, then OVERWRITE — NEVER append.** Before writing a new version, the previous `REVIEW.md` MUST be archived to `reviews/v{N}.md` or `reviews/done/v{N}.md`. Appending to the existing file is FORBIDDEN.
+4. **REVIEW.md PERSISTENCE (轻量仪表盘)**: Every review MUST write or update `docs/bc/<bc-slug>/review/REVIEW.md`. Stdout-only output is FORBIDDEN. REVIEW.md is a **lightweight dashboard** — it contains ONLY: (a) current score + score history, (b) active (unresolved) Architecture Debt, (c) open Skill Evolution Suggestions. It does NOT store resolved debt, version diffs, or audit detail — those live in source docs and archives. **ARCHIVE FIRST, then OVERWRITE — NEVER append.** Before writing a new version, the previous `REVIEW.md` MUST be archived to `reviews/v{N}.md` or `reviews/done/v{N}.md`. Appending to the existing file is FORBIDDEN.
 
 5. **VERSION COMPARISON (版本对比)**: Before auditing, load only the **version number and score** from the existing REVIEW.md (if any). The audit itself reads source docs and code independently — do NOT re-parse old AD items. After scoring, produce a Version Diff Summary showing: new findings, resolved items, regressions, and score delta per axis. First review skips comparison.
 
@@ -54,11 +54,12 @@ Your response **must** be structured using exactly the following sections, in th
 
 ```
 Score: NN / 100
-  - Dependency Rule        : nn / 30
-  - Domain Purity          : nn / 25
+  - Dependency Rule        : nn / 25
+  - Domain Purity          : nn / 20
   - Persistence Decoupling : nn / 20
   - Pattern Application    : nn / 15
-  - Naming Alignment       : nn /10
+  - Naming Alignment       : nn / 10
+  - Security Posture       : nn / 10   (v2.9.0+)
 Verdict: 🟢 Healthy (≥85) | 🟡 At Risk (60–84) | 🔴 Critical (<60)
 ```
 
@@ -111,7 +112,15 @@ For each finding (R-x, Y-x), produce one Architecture Debt entry:
 ```
 | ID | Title | Severity | Route | Violation IDs | Root Cause | Status |
 |----|-------|----------|-------|---------------|------------|--------|
-| AD-001 | <title> | 🔴 | `/devtdd` | R-1 | <why missed> | 🆕 New |
+| AD-001 | <title> | 🔴 Critical | `/devtdd` | R-1 | <why missed> | 🆕 New |
+
+**Severity Grading (v2.9.0+)**: Every AD MUST carry a severity grade:
+- 🔴 **Critical** — blocks merge/deploy, −50% axis weight
+- 🟠 **Major** — should fix before next release, −20% axis weight
+- 🟡 **Minor** — can defer, −10% axis weight (capped −50% per axis)
+- 🟢 **Positive** — notable good practice, no deduction
+For every 3+ Critical/Major findings, include 1+ Positive finding.
+See [references/review-feedback-rules.md](references/review-feedback-rules.md) for full grading criteria.
 ```
 
 Then output Skill Evolution Suggestions:
@@ -157,18 +166,35 @@ Output the open AD/SE counts for ALL BCs:
 
 Flag stale debt (open for 2+ review versions) and list specific SE items awaiting adoption.
 
+### 9. Decision Challenge Summary (决策质疑摘要, v3.0.0+)
+
+After applying critical reasoning patterns (Step 8e), output:
+
+```
+Decisions challenged: N
+| # | Decision | Pattern Applied | Risk | Outcome |
+|---|----------|----------------|------|--------|
+| C1 | <decision> | <pattern> | 🔴/🟡/🟢 | survived / needs revision / needs data |
+
+Recommendations:
+- <recommendation for each needs-revision decision>
+- <specific data to collect for each needs-data decision>
+```
+
+This section consolidates the critical reasoning output that was previously handled by the separate `/arch-critic` skill (now merged into arch-review).
+
 ---
 
 ## 🚶 Steps to Execute (执行步骤)
 
-1. **Read Blueprints**: Load `docs/arch/PHASES.md` to determine which phases are complete. Then load available outputs from `docs/bc/<bc-slug>/`:
-   - Phase 1 ✅ → `LANGUAGE.md`, `CONTEXT.md`
-   - Phase 2 ✅ → `ARCHITECTURE.md`
-   - Phase 3 ✅ → `DESIGN.md` (index) + `design/modules/` (per-module design + interface contracts, if directory exists; otherwise read monolithic DESIGN.md)
-   - **Phase 4 existing** → `REVIEW.md` (previous review, if exists)
-   Halt if `docs/arch/PHASES.md` is missing or no phase is complete.
+1. **Read Blueprints**: Load `docs/bc/<bc-slug>/kanban/BOARD.md` to find the current task and determine which upstream skills are `done`. Then load available outputs:
+   - arch-align done → `align/LANGUAGE.md`, `align/BRD.md`
+   - arch-design done → `design/ARCHITECTURE.md`
+   - arch-detail done → `detail/DESIGN.md` (index) + `detail/modules/`
+   - **devtdd done** → `review/REVIEW.md` (previous review, if exists)
+   Halt if `BOARD.md` is missing or no skill is `done`.
 
-2. **Load Previous Review**: If `docs/bc/<bc-slug>/REVIEW.md` exists, extract only its version number and last score. The audit itself reads source docs and code independently — do NOT re-parse old AD items. If it does not exist, this is the first review (v1).
+2. **Load Previous Review**: If `docs/bc/<bc-slug>/review/REVIEW.md` exists, extract only its version number and last score. The audit itself reads source docs and code independently — do NOT re-parse old AD items. If it does not exist, this is the first review (v1).
 
 3. **Determine Scope**: Either (a) full workspace, (b) specific files/directories, or (c) a diff/PR. Confirm scope in one line before proceeding.
 
@@ -186,9 +212,12 @@ Flag stale debt (open for 2+ review versions) and list specific SE items awaitin
    - **ARCHITECTURE.md ↔ Code**: Mermaid diagrams must reflect current import graph and adapter names. Grep for adapter/constructor names in code and compare against diagram labels.
    - **DESIGN.md ↔ ARCHITECTURE.md**: Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1.
    - **LANGUAGE.md ↔ All docs**: Adapter/port names in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and code.
-   - **Cross-cutting docs ↔ BC docs (X6/X7)**: When `docs/agents/domain.md` or `docs/arch/SYSTEM.md` exist, verify:
-     - `domain.md` file structure diagram reflects each BC's actual `docs/` contents (run `find <bc>/docs -type f` and compare against the listed tree).
+   - **Cross-cutting docs ↔ BC docs (X6/X7)**: When `docs/arch/SYSTEM.md` exists, verify:
      - `SYSTEM.md` "Last updated" comment describes the most recent change, not a stale historical one.
+   - **ARCHITECTURE.md §5 ADR Index ↔ `design/adr/` directory (X9/X10)**: When `docs/bc/<slug>/design/adr/` exists, verify:
+     - Every ADR file has a row in ARCHITECTURE.md §5, and every row has a matching file.
+     - No ADR has Status "Proposed" after Phase 2 is marked ✅.
+     - Superseded ADRs reference valid replacing ADR numbers.
    This step catches staleness that individual doc audits miss — documents evolve independently and drift apart. Outer cross-cutting docs are especially vulnerable since no single BC owns them.
 
 6. **Static Audit**: Apply the audit checklist from [reference.md](reference.md) §1. For each finding, classify as Red/Yellow.
@@ -199,13 +228,21 @@ Flag stale debt (open for 2+ review versions) and list specific SE items awaitin
    a. Assign a Route tag per the decision matrix in [reference.md](reference.md) §7.
    b. Write a Root Cause Analysis per [reference.md](reference.md) §8.
    c. If the root cause points to a skill gap, add a Skill Evolution Suggestion.
+   d. **Security Audit (v2.9.0+)**: Run OWASP Top 10 checks as an additional audit axis. Score security findings using CVSS v3.1 severity bands. See [references/security-audit-checklist.md](references/security-audit-checklist.md) for the full OWASP checklist and CVSS scoring framework.
+   e. **Critical Reasoning (v3.0.0+)**: Before applying patterns, build a **Decision Inventory** of high-risk architectural decisions in the target deliverable (see [references/critical-reasoning.md](references/critical-reasoning.md) for template). Prioritize: BC boundaries > persistence technology > communication patterns > GoF patterns > naming. Then:
+      - For any **Critical** severity AD: apply Pattern 1 (Expose Assumptions) + Pattern 3 (Pre-Mortem) at minimum.
+      - When score < 60 (Critical verdict): apply all 5 patterns systematically.
+      - For each challenged decision, output: Pattern applied, Challenge, Evidence gap, Recommendation, Confidence (High/Medium/Low).
+      - Classify each challenged decision: survived scrutiny (strengthened) / needs revision (with recommendation) / needs more data (with specific data to collect).
+      See [references/critical-reasoning.md](references/critical-reasoning.md) for all 5 patterns with worked examples, when-to-apply matrix, and severity guide.
+   f. **Severity Grading (v2.9.0+)**: Apply Critical/Major/Minor/Positive grading to all ADs. Include code comparison examples for refactoring guidance. See [references/review-feedback-rules.md](references/review-feedback-rules.md).
 
 8.5. **AD Dependency Analysis & Execution Plan**: After routing all ADs, analyze dependencies and generate a structured Execution Plan per [reference.md](reference.md) §12:
    a. Group ADs by Route.
    b. Determine Batch ordering using Phase dependency rules (upstream Phases block downstream).
    c. Mark same-Batch ADs as parallel-capable.
    d. Assign `Blocked By` field to each AD item.
-   e. If any AD routes to Phase 1-3: increment `Current Cycle` in PHASES.md and mark affected Phases (🔄 redoing / ⏭ invalidated) per Cascade Rules.
+   e. If any AD routes to upstream skills (align/design/detail): note this in T{N}.md Change History so those skills can see the redo requirement on next startup.
    f. If only `/devtdd` ADs exist: do NOT increment Cycle (Phase 4 internal iteration).
    g. Output the Execution Plan as part of the Hand-off Trigger.
 
@@ -235,48 +272,43 @@ Flag stale debt (open for 2+ review versions) and list specific SE items awaitin
 
 ### On Startup
 
-1. Read `docs/arch/PHASES.md` (if it exists) to determine completed phases.
+1. Read `docs/bc/<bc-slug>/kanban/BOARD.md` (if it exists) to find current task and determine completed upstream skills.
 2. **BC Selection Protocol** (when user does not specify a BC):
-   - Read `docs/arch/PHASES.md` and list all registered BCs.
+   - Read `AGENTS.md` BC registry and list all registered BCs.
    - If only one BC exists, use it automatically.
    - If multiple BCs exist, ask the user which BC(s) to audit (single BC or all).
-   - All subsequent file operations use `docs/bc/<bc-slug>/` as the base path.
-3. Load only the blueprints for completed phases:
-   - Phase 1 ✅ → `LANGUAGE.md`, `CONTEXT.md`
-   - Phase 2 ✅ → `ARCHITECTURE.md`
-   - Phase 3 ✅ → `DESIGN.md` (index) + `design/modules/`
-4. **Load Previous Review**: Read `docs/bc/<bc-slug>/REVIEW.md` if it exists. Extract ONLY:
+3. Read `kanban/tasks/T{N}.md` → check References for upstream files.
+4. **AD Check**: Scan `Architecture Discrepancies → arch-review` section. If unresolved AD entries exist → enter AD fix mode: read AD description, fix only what's required, mark Resolved. Skip remaining startup steps.
+5. **Migration Mode Detection (v3.1.0+)**: Before upstream halt, check if `T{N}.md` References has `(migration)` tag. If yes → skip upstream halt (all blueprints were just generated by the migration pipeline). Continue with normal audit. See [arch-init reference.md](../arch-init/reference.md) §10 Migration Mode.
+6. **Upstream check**: Verify devtdd has T{N} in `done`. If not → halt: "Upstream devtdd has not completed T{N}. Run `/devtdd` first."
+7. **Handover removal**: If T{N} exists in devtdd's `done` column on BOARD.md → remove it.
+8. Load only the blueprints for completed skills:
+   - arch-align done → `align/LANGUAGE.md`, `align/BRD.md`
+   - arch-design done → `design/ARCHITECTURE.md`
+   - arch-detail done → `detail/DESIGN.md` (index) + `detail/modules/`
+9. **Load Previous Review**: Read `docs/bc/<bc-slug>/review/REVIEW.md` if it exists. Extract ONLY:
    - Version number (for archive naming and version bump)
    - Previous score (for delta computation)
-   Do NOT re-parse old AD items or SE suggestions — the audit reads source docs and code independently. Source documents are the authoritative record; REVIEW.md is a transient dashboard. If REVIEW.md does not exist, this is the first review (v1).
-4.5. **Pipeline Task Sweep (跨阶段任务追踪)**: For ALL BCs listed in PHASES.md (not just the target BC), scan their REVIEW.md files:
-   - Count open ADs per Route (🆕 New / 🔄 Open, excluding ✅ Resolved).
-   - Count open SEs per Target Skill (🆕 New, excluding ✅ Adopted).
-   - Produce a **Pipeline Health Summary**:
-     - For each BC: `[BC-slug] AD: N open / SE: N open`
-     - Flag any BC with open ADs that have been 🆕 New for 2+ review versions (stale debt).
-   - This summary is output in the Hand-off Trigger §Pipeline Health and stored in REVIEW.md as a footer note.
-5. If `docs/arch/PHASES.md` is missing or no phase is complete, **halt** and instruct the user to run `/arch-align` first.
+   Do NOT re-parse old AD items. Source documents are the authoritative record.
+10. **Pipeline Task Sweep**: For ALL BCs in `AGENTS.md`, scan their `review/REVIEW.md` files for open ADs/SEs. Produce a Pipeline Health Summary.
+11. If `BOARD.md` is missing or no skill is `done`, **halt** and instruct the user to run `/arch-align` first.
 
 ### On Completion
 
-1. **Archive previous review**: If `REVIEW.md` exists:
-   a. Check if all AD items in the current `REVIEW.md` have Status = ✅ Resolved.
-   b. If **all resolved** → move `REVIEW.md` to `reviews/done/v{N}.md` (closed archive).
-   c. If **any unresolved** → move `REVIEW.md` to `reviews/v{N}.md` (active archive).
-2. **Write REVIEW.md**: Write `docs/bc/<bc-slug>/REVIEW.md` as a **lightweight dashboard** containing ONLY:
-   - Version header (version number, date, skill version, scope)
-   - Score History table (all historical scores — append new row)
-   - Active Architecture Debt table (only unresolved items with full detail)
-   - Open Skill Evolution Suggestions (only items with Status 🆕 New)
-   - **Pipeline Health Summary** footer (cross-BC open AD/SE counts from Step 4.5)
-   Do NOT include: Resolved Debt table, Deployment Boundary Audit, or Version Diff Summary — those belong in archives and stdout only.
-3. **Update PHASES.md**:
-   - Set Phase 4 column to `✅ audited YYYY-MM-DD (NN/100) v<N>`.
-   - If Execution Plan has ADs routing to Phase 1-3: increment `Current Cycle` header, mark affected Phases per Cascade Rules (🔄 redoing + ⏭ invalidated).
-   - If only `/devtdd` ADs: Phase 4 only, no Cycle increment.
-4. **Render stdout report**: Output the 7-section report (including Version Diff section and §7 Resolution Verification).
+1. **Archive previous review**: If `REVIEW.md` exists, archive to `reviews/v{N}.md` or `reviews/done/v{N}.md`.
+2. **Write REVIEW.md**: Write `docs/bc/<bc-slug>/review/REVIEW.md` as a lightweight dashboard.
+3. **Update kanban**:
+   - Update `kanban/tasks/T{N}.md`: References → review section, Status → done, Change History.
+   - Mark any AD entries targeting arch-review as Resolved (if not already).
+   - Move T{N} from `doing` to `done` in `kanban/BOARD.md`.
+   - **Archive check**: If ALL skills in T{N}.md Status are done AND no unresolved Architecture Discrepancy entries exist in T{N}.md → add T{N} to BOARD.md Archive table and remove from Board table.
+   - If Execution Plan has ADs routing to upstream skills, write AD entries in T{N}.md → Architecture Discrepancies → target skill sections, and note in Change History.
+4. **Render stdout report**: Output the 7-section report.
 5. Do **not** modify any blueprint files unless the user explicitly authorizes.
+
+## Kanban Protocol
+
+See [kanban-spec.md](../kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
 ---
 
@@ -284,7 +316,7 @@ Flag stale debt (open for 2+ review versions) and list specific SE items awaitin
 
 After writing REVIEW.md and rendering the stdout report, output:
 
-> **"架构审查 v<N> 完成。健康分数 NN/100 — 🟢/🟡/🔴。REVIEW.md 已写入 `docs/bc/<bc-slug>/REVIEW.md`（v<N>），旧版归档至 `REVIEW-v{N-1}.md`。"**
+> **"架构审查 v<N> 完成。健康分数 NN/100 — 🟢/🟡/🔴。REVIEW.md 已写入 `docs/bc/<bc-slug>/review/REVIEW.md`（v<N>），旧版归档至 `reviews/v{N-1}.md`。"**
 >
 > **Architecture Debt 分流:**
 > - `/arch-align`: N 项 (AD-xxx, ...)
@@ -314,6 +346,12 @@ After writing REVIEW.md and rendering the stdout report, output:
 > - `[ayuan]` AD: 0 open / SE: 2 open (SE-022 → /arch-design, SE-023 → /devtdd)
 > - `[taiyi-platform]` AD: 0 open / SE: 0 open
 >
+> **Decision Challenge Summary (Critical Reasoning):**
+> - Decisions challenged: N
+> - Survived scrutiny (strengthened): N
+> - Needs revision: N (AD-xxx, ...)
+> - Needs more data: N (specific data to collect)
+>
 > 按 Batch 顺序执行，同一 Batch 内的 skill 可分别运行。
 
 ---
@@ -331,4 +369,9 @@ For detailed audit checklists, scoring rubric, and language-specific red flags, 
 - **§9 Architecture Debt Template** — full AD item structure with all required fields.
 - **§10 Skill Evolution Suggestions Template** — SE item structure and consumption protocol.
 - **§11 Version Comparison Protocol** — how to diff against previous REVIEW.md and archive.
-- **§12 AD Dependency Analysis & Execution Plan** — dependency inference rules, Batch ordering, PHASES.md Cycle update.
+- **§12 AD Dependency Analysis & Execution Plan** — dependency inference rules, Batch ordering, kanban/BOARD.md task update.
+
+For security auditing, critical reasoning, and feedback grading, see the `references/` subdirectory:
+- [references/security-audit-checklist.md](references/security-audit-checklist.md) — OWASP Top 10 + CVSS v3.1 scoring + SAST tools
+- [references/critical-reasoning.md](references/critical-reasoning.md) — 5 critical reasoning patterns with worked examples, decision inventory, when-to-apply matrix, severity guide (merged from arch-critic v1.0.0)
+- [references/review-feedback-rules.md](references/review-feedback-rules.md) — 4-level severity grading + disagreement protocol

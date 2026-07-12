@@ -15,9 +15,9 @@ Detailed audit checklists, scoring rubric, per-language red flags, and refactori
 | 1.3 GoF Pattern Rules | — | ✅ | Pattern application, anti-pattern detection |
 | 1.4 Naming & Language Drift | ✅ | ✅ | Cross-reference LANGUAGE.md |
 | 1.5 Documentation Drift Detection | — | ✅ | Cross-check DESIGN.md Task Summary ↔ actual code |
-| 1.6 Cross-Document Consistency | ✅ | ✅ | Inter-document staleness detection (ARCH↔SYSTEM, ARCH↔Code, LANG↔All, Cross-cutting docs↔BC docs) |
+| 1.6 Cross-Document Consistency | ✅ | ✅ | Inter-document staleness detection (ARCH↔SYSTEM, ARCH↔Code, LANG↔All, ADR↔Index, Cross-cutting docs↔BC docs) |
 
-When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1, 1.4, and 1.6. When Phase 3 is also complete, apply all rule groups.
+When `kanban/BOARD.md` indicates only Phase 2 is complete, focus on 1.1, 1.4, and 1.6. When Phase 3 is also complete, apply all rule groups.
 
 ### 1.1 Clean Architecture Rules (Phase 2 + 3)
 
@@ -59,7 +59,7 @@ When `PHASES.md` indicates only Phase 2 is complete, focus on 1.1, 1.4, and 1.6.
 | N2 | English mappings consistent (e.g., 灵簿 always `Census`, never `Registry`) | Search for synonym drift | 🟡 |
 | N3 | Bounded context names not crossed (no `census` package importing `intent` internals) | Inspect cross-context imports | 🔴 |
 | N4 | **Go 文件名必须与主 struct 名对齐**：struct `ABody` → 文件 `abody.go`；struct `AManifest` → 文件 `amanifest.go`；测试文件同理（`abody_test.go`）。命名规范约定的前缀（如 A 前缀）必须反映在文件名中 | Grep 所有 Go 源文件：提取主 struct 名，比较小写形式与文件名是否一致 | 🟡 |
-| N5 | **docs/design/modules/ 目录名必须与 domain struct 名对齐**：struct `ABody` → 目录 `abody/`；struct `AManifest` → 目录 `amanifest/`。使用小写前缀形式 | Compare `ls docs/design/modules/` against domain struct names from LANGUAGE.md | 🟡 |
+| N5 | **docs/detail/modules/ 目录名必须与 domain struct 名对齐**：struct `ABody` → 目录 `abody/`；struct `AManifest` → 目录 `amanifest/`。使用小写前缀形式 | Compare `ls docs/detail/modules/` against domain struct names from LANGUAGE.md | 🟡 |
 
 ### 1.5 Documentation Drift Detection (Phase 3)
 
@@ -80,9 +80,11 @@ These rules catch staleness caused by documents evolving independently. Apply du
 | X3 | DESIGN.md ↔ ARCHITECTURE.md package structure | Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1 | 🟡 |
 | X4 | LANGUAGE.md ↔ All docs adapter/port names | Adapter/port names registered in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and module.md files | 🟡 |
 | X5 | ARCHITECTURE.md Consumers / Open Questions vs SYSTEM.md | Every “Consumers” column entry and Open Questions item in ARCHITECTURE.md that references cross-BC communication MUST use a protocol declared in SYSTEM.md §3. Stale references to deprecated protocols (e.g., gRPC when matrix says MQ-only) are flagged | 🟡 |
-| X6 | `docs/agents/domain.md` file structure ↔ actual BC docs | The file structure diagram in `docs/agents/domain.md` must reflect each BC’s actual docs/ contents (phases completed, directories present). Compare listed files against `find <bc>/docs -type f` | 🟡 |
+| X6 | `docs/arch/SYSTEM.md` topology ↔ actual BC architecture docs | The topology in `docs/arch/SYSTEM.md` must reflect each BC's actual architecture (phases completed, communication protocols). Compare declared protocols against actual ARCHITECTURE.md diagrams | 🟡 |
 | X7 | `docs/arch/SYSTEM.md` Last-updated staleness | SYSTEM.md “Last updated” comment must describe the most recent change, not a stale historical one. If the comment references a change that was later superseded, flag it | 🟡 |
 | X8 | **BC `README.md` ↔ Code consistency** | Each BC's README.md must match actual code: (a) directory tree matches current `ls internal/` output (no ghost directories), (b) architecture/component diagrams match current domain struct names and responsibilities, (c) config/env var defaults match `config.go` actual defaults. Run `ls -d internal/*/` and compare against README tree | 🟡 |
+| X9 | **ARCHITECTURE.md §5 ADR Index ↔ `design/adr/` directory** | Every ADR file in `docs/bc/<slug>/design/adr/` must have a corresponding row in ARCHITECTURE.md §5 ADR Index table; every row in §5 must have a matching file in `design/adr/`. Run `ls docs/bc/<slug>/design/adr/` and compare against §5 table rows | 🟡 |
+| X10 | **ADR Status lifecycle compliance** | After Phase 2 is marked ✅: (a) no ADR may have Status "Proposed" — must be Accepted or Superseded, (b) Superseded ADRs must reference a valid replacing ADR number, (c) Status field in ADR file must match the Status in ARCHITECTURE.md §5 Index | 🔴 |
 
 ---
 
@@ -96,7 +98,7 @@ These rules catch staleness caused by documents evolving independently. Apply du
 | Domain Purity | 25 | C1, P1, framework annotations check |
 | Persistence Decoupling | 20 | P1–P6 |
 | Pattern Application | 15 | G1–G5 |
-| Naming Alignment | 10 | N1–N5, X1–X8 |
+| Naming Alignment | 10 | N1–N5, X1–X10 |
 
 ### 2.2 Deduction policy
 
@@ -320,8 +322,8 @@ Every Architecture Debt item MUST be assigned exactly one Route. Use this table 
 
 | Finding Type | Route | Document Owner | Example |
 |-------------|-------|---------------|--------|
-| Terminology drift / BC boundary shift / glossary gap | `/arch-align` | LANGUAGE.md, CONTEXT.md | Code uses "Registry" but LANGUAGE.md says "Census" |
-| ARCHITECTURE.md inconsistency / sequence diagram drift / port table mismatch | `/arch-design` | ARCHITECTURE.md, SYSTEM.md | ARCHITECTURE.md says "Engine constructs outbox" but code says "ABody RunLoop" |
+| Terminology drift / BC boundary shift / glossary gap | `/arch-align` | LANGUAGE.md, BRD.md | Code uses "Registry" but LANGUAGE.md says "Census" |
+| ARCHITECTURE.md inconsistency / sequence diagram drift / port table mismatch | `/arch-design` | ARCHITECTURE.md, SYSTEM.md, adr/*.md | ARCHITECTURE.md says "Engine constructs outbox" but code says "ABody RunLoop" |
 | Structural violation: DIP / package layout / port placement | `/arch-design` | ARCHITECTURE.md | Domain imports infrastructure package |
 | Design gap: missing interface / missing DDL / module omission | `/arch-detail` | DESIGN.md, module.md, interfaces/ | No Data Mapper for a persisted entity |
 | Code implementation issue: missing file / missing test / TODO stub | `/devtdd` | source code, test files | Port interface has no adapter implementation |
@@ -443,7 +445,7 @@ Suggestions for improving arch-review itself or other pipeline skills.
 
 ### Consumption Protocol
 
-When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/REVIEW.md` for any SE items targeting it (Status 🆕) and consider incorporating them before proceeding.
+When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/review/REVIEW.md` for any SE items targeting it (Status 🆕) and consider incorporating them before proceeding.
 
 ---
 
@@ -562,11 +564,11 @@ After all Batches: run /arch-review to verify zero ADs
 | `/arch-review-self` SE items | Listed separately; do not block other Batches |
 | Mixed Phase 2 + Phase 4 ADs | Phase 2 = Batch 1, Phase 4 = Batch 2 (sequential) |
 
-### 12.5 PHASES.md Cycle Update
+### 12.5 Kanban Task Update
 
 When arch-review generates an Execution Plan:
 
-1. If any AD routes to Phase 1-3 (upstream of devtdd): increment `Current Cycle` in PHASES.md header
-2. Mark affected Phases per Cascade Rules (section 1.4 in PHASES.md template)
+1. If any AD routes to Phase 1-3 (upstream of devtdd): update `kanban/tasks/T{N}.md` Change History
+2. Note affected upstream skills in Change History for redo detection
 3. If only `/devtdd` ADs exist: do NOT increment Cycle (Phase 4 internal iteration)
 4. Write the new Cycle number and Phase 🔄/⏭ marks atomically with REVIEW.md

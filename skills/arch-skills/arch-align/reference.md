@@ -11,7 +11,6 @@ Progressive-disclosure companion to `SKILL.md`. Load only when actively running 
 
 > Bounded Context: `<context-name>`
 > Last updated: `<YYYY-MM-DD>`
-> PoEAA Pattern: `<Domain Model | Transaction Script | Table Module>`
 
 ## Domain (technology-free)
 
@@ -51,10 +50,10 @@ Progressive-disclosure companion to `SKILL.md`. Load only when actively running 
 
 ---
 
-## 2. `CONTEXT.md` Template Skeleton
+## 2. `BRD.md` Template Skeleton
 
 ```markdown
-# CONTEXT.md — Bounded Context & Pattern Decision
+# BRD.md — Business Requirements Document (BRD)
 
 ## 1. Bounded Context
 
@@ -72,80 +71,67 @@ Progressive-disclosure companion to `SKILL.md`. Load only when actively running 
 - ...
 - ...
 
-## 3. PoEAA Pattern Decision
-
-**Pick:** `Domain Model | Transaction Script | Table Module`
-
-**Justification (one paragraph):**
-> Why this pick and not the others, grounded in observed business complexity.
-> Mention: number of invariants, depth of aggregates, frequency of behavior on entities,
-> presence of long-running workflows.
-
-## 4. Tracer Bullet Goal
-
-The thinnest end-to-end vertical slice that proves the architecture works:
-
-> `<one sentence: actor → action → observable outcome>`
-
-Example: "An operator registers a new agent via CLI and sees it appear in `census list`."
-
-## 5. Open Questions (must be empty before /arch-design)
+## 3. Open Questions (must be empty before /arch-design)
 
 - [ ] ...
 - [ ] ...
+
+## 4. Business Overview
+
+> Overwritten every round — always reflects the latest complete picture.
+
+### Core Business Flow
+<End-to-end narrative: starting event → key actions → terminal state>
+
+### Key Participants
+| Role | Type | Responsibility |
+|------|------|---------------|
+| ... | Human / System / External | ... |
+
+### State Machine
+| Entity | State A → State B | Trigger |
+|--------|-------------------|--------|
+| ... | ... | User action / System event / Timer |
+
+### Key Business Rules
+1. <rule> (applies to: <context>)
+2. <rule> (applies to: <context>)
+
+## 5. Change History (in T{N}.md)
+
+> No longer in BRD.md. Change history is tracked per-task in `kanban/tasks/T{N}.md`.
+> See [kanban-spec.md](../kanban-spec.md) §3 for T{N}.md format.
 ```
 
 ---
 
-## 3. PoEAA Pattern Decision Matrix
+## 3. Grilling Question Library (3-Phase)
 
-Use this matrix to drive Step 2 ("PoEAA Pattern Probing"). The pick is whichever row has the most "yes".
+Structured by Grilling phase. Pick one question per turn. Never batch.
 
-| Signal | Domain Model | Transaction Script | Table Module |
-|--------|:------------:|:------------------:|:------------:|
-| Many invariants attached to entity state | ✅ | ❌ | ⚠️ |
-| Behavior naturally lives on the noun | ✅ | ❌ | ⚠️ |
-| Aggregate depth ≥ 2 | ✅ | ❌ | ❌ |
-| Mostly CRUD with occasional rules | ❌ | ✅ | ⚠️ |
-| Set-oriented / report-heavy logic | ❌ | ⚠️ | ✅ |
-| Team is small and domain is shallow | ❌ | ✅ | ⚠️ |
-| Workflow orchestration dominates | ❌ | ✅ | ❌ |
-| ORM-friendly but logic is per-table | ❌ | ❌ | ✅ |
+### Phase A — Discovery (open-ended)
 
-**Rules of thumb:**
-- If you cannot name three non-trivial invariants, **don't** pick Domain Model — you'll over-engineer.
-- If most use cases are "load → mutate one field → save", pick Transaction Script.
-- Table Module is rare outside legacy/reporting systems.
+Focus: BC scope + candidate term extraction.
 
----
+- "描述一下这个系统的核心业务流程，从头到尾走一遍。"
+- "哪些操作是这个 BC 管的，哪些不是？给我一个明确的边界。"
+- "你提到了 X，但我看不算实现——那它进 Out of Scope 还是进 Open Questions？"
 
-## 4. Grilling Question Library
+### Phase B — Terminology (structured options preferred)
 
-Pick one question per turn. Never batch.
+Focus: synonym resolution, layer assignment, banned words.
 
-### A. Synonym Resolution
-- "你刚才用了 `record` 和 `imprint`，这是同一个东西吗？如果是，我们保留哪一个，废弃哪一个？"
-- "`agent` 和 `worker` 在你的语境里有区别吗？给我一个能区分它们的具体例子。"
+- [结构化选项] "`record` vs `imprint` —— 这是同一个东西吗？保留哪一个？" → 单选：`[record]` `[imprint]` `[都不同，各保留]` `[都不是]`
+- [结构化选项] "`agent` 和 `worker` 在你的语境里有区别吗？" → 单选：`[同一个概念]` `[有区别，我来说]`
+- [结构化选项] "`PostgresCensus` 归入 Infrastructure 层，确认？" → 单选：`[确认]` `[不，它是业务概念]`
 
-### B. Hidden Invariant Discovery
+### Phase C — Invariants (open-ended)
+
+Focus: hidden business rules, edge cases, boundary conditions.
+
 - "一个 agent 在什么情况下不能被注册？列出所有失败原因。"
 - "如果两个 agent 同时尝试 X，预期行为是什么？谁赢、谁输、还是都失败？"
 - "状态从 A 到 B 之外，还有哪些合法转移？哪些是非法的？"
-
-### C. Domain vs Infrastructure Separation
-- "`Postgres census` 是真的业务概念，还是只是当前实现选择？如果换成 SQLite，业务方还会这么叫它吗？"
-- "JSON 这个词出现在你的描述里——是协议细节还是业务约束？"
-
-### D. PoEAA Anchor
-- "给我一条非平凡的、必须由 `Agent` 自己保证的不变量。如果给不出，我们就不该用 Domain Model。"
-- "这个用例除了'读一行、改一个字段、写回去'，还有别的吗？"
-
-### E. Tracer Bullet Sharpening
-- "如果只能交付一条端到端的路径来证明架构成立，是哪一条？给我一句话：谁、做什么、看到什么。"
-- "Tracer Bullet 完成后，可观察的输出是什么？CLI 输出？数据库行？日志？"
-
-### F. Out-of-Scope Pinning
-- "你提到了 X，但我看你说不打算实现——那它进 Out of Scope 还是进 Open Questions？"
 
 ---
 
@@ -165,7 +151,7 @@ Trigger a grilling question whenever the user input contains any of:
 
 ---
 
-## 6. Pre-Output Self-Audit (run before each `LANGUAGE.md` / `CONTEXT.md` save)
+## 6. Pre-Output Self-Audit (run before each `LANGUAGE.md` / `BRD.md` save)
 
 Mentally run through these checks. If any fails, do not save — ask another grilling question.
 
@@ -173,10 +159,34 @@ Mentally run through these checks. If any fails, do not save — ask another gri
 2. **No synonyms inside Domain.** Each concept has exactly one canonical term.
 3. **All Application verbs are imperative active.** `RegisterAgent`, not `AgentRegistration` or `register_agent_handler`.
 4. **Infrastructure suffix is consistent.** Every Infrastructure term ends in `Adapter | Producer | Consumer | Census | Store | Gateway`.
-5. **PoEAA pick has a written justification.** Not just the name.
-6. **Tracer Bullet has actor + action + observable outcome.** Three components, all present.
-7. **Open Questions section is honestly populated.** Empty only when truly empty; never empty as a shortcut.
-8. **Banned Terms list is not empty** (if any synonym was discussed). Drift candidates must be recorded.
+5. **Open Questions section is honestly populated.** Empty only when truly empty; never empty as a shortcut.
+6. **Banned Terms list is not empty** (if any synonym was discussed). Drift candidates must be recorded.
+7. **Business Overview (§4) is current.** If any term, rule, or scope changed this round, §4 must be rewritten before hand-off.
+8. **T{N}.md Change History has this round's entry.** All changes from this round are recorded with impact classification.
+9. **Impact Assessment is complete.** Every Change History entry has a corresponding impact classification (⚠️ Breaking or ➕ Additive).
+
+---
+
+## 8. Impact Assessment Guide
+
+When comparing this round's changes against downstream artifacts, use this decision matrix:
+
+| Change Type | Downstream Artifact | Classification | Action Required |
+|------------|-------------------|---------------|----------------|
+| Term renamed/retired | ARCHITECTURE.md, DESIGN.md, module docs | ⚠️ Breaking | Downstream must update all references |
+| Invariant modified/removed | DESIGN.md § business rules | ⚠️ Breaking | Downstream must re-validate design |
+| Scope item removed | All downstream artifacts | ⚠️ Breaking | Downstream must remove related content |
+| New term added | DESIGN.md, modules | ➕ Additive | Downstream may add related modules |
+| New invariant added | DESIGN.md, modules | ➕ Additive | Downstream may add validation logic |
+| Scope item added | ARCHITECTURE.md | ➕ Additive | Downstream may extend boundary design |
+
+**Scan targets for Impact Assessment:**
+1. `docs/bc/<slug>/design/ARCHITECTURE.md` — check for references to modified/retired terms
+2. `docs/bc/<slug>/detail/DESIGN.md` — check for references to modified terms or rules
+3. `docs/bc/<slug>/detail/modules/*/module.md` — check for modules using modified terms
+4. Source code (if Phase 4 exists) — check for code referencing retired terms
+
+**First round:** No prior T{N}.md Change History exists → skip Impact Assessment, set Change History to "Initial alignment."
 
 ---
 
@@ -189,7 +199,7 @@ When the user pushes back on a constraint, follow this exact sequence:
 3. **Show the conflict.** "These conflict because ..."
 4. **Offer two paths:**
    - (a) revise their intent to fit the constraint, or
-   - (b) explicit `OVERRIDE: <reason>` from them, which you record verbatim in `CONTEXT.md` § Open Questions before proceeding.
+   - (b) explicit `OVERRIDE: <reason>` from them, which you record verbatim in `BRD.md` § Open Questions before proceeding.
 5. **Wait.** Do not proceed until they pick (a) or (b).
 
 Never silently bend a hard constraint. Never proceed on assumption.

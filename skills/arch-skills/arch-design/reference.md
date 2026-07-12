@@ -73,82 +73,6 @@ classDiagram
 - The Domain layer must have **zero outgoing arrows** to outer layers.
 - Label every port with `<<port>>` or `[[Port]]` shape; every adapter with `<<adapter>>`.
 
-### Layout C — System Context / Application Topology (multi-BC projects)
-
-**When to use**: Mandatory when `docs/arch/PHASES.md` lists 2+ BCs. Optional for single-BC projects.
-
-**Arrow semantics**: Arrows represent **runtime communication direction** (not source-code dependency). Every arrow MUST be labeled with the protocol/channel name.
-
-```mermaid
-flowchart TB
-  subgraph External["External Actors"]
-    Op((Operator))
-  end
-
-  subgraph BC1["BC-Alpha (e.g., Platform)"]
-    Daemon[Daemon Process]
-    CLI[CLI Tool]
-  end
-
-  subgraph BC2["BC-Beta (e.g., Agent)"]
-    Process[Agent Process]
-    SDK[Agent SDK]
-  end
-
-  subgraph Infra["Shared Infrastructure"]
-    DB[(Database)]
-    MQ[[Message Broker]]
-    FS[(File System)]
-  end
-
-  Op -->|terminal| CLI
-  CLI -->|OS exec| Process
-  CLI -->|gRPC| Daemon
-  Process <-->|stdin/stdout| SDK
-  SDK -->|gRPC| Daemon
-  SDK -->|MQ pub/sub| MQ
-  Daemon -->|SQL| DB
-  Daemon -->|MQ sub| MQ
-  SDK -->|file I/O| FS
-  Daemon -->|file I/O| FS
-```
-
-**Layout C rules**:
-- Group processes by BC using `subgraph` with BC name + PoEAA pattern label.
-- External actors (Operator, Creator, third-party services) in their own subgraph.
-- Shared infrastructure (DB, MQ, FS) in a separate `Infra` subgraph.
-- Label every arrow with the communication protocol (gRPC, MQ pub/sub, stdin/stdout, OS exec, SQL, file I/O).
-- Use `-.-` (dotted) for async/eventual communication; `-->` (solid) for synchronous calls.
-
-### Layout D — Independent Module Split (multi-process monorepos)
-
-**When to use**: Mandatory when SYSTEM.md shows 2+ BCs that run as **independent processes** with separate entry points and potential independent deployment. Each BC is a completely separate module (own `go.mod`, `cmd/`, `internal/`, `docs/`, `scripts/`). **Zero shared code** between BCs — cross-BC communication is via messages only.
-
-**Key principles**:
-- Each BC is an independent module — no shared `pkg/`, no shared `internal/`, no cross-module imports.
-- Each BC defines its own domain types, port interfaces, config loading, and infrastructure adapters.
-- Cross-BC communication contracts are defined by message schemas (MQ topics, protobuf), not Go types.
-- Ports that were previously "shared" (e.g., IntentClient with Publish + Subscribe) are **split by responsibility**: each BC defines only the port methods it consumes.
-
-**Directory structure**:
-```
-<project-root>/                  # Not a Go module
-├── AGENTS.md
-├── docs/                        # Project-level docs only (PHASES.md, SYSTEM.md)
-├── <bc-slug-a>/                 # BC-A — independent module
-│   ├── go.mod                   # module github.com/<org>/<project>/<bc-slug-a>
-│   ├── cmd/<entry>/
-│   ├── internal/{domain,port,app,config,infra}/
-│   ├── docs/                    # BC-specific design docs
-│   └── scripts/
-└── <bc-slug-b>/                 # BC-B — independent module
-    ├── go.mod                   # module github.com/<org>/<project>/<bc-slug-b>
-    ├── cmd/<entry>/
-    ├── internal/...
-    ├── docs/
-    └── scripts/
-```
-
 ---
 
 ## 2. ARCHITECTURE.md Template
@@ -157,11 +81,20 @@ flowchart TB
 # Architecture Specification — <Bounded Context Name>
 
 > Phase 2 output. Source of truth for layer boundaries.
-> Aligned with: [LANGUAGE.md](./LANGUAGE.md), [CONTEXT.md](./CONTEXT.md)
+> Aligned with: [LANGUAGE.md](./LANGUAGE.md), [BRD.md](./BRD.md)
 
-## 0. System Context Overview (mandatory when 2+ BCs)
+## 0. Architecture Overview
 
-> System topology: see [SYSTEM.md](../../../arch/SYSTEM.md)
+> Overwritten every round — always reflects the latest architecture picture.
+
+- **Pattern**: Monolith
+- **Layers**: Domain → Port → App → Infra (4-layer)
+- **PoEAA**: Domain Model (rich Order aggregate, complex invariants)
+- **Persistence**: PostgreSQL (primary), Redis (cache)
+- **Messaging**: RocketMQ (async event publishing)
+- **Ports**: 3 — OrderRepository, EventPublisher, NotificationPort
+- **Adapters**: 5 — PostgresOrderRepo, RocketMQAdapter, GRPCHandler, RedisCacheAdapter, FsAdapter
+- **Tracer Bullet**: Actor creates order via gRPC → system persists to PostgreSQL → publishes OrderCreated event → observable in dashboard
 
 ## 1. Layers & Components
 
@@ -219,56 +152,35 @@ internal/
     <tech>/             # Per-technology adapter
 ```
 
-**Multi-BC monorepo — Independent Module Split (MANDATORY when ≥2 BCs with independent processes)**:
-Each BC MUST be an independent module with its own `go.mod`, `cmd/`, `internal/`, `docs/`, and `scripts/`. **Zero shared code** — no `pkg/`, no shared `internal/`. Cross-BC ports are split by responsibility: each BC defines only the port methods it consumes (e.g., BC-A has `EventSubscriber`, BC-B has `EventPublisher` — no shared `IntentClient` interface). Cross-BC communication is via message contracts (MQ topics, protobuf schemas), not Go type imports.
+## 5. Architecture Decision Records
 
-## 5. Open Questions / Deferred Decisions
+| ADR | Title | Status | Key Decision | Date |
+|-----|-------|--------|-------------|------|
+| [ADR-001](./adr/001-use-postgresql-storage.md) | PostgreSQL 作为主存储 | Accepted | ACID 事务 + JSONB 灵活性 | 2025-01-15 |
+
+> ADR 详细指南见 [references/adr-guide.md](references/adr-guide.md)。每个重大技术选型（持久化、通信协议、架构模式、第三方服务）都需要一条 ADR。Phase 2 完成时所有 ADR 必须为 Accepted 或 Superseded 状态。
+
+## 6. Open Questions / Deferred Decisions
 
 - [ ] ...
-```
 
----
+## 7. Change History (in T{N}.md)
 
-## 2A. SYSTEM.md Template
+> No longer in ARCHITECTURE.md. Change history is tracked per-task in `kanban/tasks/T{N}.md`.
+> See [kanban-spec.md](../kanban-spec.md) §3 for T{N}.md format.
 
-When 2+ BCs are registered in `docs/arch/PHASES.md`, create or update `docs/arch/SYSTEM.md` using this template:
+## 8. Cross-Cutting Strategies
 
-```markdown
-# System Architecture Overview — <Project Name>
+> Architecture-level strategy decisions only. Implementation details belong to detail phase.
 
-> Cross-BC system topology. Source of truth for process inventory and inter-BC communication.
-> Generated by /arch-design when 2+ BCs are registered.
-> Last updated: <YYYY-MM-DD>
-
----
-
-## 1. Application Topology Diagram
-
-<insert Layout C Mermaid diagram here>
-
-## 2. Process Inventory
-
-| Process | Entry Point | BC | Role | Protocols |
-|---------|------------|----|------|----------|
-| <Process Name> | cmd/<entry>/main.go | <BC Name> | <one-line role> | <comma-separated protocols> |
-
-## 3. Cross-BC Communication Matrix
-
-| From (BC) | To (BC) | Protocol | Channel | Purpose |
-|-----------|---------|----------|---------|--------|
-| <BC-A> (<component>) | <BC-B> (<component>) | <gRPC/MQ/...> | <method/topic> | <one-line purpose> |
-
-## 4. BC Code Ownership (Current + Planned)
-
-> Each BC is an independent module. No shared packages.
-
-| Package Path | Module | Status | Notes |
-|-------------|--------|--------|-------|
-| `<bc-slug>/internal/domain/` | <bc-slug> | 现有 / 规划中 | <notes> |
-| `<bc-slug>/internal/port/<module>/` | <bc-slug> | 现有 / 规划中 | <notes> |
-| `<bc-slug>/internal/app/` | <bc-slug> | 现有 / 规划中 | <notes> |
-| `<bc-slug>/internal/infra/<tech>/` | <bc-slug> | 现有 / 规划中 | <notes> |
-| `<bc-slug>/cmd/<entry>/` | <bc-slug> | 现有 / 规划中 | <notes> |
+| Concern | Strategy | Owning Layer | Notes |
+|---------|----------|-------------|-------|
+| Error Handling | Result type | App layer | Domain returns Result, App translates to HTTP/gRPC error |
+| Data Consistency | Local transaction | App layer | Each use case = one DB transaction |
+| DI Strategy | Constructor injection | cmd/ composition root | Wire all deps at startup |
+| Concurrency Model | Goroutine per request | Adapter layer | Worker pool deferred (see Open Questions) |
+| Configuration | Env vars + defaults | Infra layer | Viper with env override |
+| Observability | Structured logging (slog) | Infra middleware | Trace ID via context propagation |
 ```
 
 ---
@@ -277,8 +189,10 @@ When 2+ BCs are registered in `docs/arch/PHASES.md`, create or update `docs/arch
 
 Before writing `ARCHITECTURE.md`, silently verify:
 
+- [ ] **Architecture Overview (§0) is current.** If any port, adapter, pattern, or technology changed this round, §0 must be rewritten before hand-off.
+- [ ] **Cross-Cutting Strategies (§8) are complete.** Every concern has a strategy + owning layer, or explicit N/A.
 - [ ] Every term used appears in `LANGUAGE.md` (no invented names).
-- [ ] Every external tech listed in `CONTEXT.md` has a corresponding port.
+- [ ] Every external tech from the Step 2.5 inventory has a corresponding port.
 - [ ] No port is defined by an adapter (DIP — port lives with consumer).
 - [ ] No Domain entity imports from `infrastructure/` or third-party packages.
 - [ ] Mermaid diagram has zero arrows leaving the Domain subgraph.
@@ -286,21 +200,71 @@ Before writing `ARCHITECTURE.md`, silently verify:
 - [ ] All adapters (driven + driving) are under `infra/`; `cmd/` contains only entry points.
 - [ ] Port interfaces are grouped under `port/` (or embedded in usecase package for OO style).
 - [ ] Driving adapters (CLI, HTTP client, gRPC client) translate wire-format types (proto/DTO) into domain/display types before the use case layer.
-- [ ] When 2+ BCs registered: Layout C diagram is present in SYSTEM.md, showing all processes, infrastructure, and communication protocols.
-- [ ] When 2+ BCs registered: ARCHITECTURE.md §0 links to SYSTEM.md.
-- [ ] When 2+ BCs with independent processes: Layout D — each BC is an independent module (own `go.mod`, `cmd/`, `internal/`). No shared `pkg/` or cross-module imports. Cross-BC ports are split by responsibility.
-- [ ] When 2+ BCs with independent processes: SYSTEM.md §4 Code Ownership shows module paths (`<bc-slug>/internal/...`), not flat `internal/` paths.
-- [ ] When ARCHITECTURE.md contains runtime interaction diagrams (e.g., §2.2 sequence diagrams): every cross-BC communication arrow in the diagram MUST match a row in SYSTEM.md §3 Communication Matrix (protocol, direction, channel). If SYSTEM.md says "MQ only" but the diagram shows gRPC, flag the inconsistency and fix before writing.
-- [ ] When ARCHITECTURE.md contains an Event Contract table (§6 Cross-BC Event Contract): each row's "Platform Action" column MUST be consistent with SYSTEM.md §3 Communication Matrix — no direct API calls if SYSTEM.md declares message-only communication.
-- [ ] **Post-Rename Doc Sync**: When the design session involved renaming a port, adapter, or domain term, grep the entire project for the old name — LANGUAGE.md, CONTEXT.md, SYSTEM.md, DESIGN.md, design/modules/*/module.md, design/modules/*/interfaces/*.md — and fix every stale reference before writing.
+- [ ] **Post-Rename Doc Sync**: When the design session involved renaming a port, adapter, or domain term, grep the entire project for the old name — LANGUAGE.md, BRD.md, DESIGN.md, design/modules/*/module.md, design/modules/*/interfaces/*.md — and fix every stale reference before writing.
+- [ ] Every significant technology choice in ARCHITECTURE.md §1.4 (Infrastructure/Adapters) has a corresponding ADR in `adr/`.
+- [ ] ARCHITECTURE.md §5 ADR Index table matches actual `adr/` directory contents (every file has a row, every row has a file).
+- [ ] Every ADR's Status is `Accepted` or `Superseded` — no `Proposed` ADR leaves Phase 2.
+- [ ] ADR IDs are sequential with no gaps (001, 002, 003...).
+- [ ] Superseded ADRs correctly reference the replacing ADR number.
+- [ ] **T{N}.md Change History has this round's entry.** All port/adapter/pattern changes from this round are recorded with impact classification.
+- [ ] **Impact Assessment is complete.** Every Change History entry has a corresponding impact classification (⚠️ Breaking or ➕ Additive).
 
 If any check fails, fix the design **before** writing the file.
 
 ---
 
+## 3A. Impact Assessment Guide (v1.12.0+)
+
+When comparing this round's changes against downstream artifacts, use this decision matrix:
+
+| Change Type | Downstream Artifact | Classification | Action Required |
+|------------|-------------------|---------------|----------------|
+| Port renamed/retired | DESIGN.md, module.md, interfaces/ | ⚠️ Breaking | Downstream must update all references |
+| Adapter removed/replaced | DESIGN.md, module.md | ⚠️ Breaking | Downstream must re-validate adapter usage |
+| Architecture pattern changed | DESIGN.md, all modules | ⚠️ Breaking | Downstream must re-validate structure |
+| New port added | DESIGN.md, modules | ➕ Additive | Downstream may add related modules |
+| New adapter added | DESIGN.md | ➕ Additive | Downstream may add adapter skeleton |
+| ADR Superseded | ARCHITECTURE.md §5 index | ➕ Additive | Downstream may update references |
+
+**First round:** No prior T{N}.md Change History exists → skip Impact Assessment, set Change History to "Initial design."
+
+---
+
+## 3B. Redo Workflow Guide
+
+When T{N} has prior design entries in Change History (redo scenario):
+
+### Startup Flow
+1. Read T{N}.md Change History → note prior design changes
+2. Read upstream align's output:
+   - `LANGUAGE.md` + `BRD.md` (current latest overview)
+   - `align/brds/brd-t{N}.md` (this task's BRD snapshot)
+   - **BRD Conflict Check**: Compare `brd-t{N}.md` vs `BRD.md` → if scope/rules/terms differ, present to user for resolution
+3. **Present prior design to user:**
+   - §0 Architecture Overview (current)
+   - §8 Cross-Cutting Strategies (current)
+   - §5 ADR Index (current list)
+4. Ask: "以上为上轮设计产出，哪些需要更新？"
+5. User confirms scope → only re-execute affected steps
+
+### ADR Redo Rules
+| Scenario | Action |
+|----------|--------|
+| Decision still valid, no change needed | Keep as `Accepted`, no action |
+| Decision invalidated by align change | Set to `Superseded`, create new ADR with link |
+| Decision needs refinement | Update existing ADR content, keep `Accepted` |
+| New decision needed (new tech/pattern) | Create new ADR |
+
+### §8 Cross-Cutting Redo Rules
+- Do NOT silently retain existing strategies
+- Present each strategy to user: "Error Handling: Result type @ App layer — still valid?"
+- If align Breaking change affects a strategy (e.g., new MQ added → Consistency strategy may change), flag it explicitly
+
+---
+
 ## 4. Clarification Protocol
 
-If the alignment artifacts (`LANGUAGE.md` / `CONTEXT.md`) are ambiguous on a boundary decision, **ask exactly one question** at a time and wait. Do not invent answers. Do not write `ARCHITECTURE.md` until ambiguity is resolved.
+If the alignment artifacts (`LANGUAGE.md` / `BRD.md`) are ambiguous on a boundary decision, **ask exactly one question** at a time and wait. Do not invent answers. Do not write `ARCHITECTURE.md` until ambiguity is resolved.
 
 Example:
-> "`CONTEXT.md` lists both `PostgreSQL` and `local FS` as persistence. Should `Imprint` use a single `ImprintStore` port covering both, or split into `ImprintMetaRepo` (Postgres) + `ImprintBlobStore` (FS)? — Pick one."
+> "用户在 NFR 对话中提到需要 PostgreSQL 和 local FS 两种持久化。Should `Imprint` use a single `ImprintStore` port covering both, or split into `ImprintMetaRepo` (Postgres) + `ImprintBlobStore` (FS)? — Pick one."

@@ -9,7 +9,7 @@
 ```
 Phase 0        Phase 1        Phase 2          Phase 3          Phase 4
 /arch-init  →  /arch-align  →  /arch-design  →  /arch-detail  →  /arch-review
-  (脚手架)       (术语对齐)       (边界设计)        (详细设计)        (架构审计)
+  (脚手架)       (术语对齐)       (边界设计)        (详细设计)     (架构审计+决策批判)
                                                       ↓
                                                   /devtdd
                                                (垂直切片TDD实现)
@@ -20,10 +20,10 @@ Phase 0        Phase 1        Phase 2          Phase 3          Phase 4
 | Skill | Phase | 描述 |
 |-------|-------|------|
 | **arch-init** | Phase 0 | 项目脚手架与文档治理。初始化 arch pipeline 文档结构，注册 Bounded Context，或审计/修复混乱的文档回归规范形式。幂等安全可重跑。 |
-| **arch-align** | Phase 1 | 概念与术语对齐。在任何设计工作之前，通过质询式对话对齐业务概念、统一语言 (DDD Ubiquitous Language) 和企业架构模式。产出 `LANGUAGE.md` + `CONTEXT.md`。 |
-| **arch-design** | Phase 2 | 边界设计与可视化。基于 Phase 1 产出，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`。 |
+| **arch-align** | Phase 1 | 概念与术语对齐。在任何设计工作之前，通过质询式对话对齐业务概念、统一语言 (DDD Ubiquitous Language) 和企业架构模式。产出 `LANGUAGE.md` + `BRD.md`。 |
+| **arch-design** | Phase 2 | 边界设计与可视化。基于 Phase 1 产出，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`，并管理 Architecture Decision Records (ADR)。 |
 | **arch-detail** | Phase 3 | 详细设计与多语言实现映射。将 `ARCHITECTURE.md` 的边界翻译为模块化 `DESIGN.md` 索引 + 每模块设计文件 + 每方法接口契约，支撑垂直切片 TDD。 |
-| **arch-review** | Phase 4 | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `REVIEW.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。 |
+| **arch-review** | Phase 4 | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `REVIEW.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。内置 5 种批判推理模式（原 arch-critic）。 |
 | **devtdd** | 实现 | 垂直切片 TDD 实现引擎。消费 Phase 3 产出（任务列表、模块设计、接口契约验收场景），驱动逐任务 red-green-refactor，同时强制架构边界。 |
 
 ## 使用方式
@@ -52,7 +52,8 @@ npx skills@latest add <your-repo>/skills/arch-skills
 - `/arch-align` | "align terms" | "grill the requirements" | "build the dictionary"
 - `/arch-design` | "design architecture" | "draw the boundaries" | "visualize dependencies"
 - `/arch-detail` | "detail design" | "vertical slice tasks" | "translate to code"
-- `/arch-review` | "audit this code" | "check architecture compliance" | "is this leaky"
+- `/arch-review` | "audit this code" | "check architecture compliance" | "is this leaky" | "challenge this design" | "pre-mortem" | "red team"
+
 - `/devtdd` | "implement task" | "tdd this task" | "implement next task"
 
 ## 理论基础
@@ -62,6 +63,7 @@ npx skills@latest add <your-repo>/skills/arch-skills
 - **Patterns of Enterprise Application Architecture** (Martin Fowler) — 企业模式分类
 - **Design Patterns** (GoF) — 可复用设计模式
 - **A Philosophy of Software Design** (John Ousterhout) — 深模块、复杂性管理
+- **Critical Reasoning & Pre-Mortem Analysis** (Gary Klein) — 批判推理、前瞻性失败分析
 
 ## 文件结构
 
@@ -73,19 +75,24 @@ arch-skills/
 │   └── reference.md       ← 补充参考
 ├── arch-align/
 │   ├── SKILL.md
-│   └── reference.md
+│   ├── reference.md
+│   └── references/        ← EARS 格式、Spec Mining 技术
 ├── arch-design/
 │   ├── SKILL.md
-│   └── reference.md
+│   ├── reference.md
+│   └── references/        ← NFR 清单、架构模式、数据库选型、ADR 指南
 ├── arch-detail/
 │   ├── SKILL.md
-│   └── reference.md
+│   ├── reference.md
+│   └── references/        ← API 契约标准、安全检查点
 ├── arch-review/
 │   ├── SKILL.md
-│   └── reference.md
+│   ├── reference.md
+│   └── references/        ← OWASP 审计、批判推理、反馈分级
 └── devtdd/
     ├── SKILL.md
-    └── reference.md
+    ├── reference.md
+    └── references/        ← 测试反模式、Flaky Test 协议
 ```
 
 ## 兼容性

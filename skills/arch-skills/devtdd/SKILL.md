@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.6.2
+version: 1.9.0
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -35,12 +35,12 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 5. **STATE SYNCHRONIZATION**: Upon task completion, update BOTH files atomically:
    - `DESIGN.md` §5: change task Status from `☐` to `✅`
-   - `design/modules/<module>/module.md` §7: check all DoD `[ ]` → `[x]`
+   - `detail/modules/<module>/module.md` §7: check all DoD `[ ]` → `[x]`
    Never leave one updated and the other stale.
 
 6. **LANGUAGE-AGNOSTIC PATTERNS**: All guidance describes testing **strategy patterns**, not language-specific syntax. Code uses the project's target language from DESIGN.md header, but test structure principles are universal.
 
-7. **ARCHITECTURE.md SEQUENCE DIAGRAM SYNC (via AD)**: If a task modifies code behavior (adds/removes/renames methods, changes lifecycle steps, alters interaction sequences), check `ARCHITECTURE.md` for affected sequence diagrams (§2.x Runtime Interaction). If diagrams are stale, generate an **Architecture Debt (AD)** routed to `/arch-design` — devtdd does NOT directly modify ARCHITECTURE.md (owned by `/arch-design`). Include: stale diagram location, current code behavior, suggested diagram update.
+7. **ARCHITECTURE.md SEQUENCE DIAGRAM SYNC (via AD)**: If a task modifies code behavior (adds/removes/renames methods, changes lifecycle steps, alters interaction sequences), check `ARCHITECTURE.md` for affected sequence diagrams (§2.x Runtime Interaction). If diagrams are stale, generate an **Architecture Discrepancy (AD)** routed to `/arch-design` — devtdd does NOT directly modify ARCHITECTURE.md (owned by `/arch-design`). Include: stale diagram location, current code behavior, suggested diagram update.
 
 8. **SYSTEM.md §4 CODE OWNERSHIP SYNC**: If a task implements or upgrades an adapter, or modifies the composition root, check `docs/arch/SYSTEM.md` §4 BC Code Ownership table. Update the package status label to reflect the actual implementation state (e.g., remove "(stub)" if the adapter is no longer a stub).
 
@@ -68,14 +68,15 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 Read the following files in order:
 
-1. `docs/arch/PHASES.md` — verify target BC has Phase 3 ✅
-2. `docs/bc/<bc-slug>/DESIGN.md` — read §5 Task Summary to find the target task
-3. `docs/bc/<bc-slug>/ARCHITECTURE.md` — load layer boundaries + DIP rules
-4. Target `design/modules/<module>/module.md` — read the specific Task's §7 section
-5. All `design/modules/<module>/interfaces/<method>.md` linked by that Task
-6. `docs/bc/<bc-slug>/REVIEW.md` (if exists) — scan Architecture Debt table for items with Route = `/devtdd`. These are known implementation gaps that the current TDD session should prioritize or be aware of.
+1. `docs/bc/<bc-slug>/kanban/BOARD.md` — find current task, verify upstream arch-detail is `done` for T{N}
+2. `kanban/tasks/T{N}.md` — read References for upstream files
+3. `docs/bc/<bc-slug>/detail/DESIGN.md` — read §5 Task Summary to find the target task
+4. `docs/bc/<bc-slug>/design/ARCHITECTURE.md` — load layer boundaries + DIP rules
+5. Target `detail/modules/<module>/module.md` — read the specific Task's §7 section
+6. All `detail/modules/<module>/interfaces/<method>.md` linked by that Task
+7. `docs/bc/<bc-slug>/review/REVIEW.md` (if exists) — scan Architecture Discrepancy table for items with Route = `/devtdd`
 
-**Precondition**: If Phase 3 is not ✅, HALT and instruct user to run `/arch-detail`.
+**Precondition**: If upstream arch-detail is NOT `done` for T{N}, HALT and instruct user to run `/arch-detail`.
 If all tasks are ✅, output completion message and suggest `/arch-review`.
 
 ### Step 2: Task Analysis (任务解析)
@@ -144,8 +145,15 @@ For EACH micro-cycle from Step 3:
    - Delete any dead code revealed by the new implementation (unused fields, unreachable branches, stale imports)
    - **Uncalled private function detection**: grep the entire package for each private (unexported) function name — if a function only appears at its definition site (zero call sites), it is dead code and must be deleted. Also remove its now-unused imports if applicable.
    - Replace any custom utility with standard library equivalent if one exists
-5. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Part II Banned Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
-6. Run ALL tests again. All must still pass.
+5. **Test Anti-Pattern Check (v1.7.0+)**: Scan test code for common anti-patterns:
+   - Testing implementation (test names contain `calls_`, `invokes_`) → rewrite to test behavior
+   - Excessive mocking (>3 mocks per test) → use real implementations for non-boundary deps
+   - Brittle assertions (exact strings, timestamps) → use domain sentinels, structural assertions
+   - Test-after coding (tests mirror implementation) → write test FIRST
+   - Shared mutable state (tests fail with `-shuffle=on`) → fresh state per test
+   See [references/test-anti-patterns.md](references/test-anti-patterns.md) for the full catalog with examples.
+6. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, SYSTEM.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Part II Banned Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
+7. Run ALL tests again. All must still pass.
 
 #### Per-Cycle Self-Check
 
@@ -174,11 +182,57 @@ After all micro-cycles complete:
 
 If any DoD item fails, return to Step 4 for a corrective micro-cycle.
 
+### Step 5.5: Coverage Gap Scan (覆盖率差距扫描)
+
+After all DoD items pass, run a coverage check on the newly implemented module:
+
+1. **Line coverage**: Run `go test -cover` (or language equivalent) for the module's packages. Target: ≥80% line coverage for domain + application layers.
+2. **Branch coverage**: Identify uncovered branches:
+   - `if/else` paths not exercised by any test
+   - `switch` cases not reached
+   - Error return paths not triggered
+3. **Gap report**: For each uncovered branch, check:
+   - Is there a corresponding interface contract scenario? If yes → test is missing, add it.
+   - Is it defensive code (unreachable in practice)? → Document as intentional gap.
+   - Is it a missing edge case? → Add a supplementary test.
+4. **Mutation resilience** (spot check): Mentally change one condition in a critical branch — would any existing test fail? If not → add a regression test.
+
+Output format:
+
+```
+Coverage: domain/ 92% | app/ 85% | infra/ 78%
+Uncovered branches: 2
+  - infra/postgres/census_store.go:47 — error translation for constraint violation (intentional: driver-specific)
+  - app/upsert.go:23 — nil context path (gap: adding test)
+```
+
+**Coverage Gap → AD Template**: When an uncovered branch traces to a missing interface contract scenario, write AD to detail:
+
+```
+AD-{ID}: interfaces/{method}.md §6 missing scenario: <branch description>
+  Location: <source file>:<line>
+  Branch: <uncovered condition>
+  Suggested scenario: Given <precondition>, When <action>, Then <expected outcome>
+  (by devtdd, <date>)
+```
+
+### Step 5.6: Flaky Test Handling (v1.7.0+, optional)
+
+When a test passes sometimes and fails sometimes:
+1. **Isolate** — mark with skip annotation (don't delete)
+2. **Diagnose** — run 20x, categorize: time/order/concurrency/external/resource
+3. **Stabilize** — fix root cause (inject clock, add cleanup, add sync)
+4. **Verify** — run 10 consecutive times + `-race` + `-shuffle=on`
+5. **Unskip** — remove skip, verify full suite passes
+6. **Post-Mortem** — document root cause and prevention
+
+Full protocol: [references/test-anti-patterns.md](references/test-anti-patterns.md) §2
+
 ### Step 6: State Synchronization (状态同步)
 
 1. Update `DESIGN.md` §5 Task Summary: change the completed task's `Status` column from `☐` to `✅`
-2. Update `design/modules/<module>/module.md` §7: check all `[ ]` items to `[x]`
-3. Update `docs/arch/PHASES.md` `Last updated` date
+2. Update `detail/modules/<module>/module.md` §7: check all `[ ]` items to `[x]`
+3. Update `kanban/BOARD.md Last updated date
 4. **Stub Adapter Tracking Sync**: If the completed task involved implementing or upgrading an adapter (e.g., RocketMQIntentAdapter, LocalFsManifestAdapter), check `DESIGN.md` §10 Stub Adapter Tracking table. If the adapter is still listed as "Stub", update its Status to "Implemented" and clear its TODO Items. This prevents the stub tracking table from drifting behind actual code progress.
 5. **ARCHITECTURE.md Sequence Diagram AD**: If the completed task changed code behavior (new/removed/renamed methods, new lifecycle steps), scan `ARCHITECTURE.md` §2.x Runtime Interaction diagrams. If stale, generate an AD routed to `/arch-design`. (Per Hard Constraint #7)
 6. **SYSTEM.md §4 Code Ownership Sync**: If the completed task implemented or upgraded an adapter, update `docs/arch/SYSTEM.md` §4 BC Code Ownership table status label. (Per Hard Constraint #8)
@@ -211,7 +265,7 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 - When the user reports "this feels wrong"
 - After ALL tasks are ✅ (final audit before shipping)
 
-**Consuming REVIEW.md Architecture Debt**:
+**Consuming REVIEW.md Architecture Discrepancy**:
 - When devtdd resolves a code issue that matches an open AD item (by Location + description), update REVIEW.md: change AD Status from 🆕/🔄 to ✅ Resolved and add a row to Resolved Debt table.
 - This update is done atomically with the task completion (Hard Constraint #5 extended to include REVIEW.md).
 
@@ -221,39 +275,50 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 
 ### On Startup
 
-1. Read `docs/arch/PHASES.md` to verify target BC has Phase 3 ✅.
-   If not, HALT: *"Phase 3 (arch-detail) is not complete for \<bc-slug\>. Run `/arch-detail` first."*
-   **Cycle-Aware Startup Guard**: Check Phase 4 status for the target BC:
-   - **(空) or ✅ complete**: Normal startup (first run or re-run).
-   - **🔄 redoing**: Normal startup — this Phase is expected to be reworked.
-   - **⏭ invalidated**: **HALT**: *"Phase 4 被上游级联作废（⏭ invalidated）。请先运行上游 skill（`/arch-design` 或 `/arch-detail`）完成重做，再重新运行 `/devtdd`。"*
-
-2. **BC Selection Protocol** (when user does not specify a BC):
-   - List all registered BCs with Phase 3 ✅.
+1. Read `docs/bc/<bc-slug>/kanban/BOARD.md`.
+2. Find own row (`devtdd`). If `doing` has a task → continue. If `doing` is empty and `new` has tasks → pick leftmost. If both empty → halt: "No tasks for devtdd. Run `/arch-detail` first."
+3. Read `kanban/tasks/T{N}.md` → check References for upstream files.
+4. **AD Check**: Scan `Architecture Discrepancies → devtdd` section. If unresolved AD entries exist → enter AD fix mode: read AD description, fix only what's required, mark Resolved. Skip remaining startup steps.
+5. **Idempotent check**: Read own existing output (source/test files). Read AD entries. Identify delta — skip completed work, only execute what's missing or needs fixing.
+6. **Migration Mode Detection (v1.9.0+)**: Before upstream halt, check:
+   - Source code already exists in Clean Architecture layers (`internal/`, `domain/`, `cmd/`, etc.)
+   - `T{N}.md` References has `(migration)` tag
+   If ALL conditions met → **enter Migration Mode**: Skip upstream halt. Read source code + DESIGN.md → verify existing code matches design contracts. Mark already-implemented sub-tasks as ✅. Write **missing tests only** (not new implementation). Update DoD checkboxes. Present to user for confirmation. See [arch-init reference.md](../arch-init/reference.md) §10 Migration Mode.
+   If NOT in migration mode → continue with normal upstream check below.
+7. **Upstream check**: Verify arch-detail has T{N} in `done`. If not → halt: "Upstream arch-detail has not completed T{N}. Run `/arch-detail` first."
+8. **Handover removal**: If T{N} exists in arch-detail's `done` column on BOARD.md → remove it.
+9. Move T{N} from `new` to `doing` in BOARD.md (if not already).
+10. **BC Selection Protocol** (when user does not specify a BC):
+   - List all registered BCs with arch-detail `done` for T{N}.
    - If only one BC qualifies, use it automatically.
    - If multiple BCs qualify, ask the user which BC to target.
-
-3. Read `docs/bc/<bc-slug>/DESIGN.md` §5 Task Summary.
-   - If all tasks are ✅ → output completion message and suggest `/arch-review`.
-   - If user specified a task number → validate it exists and is ☐.
-     If already ✅ → ask: *"Task N is already complete. Re-implement? (y/N)"*
-   - If no task specified → select the first ☐ task in order.
-
-4. Read `docs/bc/<bc-slug>/ARCHITECTURE.md` (layer boundaries + DIP rules).
-
-5. Read target `module.md` §7 and all linked interface contracts.
-
-6. If `docs/bc/<bc-slug>/REVIEW.md` exists, scan for Architecture Debt items routed to `/devtdd`. If any are 🆕 New or 🔄 Recurring, inform the user:
-   *"REVIEW.md contains N open Architecture Debt items routed to `/devtdd`: AD-xxx, AD-xxx. Consider addressing these alongside task implementation."*
+11. Read `docs/bc/<bc-slug>/detail/DESIGN.md` §5 Task Summary.
+    - If all tasks are ✅ → output completion message and suggest `/arch-review`.
+    - If user specified a task number → validate it exists and is ☐.
+    - If no task specified → select the first ☐ task in order.
+12. Read `docs/bc/<bc-slug>/design/ARCHITECTURE.md` (layer boundaries + DIP rules).
+13. Read target `module.md` §7 and all linked interface contracts.
+14. If `docs/bc/<bc-slug>/review/REVIEW.md` exists, scan for Architecture Discrepancy items routed to `/devtdd`.
 
 ### On Completion (per task)
 
-1. Write implementation code to source files (following package layout from DESIGN.md §3).
-2. Write test files alongside source (same package, `_test` suffix convention).
+1. Write implementation code to source files.
+2. Write test files alongside source.
 3. Update `DESIGN.md` §5 Status column for the completed task.
-4. Update `design/modules/<module>/module.md` §7 DoD checkboxes.
-5. Update `docs/arch/PHASES.md` `Last updated` date.
-6. If the task implemented an adapter, update `DESIGN.md` §10 Stub Adapter Tracking (change "Stub" → "Implemented").
+4. Update `detail/modules/<module>/module.md` §7 DoD checkboxes.
+5. Update `kanban/tasks/T{N}.md`:
+   - Fill in References → devtdd section with source/test links.
+   - Set Status row: devtdd = done + Completed date.
+   - Mark any AD entries targeting devtdd as Resolved (if not already).
+   - Append Change History entry at top.
+6. Move T{N} from `doing` to `done` in `kanban/BOARD.md`.
+7. **Archive check**: If ALL skills in T{N}.md Status are done AND no unresolved Architecture Discrepancy entries exist in T{N}.md → add T{N} to BOARD.md Archive table and remove from Board table.
+8. **Migration task chaining (v1.9.0+)**: If T{N}.md has `(migration)` tag → also add T{N} to `arch-review` row, `new` column on BOARD.md.
+9. If the task implemented an adapter, update `DESIGN.md` §10 Stub Adapter Tracking.
+
+## Kanban Protocol
+
+See [kanban-spec.md](../kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
 ---
 
@@ -262,11 +327,19 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 For detailed protocols and checklists, see [reference.md](reference.md):
 
 - **§1 Contract-to-Test Translation Protocol** — how to convert interface contract sections into tests.
+  - **§1 Error Chain Testing** — adapter→use case→delivery error propagation verification.
 - **§2 Micro-Cycle Planning Templates** — per-task-type cycle decomposition patterns.
+  - **§2 Adapter Performance Cycle** — N+1 detection, batch efficiency, index usage verification.
 - **§3 Mock Boundary Decision Matrix** — when to fake, when to use real infrastructure.
+  - **§3 Test Data Management** — fixture patterns, lifecycle strategy, time/randomness control.
 - **§4 Architecture Compliance Checklist** — per-cycle boundary enforcement rules.
+  - **§4 Security Implementation Checks** — input validation, SQL injection prevention, secret hygiene.
 - **§5 State Synchronization Protocol** — atomic update sequence and failure recovery.
 - **§6 Cross-Module Task Handling** — primary-module-first strategy.
 - **§7 Idempotency & Resumption** — handling completed tasks and interrupted sessions.
 - **§8 Test Quality Heuristics** — behavior vs implementation, deep modules, refactor signals.
 - **§9 Code Craftsmanship Iron Rules** — constant extraction decision tree, DRY extraction patterns, dead code detection, stdlib preference matrix, test code craftsmanship.
+- **§10 E2E Smoke Test Protocol** — composition root boot, health check, happy-path request, graceful shutdown.
+
+For test anti-patterns catalog and Flaky Test stabilization protocol (v1.7.0+), see the `references/` subdirectory:
+- [references/test-anti-patterns.md](references/test-anti-patterns.md) — 7 anti-patterns with detection + fix + Flaky Test stabilization protocol

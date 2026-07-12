@@ -56,6 +56,25 @@ After all §6 scenarios are covered, check for gaps:
 | §4 error sentinel not covered in §6 | One test per uncovered error type |
 | §5 edge case not covered in §6 | One test per uncovered edge case |
 
+### Error Chain Testing (v1.8.0+)
+
+Beyond individual error sentinels, verify the **full error propagation chain** from adapter → use case → delivery:
+
+| Layer Transition | What to Test | Test Strategy |
+|-----------------|-------------|---------------|
+| Adapter → Use Case | Driver error (e.g., `pgx.ErrNoRows`) → domain sentinel (`ErrNotFound`) | Adapter integration test: trigger real driver error, assert domain sentinel returned |
+| Use Case → Delivery | Domain sentinel → HTTP/gRPC error response | Delivery handler test: invoke with fake that returns sentinel, assert RFC 7807 / gRPC status code |
+| Panic → Recovery | Unexpected panic in use case → graceful error response | Delivery handler test: invoke with fake that panics, assert 500 / INTERNAL (no stack trace leaked) |
+
+#### Error Chain Test Template
+
+```
+For each port method that returns domain sentinels:
+1. Adapter test: force driver-level error → verify translation to sentinel
+2. Use case test: fake returns sentinel → verify use case propagates (not swallows)
+3. Delivery test: fake use case returns sentinel → verify mapped to RFC 7807 / gRPC status
+```
+
 ---
 
 ## 2. Micro-Cycle Planning Templates
@@ -97,6 +116,36 @@ A task that spans port + delivery layer (e.g., gRPC ListCensusEntries):
 3. **Error cases** (domain sentinels, preconditions)
 4. **Edge cases** (boundaries, empty states)
 
+### Template: Adapter Performance Cycle (v1.8.0+)
+
+After all functional cycles for an adapter task pass, add performance validation cycles:
+
+| Cycle | Focus | Test | Assertion |
+|-------|-------|------|----------|
+| P1 | N+1 detection | `TestList_noNPlusOne` | Count SQL queries: should be 1 (JOIN) not N+1 (loop) |
+| P2 | Batch efficiency | `TestBatchInsert_usesBulk` | Verify SQL uses `INSERT ... VALUES (...),(...)` not N individual inserts |
+| P3 | Index usage | `TestQuery_usesIndex` | `EXPLAIN` output shows Index Scan, not Seq Scan |
+| P4 | Large dataset | `TestList_1000Rows_performance` | Response time < threshold (e.g., 100ms for 1000 rows) |
+
+#### N+1 Detection Pattern
+
+```
+1. Seed test DB with N records (e.g., 50 orders with 5 items each)
+2. Execute the List operation
+3. Count SQL queries executed (query logger or pgx tracer)
+4. Assert: query_count <= expected (1 for JOIN, or 2 for separate parent+children)
+5. If query_count > expected → N+1 detected → refactor adapter to use JOIN or batch query
+```
+
+#### Index Usage Verification
+
+```
+1. Run EXPLAIN on the adapter's key queries
+2. Compare against indexes defined in DESIGN.md §1.1 DDL (Index Design table from arch-detail §3.5)
+3. Assert: expected index appears in EXPLAIN output
+4. If Seq Scan where Index Scan expected → check WHERE clause matches index columns
+```
+
 ---
 
 ## 3. Mock Boundary Decision Matrix
@@ -129,6 +178,34 @@ For each port interface, create an in-memory test double:
 | Adapter integration tests | Real (testcontainers) | Validates SQL, schema, error translation |
 | Delivery handler tests | In-process server + Fakes | Tests proto/HTTP mapping without network |
 | End-to-end smoke test | Real + real server | Only for final Task verification |
+
+### Test Data Management (v1.8.0+)
+
+#### Lifecycle Strategy Decision
+
+| Test Type | Data Strategy | Isolation | Performance |
+|-----------|--------------|-----------|-------------|
+| Unit (domain/app) | **In-memory fakes** | Per-test fresh instance | Fast (<1ms/test) |
+| Integration (adapter) | **Testcontainers** + per-test transaction rollback | Schema per suite, data per test | Medium (50-200ms/test) |
+| E2E smoke | **Docker Compose** full stack | Shared container set | Slow (seconds) |
+
+#### Fixture Patterns
+
+| Pattern | When to Use | Example |
+|---------|------------|--------|
+| **Builder** | Entity with many optional fields | `NewOrderBuilder().WithItems(...).WithDiscount(...).Build()` |
+| **Object Mother** | Shared canonical test entities | `testdata.ValidOrder()`, `testdata.CancelledOrder()` |
+| **Inline Factory** | Simple entity (≤4 fields) | `Order{ID: "o1", Status: Pending}` |
+
+#### Time & Randomness Control
+
+| Concern | Solution | Where |
+|---------|----------|-------|
+| Time-dependent logic | Inject `Clock` interface (fake returns fixed time) | Use case tests |
+| ID generation | Inject `IDGenerator` interface (fake returns sequential IDs) | Domain tests |
+| Random selection | Inject `Random` interface (fake returns deterministic sequence) | Use case tests |
+
+> **Rule**: No test should depend on `time.Now()`, `uuid.New()`, or `rand.Int()` directly. Always inject via port or constructor parameter.
 
 ---
 
@@ -169,12 +246,40 @@ When a refactoring cycle involves renaming a port interface, adapter type, or fi
 | **Constructor names match adapter** | `New<Adapter>()` functions should use the current adapter name | `NewIntentAdapter()` when type is `EventAdapter` |
 | **Variable names in composition root** | `cmd/` variable names should use current adapter terminology | `intentAdapter := rocketmq.NewEventAdapter(...)` — var name stale |
 | **Full-text scan (not just identifiers)** | Run `(?i)\b{old_name}\b` across the entire module — catches stale references in comments, string literals, test messages, and doc prose that identifier-only grep misses | Comment says `// dispatches an event` after `Event` → `Intent` rename |
-| **Design doc references** | DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, CONTEXT.md, SYSTEM.md, design/modules/*/module.md, design/modules/*/interfaces/*.md — all adapter name references should match code | Doc says `RocketMQIntentAdapter` but code says `RocketMQEventAdapter` |
+| **Design doc references** | DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, SYSTEM.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md — all adapter name references should match code | Doc says `RocketMQIntentAdapter` but code says `RocketMQEventAdapter` |
 | **Cross-BC doc mirrors** | When a term is renamed in one BC, check sibling BCs' LANGUAGE.md Banned Terms / glossary for stale mirrors | Platform BC renamed `Event` → `Intent`, but AYuan LANGUAGE.md Banned Terms still lists `Event` as replacement |
 | **Test fake types match current ports** | `*_test.go` fake type names and variable names must use current port terminology, not banned/old names. Scan against LANGUAGE.md Part II Banned Terms. | `fakeManifestStore` when port is `ManifestLoader/ManifestSaver` — "Store" is banned |
 | **Test fake types vs LANGUAGE.md banned terms** | grep `*_test.go` for every term in LANGUAGE.md Part II Banned Terms list (e.g., `Store`, `Kernel`, `ScopePrivate`). Any match in type names, variable names, or function names is a violation | `fakeAOSStore` when banned terms list includes `AOSStore` |
 
 **When to run**: After any REFACTOR cycle that changes a type name, interface name, or file name. Run BOTH identifier-level grep AND full-text `(?i)\b{old}\b` scan across the entire module **and all documentation files**. If any stale reference is found, fix it in the same cycle.
+
+### Security Implementation Checks (v1.8.0+)
+
+Run these checks after implementing adapter and delivery layer code. Complement the architecture boundary checks above.
+
+#### Input Validation at Boundary
+
+- [ ] All user inputs validated at adapter boundary (string length, numeric range, format regex)
+- [ ] Validation errors return structured RFC 7807 ProblemDetail, not raw framework errors
+- [ ] No raw user input passed to domain layer without validation
+
+#### SQL Injection Prevention
+
+- [ ] All SQL queries use parameterized statements (`$1`, `$2`, not string concatenation)
+- [ ] No `fmt.Sprintf` or string interpolation in SQL query construction
+- [ ] Dynamic column/table names (if any) validated against allowlist
+
+#### Secret Hygiene
+
+- [ ] No hardcoded credentials, API keys, or tokens in source code
+- [ ] Secrets loaded from env vars or secrets manager (per DESIGN.md §8 env var schema)
+- [ ] Sensitive fields excluded from log output (grep for `password`, `secret`, `token`, `key` in log statements)
+
+#### Error Response Safety
+
+- [ ] No stack traces in HTTP/gRPC error responses
+- [ ] No internal paths, SQL fragments, or driver errors exposed to clients
+- [ ] Panic recovery middleware active on all delivery layer entry points
 
 ### Test Placement
 
@@ -208,13 +313,13 @@ When a task passes all DoD items:
    After:  | 1 | Domain + Census Upsert Path | ... | ✅ |
    ```
 
-2. Update `design/modules/<module>/module.md` §7 task DoD:
+2. Update `detail/modules/<module>/module.md` §7 task DoD:
    ```
    Before: - [ ] Unit test for CanTransition predicate passes.
    After:  - [x] Unit test for CanTransition predicate passes.
    ```
 
-3. Update `docs/arch/PHASES.md` `Last updated` date.
+3. Update `kanban/BOARD.md Last updated date.
 
 4. **Stub Adapter Tracking Sync** (if applicable): If the completed task involved implementing or upgrading an adapter listed in `DESIGN.md` §10 Stub Adapter Tracking:
    ```
@@ -575,3 +680,88 @@ func withManifest(ta *testABody, id, name string) {
     }
 }
 ```
+
+---
+
+## 10. E2E Smoke Test Protocol (v1.8.0+)
+
+Run this protocol after ALL tasks in DESIGN.md §5 are ✅. This validates the entire BC boots and serves correctly.
+
+**Precondition**: `DESIGN.md` §8 Operational Entry Design MUST exist. If missing → HALT and write AD to arch-detail:
+
+```
+AD-{ID}: DESIGN.md §8 Operational Entry Design missing
+  Required: env var schema, config module, startup/shutdown scripts
+  Impact: E2E smoke test cannot determine configuration baseline
+  (by devtdd, <date>)
+```
+
+Do NOT proceed with smoke test until detail provides §8.
+
+### 10.1 Composition Root Boot Test
+
+```
+1. Build the BC binary: go build ./cmd/<bc-slug>/
+2. Start with minimal config (env vars from DESIGN.md §8)
+3. Verify:
+   - Process starts without panic
+   - All dependency injections succeed (no nil ports)
+   - All adapters connect (DB pool, message broker, etc.)
+4. Graceful shutdown: send SIGINT → process exits cleanly (exit code 0)
+```
+
+### 10.2 Health Check
+
+```
+1. Start the BC process
+2. GET /health (HTTP) or equivalent health check
+3. Assert: 200 OK, response body includes:
+   - Status: "healthy"
+   - Version: from build metadata
+   - Dependencies: all "connected"
+4. Kill DB connection → health check should return 503 "degraded"
+```
+
+### 10.3 One Happy-Path Request
+
+```
+1. Seed the database with minimal test data (one entity)
+2. Send a real request through the delivery layer:
+   - REST: POST /api/v1/{resource} + GET /api/v1/{resource}/{id}
+   - gRPC: Create RPC + Get RPC
+   - CLI: create command + list command
+3. Assert:
+   - Create returns 201 / OK with resource ID
+   - Get returns the created resource with correct fields
+   - All layers exercised (check logs or traces)
+4. Tear down: delete test data, stop process
+```
+
+### 10.4 Graceful Shutdown Under Load
+
+```
+1. Start the BC process
+2. Send N in-flight requests (e.g., 10 concurrent)
+3. Send SIGINT mid-flight
+4. Assert:
+   - In-flight requests complete (no connection reset)
+   - New requests rejected (connection refused)
+   - Process exits within shutdown timeout (default 30s)
+   - No goroutine leaks (runtime.NumGoroutine() before == after)
+```
+
+### 10.5 Smoke Test Report
+
+After completing the protocol, output:
+
+```
+E2E Smoke Test Results:
+  [PASS] Composition Root Boot — all 5 adapters connected
+  [PASS] Health Check — 200 OK (healthy) / 503 (degraded on DB kill)
+  [PASS] Happy Path — POST + GET round-trip successful
+  [PASS] Graceful Shutdown — 10 in-flight requests completed, clean exit
+  
+  Duration: 12.3s | Binary size: 18MB
+```
+
+If any check fails, report the failure and suggest returning to the specific task that needs fixing.

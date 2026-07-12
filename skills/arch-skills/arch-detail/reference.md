@@ -6,13 +6,13 @@ Detailed templates, language-specific golden rules, and protocols for the `arch-
 
 ## 0. DESIGN.md Index Template
 
-`docs/bc/<bc-slug>/DESIGN.md` is the **Phase 3 index file**. It contains global decisions (DDL, GoF, package layout) and links to modular design files under `design/modules/`. It must not be appended to `ARCHITECTURE.md`. Use this exact structure:
+`docs/bc/<bc-slug>/DESIGN.md` is the **Phase 3 index file**. It contains global decisions (DDL, GoF, package layout) and links to modular design files under `detail/modules/`. It must not be appended to `ARCHITECTURE.md`. Use this exact structure:
 
 ```markdown
 # Detailed Design Specification --- <Project Name> <BC Name>
 
 > Phase 3 output. Translates Phase 2 boundaries into <target language> code structures, DDL, GoF patterns, and vertical-slice tasks.
-> Aligned with: [ARCHITECTURE.md](./ARCHITECTURE.md) (Phase 2 boundaries), [LANGUAGE.md](./LANGUAGE.md), [CONTEXT.md](./CONTEXT.md)
+> Aligned with: [ARCHITECTURE.md](./ARCHITECTURE.md) (Phase 2 boundaries), [LANGUAGE.md](./LANGUAGE.md), [BRD.md](./BRD.md)
 > Target language: **<language + version>**
 > Last updated: <YYYY-MM-DD>
 
@@ -28,7 +28,7 @@ Detailed templates, language-specific golden rules, and protocols for the `arch-
 
 ## 3. <Language> Package Layout (Final)
 
-> When 2+ BCs are registered in PHASES.md, include a Cross-BC Package Mapping sub-table:
+> When 2+ BCs are registered in AGENTS.md, include a Cross-BC Package Mapping sub-table:
 >
 > | Package Path | Owner BC | Shared? | Notes |
 > |-------------|---------|---------|-------|
@@ -41,14 +41,14 @@ Detailed templates, language-specific golden rules, and protocols for the `arch-
 
 | Module | Port Interface | Design | Methods |
 |--------|---------------|--------|---------|
-| <module-a> | <PortA> | [module.md](./design/modules/<module-a>/module.md) | [method1](./design/modules/<module-a>/interfaces/method1.md), [method2](...) |
-| <module-b> | <PortB> | [module.md](./design/modules/<module-b>/module.md) | [method1](./design/modules/<module-b>/interfaces/method1.md), ... |
+| <module-a> | <PortA> | [module.md](./detail/modules/<module-a>/module.md) | [method1](./detail/modules/<module-a>/interfaces/method1.md), [method2](...) |
+| <module-b> | <PortB> | [module.md](./detail/modules/<module-b>/module.md) | [method1](./detail/modules/<module-b>/interfaces/method1.md), ... |
 
 ## 5. Vertical-Slice Task Summary
 
 | # | Task | Module | Interface Contracts | Definition of Done |
 |---|------|--------|--------------------|--------------------|
-| 1 | <task title> | [<module>](./design/modules/<module>/module.md#vertical-slice-tasks) | [method1](./design/modules/<module>/interfaces/method1.md) | <one-line summary> |
+| 1 | <task title> | [<module>](./detail/modules/<module>/module.md#vertical-slice-tasks) | [method1](./detail/modules/<module>/interfaces/method1.md) | <one-line summary> |
 
 (Full task details live in each module.md — this table is an index only)
 
@@ -109,7 +109,7 @@ Add a dedicated task in DESIGN.md §5 Task Summary for operational entry:
 - Cross-reference link to `ARCHITECTURE.md` in the same BC directory (Phase 2 boundaries)
 - Target language declaration (e.g., **Go 1.22+**, **Java 21+**)
 - `Last updated` date
-- Aligned-with links to `LANGUAGE.md` and `CONTEXT.md`
+- Aligned-with links to `LANGUAGE.md` and `BRD.md`
 
 **Module Index table**: every module in ARCHITECTURE.md's port table must have a row with relative links to its `module.md` and all `interfaces/<method>.md` files.
 
@@ -117,7 +117,7 @@ Add a dedicated task in DESIGN.md §5 Task Summary for operational entry:
 
 ## 0A. Module Design Template (module.md)
 
-`docs/bc/<bc-slug>/design/modules/<module>/module.md` contains the per-module design. Use this structure:
+`docs/bc/<bc-slug>/detail/modules/<module>/module.md` contains the per-module design. Use this structure:
 
 ```markdown
 # Module Design --- <Module Name>
@@ -179,6 +179,48 @@ Include code blocks.)
 **Acceptance test (TDD red first)**: ...
 
 **Definition of Done**: ...
+
+## 8. Test Strategy
+
+### 8.1 Mock Boundary Decision
+
+| Dependency | Mock? | Rationale |
+|------------|-------|-----------|
+| Port (driven adapter) | **Mock** — use fake implementation | Domain logic tested in isolation |
+| External API / third-party SDK | **Mock** — never call in unit/integration tests | Non-deterministic, slow, rate-limited |
+| Database (integration test) | **Real** — ephemeral container (Testcontainers) | Verify Data Mapper + DDL correctness |
+| Message broker (if applicable) | **Mock** for unit; **Real** for integration | Verify publish/subscribe contract |
+
+### 8.2 Test Type Breakdown
+
+| Test Type | Scope | Where | Count Guideline |
+|-----------|-------|-------|------------------|
+| Unit | Use case + domain logic | `_test.go` / `Test.java` / `test_*.py` | One per interface contract method × scenarios |
+| Integration | Adapter + real infra | `integration_test.go` / `*IT.java` | One per adapter (CRUD round-trip) |
+| Contract | Port interface compliance | Custom or Pact-style | One per port, verify pre/postconditions |
+| Architecture guard | Dependency direction | ArchUnit / import-linter / Go script | One per BC |
+
+### 8.3 Test Fixture Strategy
+
+| Fixture | Scope | Construction | Lifetime |
+|---------|-------|-------------|----------|
+| Domain entity factory | Unit tests | Builder or factory method | Per test |
+| DB seed data | Integration tests | SQL migration + seed script or factory | Per test (transaction rollback) |
+| External API stub | Unit + integration | WireMock / httptest server | Per test suite |
+
+### 8.4 Contract-to-Test Mapping
+
+Each interface contract (`interfaces/<method>.md`) maps to tests as follows:
+
+| Contract Section | Test Derivation |
+|-----------------|----------------|
+| Input Contract (preconditions) | → Invalid input test cases |
+| Output Contract (postconditions) | → Happy-path assertion targets |
+| Error Mapping (sentinels) | → One test per sentinel trigger condition |
+| Edge Cases | → One test per edge case |
+| Acceptance Test Scenarios | → Direct Given/When/Then test cases |
+
+> **Rule**: Every `interfaces/<method>.md` MUST have ≥ 1 happy-path test + 1 error test + 1 edge-case test. If a contract section is empty, note "no test needed because ...".
 ```
 
 **Rules**:
@@ -192,7 +234,7 @@ Include code blocks.)
 
 ## 0B. Interface Contract Template (method.md)
 
-`docs/bc/<bc-slug>/design/modules/<module>/interfaces/<method>.md` contains the per-method contract. Use this structure:
+`docs/bc/<bc-slug>/detail/modules/<module>/interfaces/<method>.md` contains the per-method contract. Use this structure:
 
 ```markdown
 # Interface Contract --- <Module>.<Method>
@@ -590,11 +632,55 @@ CREATE TABLE agents (
 CREATE INDEX ix_agents_status ON agents(status);
 ```
 
+### 3.5 Index Design Strategy
+
+For each table, derive indexes from the Use Case query patterns in ARCHITECTURE.md. Do not add indexes speculatively.
+
+#### Index Type Decision
+
+| Query Pattern | Index Type | PostgreSQL Syntax | When to Use |
+|---------------|-----------|-------------------|-------------|
+| Equality filter (`WHERE status = ?`) | **B-tree** (default) | `CREATE INDEX ix ON t(col)` | Most common; works for equality and range |
+| Full-text search | **GIN (tsvector)** | `CREATE INDEX ix ON t USING gin(to_tsvector('english', col))` | LIKE / ILIKE on text columns |
+| JSONB queries | **GIN** | `CREATE INDEX ix ON t USING gin(metadata)` | JSONB containment (`@>`, `?`) |
+| Time-series range queries | **BRIN** | `CREATE INDEX ix ON t USING brin(created_at)` | Large tables, naturally ordered timestamps |
+| Geospatial queries | **GiST** | `CREATE INDEX ix ON t USING gist(location)` | PostGIS / geometric types |
+| Uniqueness constraint | **Unique B-tree** | `CREATE UNIQUE INDEX ux ON t(col)` | Enforce business rules (e.g., natural ID) |
+
+#### Composite Index Ordering Rules
+
+1. **Leftmost prefix rule**: Put the most selective (highest cardinality) column first
+2. **Equality before range**: Columns used in `=` come before columns used in `>`, `<`, `BETWEEN`
+3. **Cover frequently**: If a query only needs columns already in the index, no table lookup needed
+
+```sql
+-- Example: Use Case "list orders by customer within date range"
+-- Query: SELECT ... FROM orders WHERE customer_id = ? AND created_at BETWEEN ? AND ?
+-- Index: customer_id (equality) first, created_at (range) second
+CREATE INDEX ix_orders_customer_date ON orders(customer_id, created_at);
+```
+
+#### Index Design Template
+
+For each table in DDL, add an index design sub-table:
+
+```markdown
+#### Index Design — <table_name>
+
+| Index Name | Columns | Type | Use Case | Rationale |
+|------------|---------|------|----------|----------|
+| `ix_orders_customer_date` | `(customer_id, created_at)` | B-tree | ListOrdersByCustomer | Equality + range, leftmost prefix |
+| `ux_orders_external_id` | `(external_id)` | Unique B-tree | GetOrderByExternalId | Business uniqueness |
+| `ix_orders_created_brin` | `(created_at)` | BRIN | AuditReports | Large table, time-range scans |
+```
+
+> **Rule**: Every index must trace to a specific Use Case from ARCHITECTURE.md. No speculative indexes. If a Use Case is added later, the index is added with it (generate AD if needed).
+
 ---
 
 ## 4. Vertical-Slice Task Template
 
-Each task is one **tracer bullet** through the architecture. Tasks are written inside `design/modules/<module>/module.md` §7, not in DESIGN.md. Use this exact shape:
+Each task is one **tracer bullet** through the architecture. Tasks are written inside `detail/modules/<module>/module.md` §7, not in DESIGN.md. Use this exact shape:
 
 ```markdown
 ### Task N — <Imperative title>
@@ -643,16 +729,20 @@ Before delivering, silently verify:
 - [ ] Language-specific checklist (Section 1.x) passes for the target language.
 - [ ] No port interface lives in an adapter package.
 - [ ] No domain code imports framework / driver / proto types.
-- [ ] `DESIGN.md` is a standalone index file at `docs/bc/<bc-slug>/DESIGN.md` (not appended to `ARCHITECTURE.md`).
+- [ ] `DESIGN.md` is a standalone index file at `docs/bc/<bc-slug>/detail/DESIGN.md` (not appended to `ARCHITECTURE.md`).
 - [ ] `DESIGN.md` header cross-references `ARCHITECTURE.md` and declares target language.
-- [ ] `docs/arch/PHASES.md` has been updated with Phase 3 ✅ and current date.
-- [ ] Every module in ARCHITECTURE.md's port table has a corresponding `design/modules/<module>/module.md`.
+- [ ] `kanban/BOARD.md has been updated with T{N} detail → done.
+- [ ] Every module in ARCHITECTURE.md's port table has a corresponding `detail/modules/<module>/module.md`.
 - [ ] If source code already exists (redo scenario), Redo Protocol (Step 6) was executed: code↔design delta assessed, delta tasks generated, user confirmed before Phase 3 marked complete.
-- [ ] Every method in every port interface has a corresponding `design/modules/<module>/interfaces/<method>.md`.
+- [ ] Every method in every port interface has a corresponding `detail/modules/<module>/interfaces/<method>.md`.
 - [ ] DESIGN.md Module Index table links to all module.md files with correct relative paths.
 - [ ] Every vertical-slice task references at least one specific interface contract file.
 - [ ] Every vertical-slice task includes a **Dependencies/Prerequisites** field (even if "None").
 - [ ] Every Upsert / mutating use case orchestrates the domain predicate before persisting (not delegated to adapter).
+- [ ] Every module.md includes §8 Test Strategy with mock boundary decisions, test type breakdown, and contract-to-test mapping.
+- [ ] Every DDL table has an Index Design sub-table (§3.5) with indexes traced to specific Use Cases.
+- [ ] STRIDE threat analysis (§0) completed for each module with Component/Threat/Severity/Mitigation table.
+- [ ] Security design patterns (Circuit Breaker, Rate Limiter, etc.) documented where applicable.
 - [ ] When 2+ BCs registered, DESIGN.md §3 Cross-BC Package Mapping table is present and consistent with sibling BC ARCHITECTURE.md §4 and SYSTEM.md §4.
 - [ ] DESIGN.md §1.2 explicitly states which entities use full Data Mapper vs identity mapping, with justification.
 - [ ] DESIGN.md Task Summary table lists all tasks with links to their module.md.
