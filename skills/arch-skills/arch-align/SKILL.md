@@ -45,7 +45,7 @@ Captures, in this order:
 2. **In / Out of scope** — bullet lists.
 3. **Open Questions** — anything still ambiguous, blocking `/arch-design`.
 4. **Business Overview** — holistic summary of the BC's complete business picture (see Step 3). Contains: core business flow, key participants, state machine, key business rules. Overwritten each round.
-5. **Version History** — removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../kanban-spec.md).
+5. **Version History** — removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-kanban/references/kanban-spec.md).
 
 ### 3. `align/brds/` — Per-Round BRD Archives
 
@@ -134,7 +134,7 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
 **Task Creation (align only):**
 1. Read `kanban/BOARD.md` → get `next_task_id` (e.g., 0).
 2. Increment `kanban/BOARD.md` `next_task_id` to 1.
-3. Create `docs/bc/<bc-slug>/kanban/tasks/T0.md` with initial structure (see [kanban-spec.md](../kanban-spec.md) §3).
+3. Create `docs/bc/<bc-slug>/kanban/tasks/T0.md` with initial structure (see [kanban-spec.md](../arch-kanban/references/kanban-spec.md) §3).
 4. Update `kanban/BOARD.md`: add T0 to arch-align `new` column.
 5. Move T0 from `new` to `doing`.
 
@@ -163,7 +163,7 @@ For EARS requirement syntax guide and Spec Mining techniques (v1.3.0+), see the 
 
 ## Kanban Protocol
 
-arch-align is the **only skill that creates new tasks**. See [kanban-spec.md](../kanban-spec.md) for:
+arch-align is the **only skill that creates new tasks**. See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for:
 - Task Creation protocol (§4.3)
 - Common Startup/Completion sequences (§4.1, §4.2)
 - T{N}.md structure (§3)

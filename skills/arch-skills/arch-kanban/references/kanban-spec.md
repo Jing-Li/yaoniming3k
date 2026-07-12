@@ -1,6 +1,6 @@
 # Kanban Spec (看板协议)
 
-> Version: 2.0.0
+> Version: 2.1.0
 > Scope: Per-BC, referenced by all arch-skills
 > This document defines the protocol. Each BC has a `BOARD.md` as its runtime instance.
 
@@ -27,7 +27,7 @@
 │                                                         │
 │  ┌─────────────────────────────────────────────┐       │
 │  │ Archive                                      │       │
-│  │ T0 — completed 2025-01-10                    │       │
+│  │ - T0 — 2025-01-10                             │       │
 │  └─────────────────────────────────────────────┘       │
 └───────────────────────────┬─────────────────────────────┘
                             │ references
@@ -81,25 +81,23 @@ next_task_id: 4
 
 ## Archive
 
-| Task | Completed |
-|------|----------|
-| T0   | 2025-01-10 |
+- T0 — 2025-01-10
 ```
 
 ### Counter Rules
 
-- `next_task_id` starts at `0` (set by arch-init)
+- `next_task_id` starts at `0` (set by arch-kanban)
 - Incremented by 1 each time a new task is created
-- Each BC's `BOARD.md` owns its own `next_task_id` counter (set to `0` by arch-init)
+- Each BC's `BOARD.md` owns its own `next_task_id` counter (set to `0` by arch-kanban)
 - Counter only goes up — never decremented or reused
 
 ### Board Rules
 
-- **Single position**: each T number appears in exactly ONE cell across the entire Board table
+- **Single position (ABSOLUTE)**: each T number appears in exactly ONE cell across the entire Board table. This is a hard invariant — no exceptions. If T exists in upstream `done`, downstream MUST remove it from upstream before adding to its own column.
 - **Three states**: `new` → `doing` → `done`
 - **Left-to-right flow**: tasks enter at `new`, move to `doing`, then `done`
-- **Handover removal**: when a downstream skill picks up T, remove T from the upstream skill's `done` column. T moves directly to the downstream skill's `doing` column
-- **Archive**: when ALL skills in T{N}.md Status are `done` AND no unresolved Architecture Discrepancy entries exist in T{N}.md → move T{N} to the Archive table and remove from the Board table entirely
+- **Handover removal (MANDATORY)**: when downstream picks up T from upstream's `done`, downstream MUST delete T from upstream's `done` cell and add T to its own cell in the same operation. These two actions are atomic — a task must never exist in two cells simultaneously.
+- **Archive**: when ALL skills in T{N}.md Status are `done` → remove T{N} from Board table entirely and append to Archive list
 - **AD does not affect Board**: Architecture Discrepancies are tracked in T{N}.md only; they do NOT change BOARD.md positions
 - **Sequential processing**: each skill processes one task at a time in `doing`
 - **Multiple tasks in same cell**: comma-separated (e.g., `T1, T2`)
@@ -107,13 +105,11 @@ next_task_id: 4
 
 ### Archive Rules
 
-- Archive table has two columns: `Task` and `Completed`
-- Tasks in Archive are implicitly all-done; no per-skill status needed
-- `Completed` date = the date the last skill marked `done`
+- Archive is a simple bullet list: `- T{N} — YYYY-MM-DD` (date = last skill completed)
+- Tasks in Archive are implicitly all-done
 - Once archived, a task never reappears on the Board table
-- **Archive with unresolved ADs**: a task is NOT archived if any unresolved Architecture Discrepancy entries exist in T{N}.md, even if all skills are `done`. Skills must fix their ADs first, then re-trigger archive
 
-### Initialization (by arch-init)
+### Initialization (by arch-kanban)
 
 ```markdown
 # Kanban — <BC Name>
@@ -132,9 +128,6 @@ next_task_id: 0
 | arch-review | | | |
 
 ## Archive
-
-| Task | Completed |
-|------|----------|
 ```
 
 ---
@@ -250,7 +243,7 @@ Every skill follows this exact sequence:
 8. Check upstream: find the skill directly above in pipeline
    - If upstream's status for T{N} is NOT done → halt: "Upstream <skill> has not completed T{N}."
    - If upstream is done → proceed
-9. Handover removal: if T{N} exists in upstream's `done` column on BOARD.md → remove it
+9. Handover removal (MANDATORY): if upstream skill has T{N} in its `done` column → delete T{N} from upstream's `done` cell, then add to own cell. These two actions MUST happen atomically — never leave T{N} in two cells.
 10. Read upstream files via T{N}.md References
 11. Idempotent check (if status was already doing/done):
     - Read own existing output files
@@ -271,9 +264,9 @@ Every skill follows this exact sequence:
    c. Mark any AD entries targeting this skill as Resolved (if not already)
    d. Append Change History entry at top
 3. Move T{N} from doing to done in BOARD.md
-4. Archive check: if ALL skills in T{N}.md Status are done AND no unresolved Architecture Discrepancy entries exist in T{N}.md →
-   a. Add T{N} to BOARD.md Archive table with today's date
-   b. Remove T{N} from all rows in BOARD.md Board table
+4. Archive check: if ALL skills in T{N}.md Status are done →
+   a. Remove T{N} from ALL rows in BOARD.md Board table (verify single-position invariant)
+   b. Append `- T{N} — YYYY-MM-DD` to BOARD.md Archive list
 5. If this skill can create tasks (e.g., arch-align):
    - Check if new tasks are needed → create T{N+1}
 6. Output hand-off message:

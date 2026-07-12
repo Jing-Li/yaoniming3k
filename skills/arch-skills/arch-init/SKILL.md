@@ -69,7 +69,7 @@ Register a new BC:
    - **BC slug** (kebab-case, e.g., `order-management`)
 3. Verify `docs/bc/<slug>/` does not already exist. If it does, inform the user and halt.
 4. Create `docs/bc/<slug>/` with directories: `kanban/tasks/`, `align/brds/`, `design/adr/`, `detail/modules/`, `review/reviews/`.
-5. Write `docs/bc/<slug>/kanban/BOARD.md` using the template in [reference.md](reference.md) § BOARD.md Template. Counter starts at 0, all skill rows start empty.
+5. Write `docs/bc/<slug>/kanban/BOARD.md` using the template from [arch-kanban reference.md](../arch-kanban/reference.md) §1. Counter starts at 0, all skill rows start empty.
 6. Add a new row to the BC registry table in `AGENTS.md`:
    ```
    | <BC Name> | `<slug>` | docs/bc/<slug>/ |
@@ -254,4 +254,4 @@ For file templates, verification checklists, Mode C detection rules, Mode C scan
 
 ## Kanban Protocol
 
-arch-init is responsible for **creating** the kanban structure, not for **using** it. See [kanban-spec.md](../kanban-spec.md) for the full protocol that downstream skills follow (Startup/Completion/Redo sequences).
+arch-init is responsible for **creating** the kanban directory structure, not for **using** it. arch-kanban generates the initial BOARD.md. See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for the full protocol that downstream skills follow (Startup/Completion/Redo sequences).

@@ -100,7 +100,7 @@ Progressive-disclosure companion to `SKILL.md`. Load only when actively running 
 ## 5. Change History (in T{N}.md)
 
 > No longer in BRD.md. Change history is tracked per-task in `kanban/tasks/T{N}.md`.
-> See [kanban-spec.md](../kanban-spec.md) §3 for T{N}.md format.
+> See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) §3 for T{N}.md format.
 ```
 
 ---

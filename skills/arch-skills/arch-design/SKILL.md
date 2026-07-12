@@ -69,7 +69,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 
 6. **Open Questions / Deferred Decisions**: Unresolved items.
 
-7. **Version History**: removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../kanban-spec.md).
+7. **Version History**: removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-kanban/references/kanban-spec.md).
 
 8. **Cross-Cutting Strategies (v1.14.0+)**: Architecture-level decisions for concerns that span all layers. Each item records only the **strategy choice** (A vs B) and **which layer** owns it — not implementation details (those belong to detail). Items: Error Handling, Data Consistency, DI Strategy, Concurrency Model, Configuration Management, Observability.
 
@@ -241,7 +241,7 @@ For ADR management and supplementary references, see the `references/` subdirect
 
 ## Kanban Protocol
 
-See [kanban-spec.md](../kanban-spec.md) for:
+See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for:
 - Common Startup/Completion sequences (§4.1, §4.2)
 - Redo protocol (§4.4)
 - T{N}.md structure (§3)

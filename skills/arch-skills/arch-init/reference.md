@@ -31,7 +31,7 @@ next_task_id: 0
 - **Each cell** contains comma-separated task IDs (e.g., `T1, T2`)
 - **Empty cell** = no tasks in that state for that skill
 - **Counter** starts at `0`; incremented each time a new task is created by arch-align
-- **See [kanban-spec.md](../kanban-spec.md)** for the full interaction protocol
+- **See [kanban-spec.md](../arch-kanban/references/kanban-spec.md)** for the full interaction protocol
 
 ---
 
@@ -62,7 +62,7 @@ All file paths are relative to the target BC directory `docs/bc/<slug>/`.
 
 ## Writing Protocol
 
-Each skill **must** update `kanban/BOARD.md` and `kanban/tasks/T{N}.md` per the [kanban-spec.md](../kanban-spec.md) protocol:
+Each skill **must** update `kanban/BOARD.md` and `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-kanban/references/kanban-spec.md) protocol:
 
 | Skill | On Completion |
 |-------|---------------|

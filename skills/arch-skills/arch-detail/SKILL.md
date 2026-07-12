@@ -189,7 +189,7 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 ## Kanban Protocol
 
-See [kanban-spec.md](../kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
+See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
 ---
 

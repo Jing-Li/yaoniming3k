@@ -167,7 +167,7 @@ internal/
 ## 7. Change History (in T{N}.md)
 
 > No longer in ARCHITECTURE.md. Change history is tracked per-task in `kanban/tasks/T{N}.md`.
-> See [kanban-spec.md](../kanban-spec.md) §3 for T{N}.md format.
+> See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) §3 for T{N}.md format.
 
 ## 8. Cross-Cutting Strategies
 

@@ -308,7 +308,7 @@ This section consolidates the critical reasoning output that was previously hand
 
 ## Kanban Protocol
 
-See [kanban-spec.md](../kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
+See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
 ---
 
