@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
         input: {
           main: resolve(__dirname, 'index.html'),
           report: resolve(__dirname, 'report.html'),
+          strategy: resolve(__dirname, 'strategy.html'),
         },
       },
     },
@@ -23,6 +24,11 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/api': {
           target: apiProxy,
+          changeOrigin: true,
+        },
+        '/ws': {
+          target: apiProxy,
+          ws: true,
           changeOrigin: true,
         },
       },

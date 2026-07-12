@@ -259,13 +259,11 @@
 .compare-panel {
   margin-bottom: var(--spacing-lg);
   background:
-    linear-gradient(180deg, rgba(26, 34, 52, 0.85), rgba(15, 23, 42, 0.72));
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+    linear-gradient(180deg, rgba(26, 34, 52, 0.92), rgba(15, 23, 42, 0.88));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md) var(--spacing-lg);
-  box-shadow: var(--shadow-sm), var(--shadow-inset);
+  box-shadow: var(--shadow-sm);
   opacity: 0;
   transform: translateY(-6px);
   transition:
@@ -277,15 +275,11 @@
 .compare-panel::before {
   content: '';
   position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(135deg, rgba(96, 165, 250, 0.35), transparent 60%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.35), transparent 60%);
   pointer-events: none;
   opacity: 0.6;
 }

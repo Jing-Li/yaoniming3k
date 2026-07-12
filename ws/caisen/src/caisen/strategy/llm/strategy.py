@@ -1,4 +1,4 @@
-"""LLMStrategy - LLM 驱动的交易策略（离线预计算架构）"""
+"""LLMStrategy - LLM 驱动的交易策略（递增窗口预计算架构）"""
 
 from typing import List, Optional, TYPE_CHECKING
 import os
@@ -15,10 +15,11 @@ if TYPE_CHECKING:
 class LLMStrategy(Strategy):
     """LLM 驱动的策略
 
-    采用离线预计算模式：
-    1. on_init 时一次性获取所有数据，调用 LLM 分析
-    2. 缓存 signals 和 annotations
-    3. on_bar 逐帧回放，查缓存返回 Order
+    采用递增窗口预计算模式：
+    1. on_init 时逐根 K 线调用 LLM（bars[0:i+1]），预计算 MA5/MA20
+    2. 每根 bar 只取当前 bar 的信号，收集窗口内所有标注（去重）
+    3. 缓存 signals 和 annotations
+    4. on_bar 逐帧回放，查缓存返回 Order
 
     组件组合（简化后）：
     - PromptBuilder: 构建 prompt
@@ -67,6 +68,9 @@ class LLMStrategy(Strategy):
         self.cache = SignalCache()
         self._annotations_emitted = False  # 标注是否已随 BarResult 发出
 
+        # Walk-forward 配置
+        self._walk_forward = getattr(config, 'walk_forward', True) if config else True
+
     def _create_client_from_config(self, config: "LLMStrategyConfig"):
         """根据配置创建 LLM 客户端"""
         from .provider import OpenAIProvider
@@ -76,12 +80,18 @@ class LLMStrategy(Strategy):
             env_var = api_key[2:-1]
             api_key = os.environ.get(env_var, "")
 
+        # 读取 provider 扩展参数（disable_thinking, max_tokens 等）
+        provider_kwargs = {}
+        if hasattr(config, '_provider_kwargs'):
+            provider_kwargs = config._provider_kwargs
+
         if config.provider == "openai":
             return OpenAIProvider(
                 api_key=api_key,
                 model=config.model,
                 temperature=config.temperature,
-                base_url=config.base_url or "https://api.openai.com/v1"
+                base_url=config.base_url or "https://api.openai.com/v1",
+                **provider_kwargs,
             )
         else:
             raise ValueError(f"Unsupported LLM provider: {config.provider}")
@@ -89,21 +99,37 @@ class LLMStrategy(Strategy):
     def _create_prompt_builder_from_config(self, config: "LLMStrategyConfig"):
         """根据配置创建 PromptBuilder"""
         from .prompt import PromptBuilder
+        from pathlib import Path
+        import logging
+
+        rules = config.rules
+
+        # 进化闭环：自动加载进化后的规则文件
+        if config.evolved_rules_path:
+            evolved_path = Path(config.evolved_rules_path)
+            if evolved_path.exists():
+                rules = evolved_path.read_text(encoding="utf-8")
+                logging.getLogger(__name__).info(
+                    f"已加载进化规则: {evolved_path} ({len(rules)} chars)"
+                )
 
         return PromptBuilder(
-            rules=config.rules,
+            rules=rules,
             examples_count=config.examples
         )
 
-    def analyze(self, bars, batch_size: int = 20) -> "LLMResult":
-        """分析 K 线数据（组合三个组件，支持分批处理）
+    def analyze(self, bars, batch_size: int = 50) -> "LLMResult":
+        """分析 K 线数据
 
-        当 K 线数量超过 batch_size 时自动分批调用 LLM，合并结果。
-        分批可避免推理模型因 thinking 消耗 token 导致响应截断。
+        支持两种模式：
+        - walk_forward=True（默认）：逐根滚动窗口，每根 K 线只看历史数据，消除未来数据泄漏
+        - walk_forward=False：批量发送所有数据（快但有未来数据泄漏，仅用于快速验证）
+
+        预计算 MA5/MA20 并注入 bar 数据，让 LLM 有准确的趋势参考。
 
         Args:
             bars: K 线数据列表
-            batch_size: 每批最多处理的 K 线数量（默认 20）
+            batch_size: walk_forward=False 时每批最多处理的 K 线数量
 
         Returns:
             LLMResult: 包含 signals 和 annotations
@@ -115,11 +141,73 @@ class LLMStrategy(Strategy):
 
         from .client import LLMResult
 
+        # 预计算 MA5 / MA20，注入到 bar dict 供 LLM 参考
+        enriched = self._enrich_bars_with_ma(bars)
+
+        if self._walk_forward:
+            return self._analyze_walk_forward(enriched)
+        else:
+            return self._analyze_batch(enriched, batch_size)
+
+    def _analyze_walk_forward(self, enriched: list) -> "LLMResult":
+        """递增窗口模式：逐根分析，每根 K 线看到从第一根到当前的完整历史
+
+        对第 i 根 K 线，发送 bars[0:i+1] 给 LLM，
+        取最后一根的信号，收集窗口内所有标注（timestamp 去重）。
+        确保无未来数据泄漏，且标注与信号同源。
+        """
+        from .client import LLMResult
+        import logging
+
+        logger = logging.getLogger(__name__)
+        all_signals: list = []
+        all_annotations: list = []
+        seen_annotation_keys: set = set()
+        total = len(enriched)
+
+        logger.info(f"递增窗口模式：逐根分析 {total} 根 K 线")
+
+        for i in range(total):
+            # 递增窗口：从第一根到当前根
+            window = enriched[:i + 1]
+
+            prompt = self.prompt_builder.build(window)
+            response = self.llm_client.call(prompt)
+            result = self.response_parser.parse(response)
+
+            # 只取最后一根 K 线（当前 bar）的信号
+            current_ts = window[-1].get("timestamp", "")
+            for sig in result.signals:
+                if sig.get("timestamp") == current_ts:
+                    all_signals.append(sig)
+
+            # 收集窗口内所有标注（timestamp+type 去重）
+            for ann in result.annotations:
+                ann_key = (ann.get("timestamp", ""), ann.get("type", ""))
+                if ann_key not in seen_annotation_keys:
+                    seen_annotation_keys.add(ann_key)
+                    all_annotations.append(ann)
+
+            # 进度日志
+            if (i + 1) % 10 == 0 or i + 1 == total:
+                logger.info(f"  进度: {i + 1}/{total} ({(i + 1) * 100 // total}%)")
+
+        logger.info(f"递增窗口完成：{len(all_signals)} signals, {len(all_annotations)} annotations")
+        return LLMResult(signals=all_signals, annotations=all_annotations)
+
+    def _analyze_batch(self, enriched: list, batch_size: int) -> "LLMResult":
+        """批量模式：一次性发送所有数据（快速但有未来数据泄漏）"""
+        from .client import LLMResult
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.warning("批量模式：LLM 可看到未来数据，回测结果仅供快速验证参考")
+
         all_signals: list = []
         all_annotations: list = []
 
-        for i in range(0, len(bars), batch_size):
-            batch = bars[i:i + batch_size]
+        for i in range(0, len(enriched), batch_size):
+            batch = enriched[i:i + batch_size]
             prompt = self.prompt_builder.build(batch)
             response = self.llm_client.call(prompt)
             result = self.response_parser.parse(response)
@@ -127,6 +215,39 @@ class LLMStrategy(Strategy):
             all_annotations.extend(result.annotations)
 
         return LLMResult(signals=all_signals, annotations=all_annotations)
+
+    @staticmethod
+    def _enrich_bars_with_ma(bars) -> list:
+        """预计算 MA5/MA20 并返回 enriched dict 列表"""
+        closes = []
+        enriched = []
+        for i, bar in enumerate(bars):
+            c = bar.close if hasattr(bar, 'close') else bar.get('close', 0)
+            closes.append(c)
+
+            if hasattr(bar, 'to_dict'):
+                d = bar.to_dict()
+            elif isinstance(bar, dict):
+                d = dict(bar)
+            else:
+                d = {
+                    "timestamp": str(bar.timestamp) if hasattr(bar, 'timestamp') else str(bar),
+                    "open": getattr(bar, 'open', 0),
+                    "high": getattr(bar, 'high', 0),
+                    "low": getattr(bar, 'low', 0),
+                    "close": c,
+                    "volume": getattr(bar, 'volume', 0),
+                }
+
+            # MA5
+            if i >= 4:
+                d["ma5"] = round(sum(closes[i-4:i+1]) / 5, 2)
+            # MA20
+            if i >= 19:
+                d["ma20"] = round(sum(closes[i-19:i+1]) / 20, 2)
+
+            enriched.append(d)
+        return enriched
 
     def on_init(self, config: "BacktestConfig") -> None:
         """回测开始前调用

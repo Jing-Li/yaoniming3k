@@ -14,7 +14,7 @@
  */
 export const STRATEGY_DISPLAY_NAMES = {
     'CaiSenStrategy': 'Phoenix',
-    'MACrossStrategy': 'Tide',
+    'LLMStrategy': 'Oracle',
     'BreakoutStrategy': 'Eagle',
     'MomentumStrategy': 'Storm',
     'MeanReversionStrategy': 'Anchor',

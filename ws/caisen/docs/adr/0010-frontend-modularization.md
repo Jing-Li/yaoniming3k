@@ -5,19 +5,19 @@ Implemented
 
 ## Context
 
-当前 `src/caisen/visualization/index.html` 是单文件实现（1245 行），包含 CSS、HTML 模板和 JavaScript 逻辑混在一起。随着 Annotation 类型增加（已达 12 种），维护成本上升。
+原 `src/caisen/visualization/index.html` 单文件实现（1245 行）已完成模块化重构，迁移至 `src/caisen/frontend/`。
 
-### 问题
+### 已解决的问题
 
-1. **单文件过长**：1245 行导致定位和修改困难
-2. **模块边界不清**：renderMap、图表初始化、数据加载混在一起
-3. **测试缺失**：纯 JS 无测试覆盖
-4. **类型安全不足**：无 TypeScript
+1. **单文件过长** → 拆分为 26 个 JS 模块
+2. **模块边界不清** → 按职责分离到独立文件
+3. **测试缺失** → Vitest 单元测试 + Playwright E2E
+4. **构建工具** → Vite 开发服务器 + 生产构建
 
-### 约束
+### 约束（保持）
 
-- 保持纯 HTML + JS（无框架），便于直接浏览器打开
-- JSON 数据文件作为数据传递格式（ADR-0007 已定义）
+- 保持纯 HTML + JS（无框架），Vite 构建
+- JSON 数据文件作为数据传递格式
 - ECharts 作为图表库
 
 ## Decision
@@ -25,34 +25,52 @@ Implemented
 ### 1. 目录结构
 
 ```
-src/caisen/visualization/
-├── index.html          # 入口文件，组装各模块
-├── styles/
-│   └── main.css        # 样式（从 index.html 提取）
-├── modules/
-│   ├── chart.js        # 图表初始化、配置
-│   ├── annotation.js   # renderMap、标注渲染逻辑
-│   ├── data.js         # 数据加载、解析
-│   └── utils.js        # 工具函数（findBarByTimestamp 等）
-└── sample/
-    └── data.json       # 示例数据
+src/caisen/frontend/
+├── index.html              # 入口（runs 列表）
+├── report.html             # K线图详情页
+├── strategy.html           # 策略中心页
+├── package.json            # npm 依赖
+├── vite.config.js          # Vite 配置
+├── src/
+│   ├── js/                 # 26 个 JS 模块
+│   │   ├── app.js          # 主应用入口
+│   │   ├── data-loader.js  # 数据加载
+│   │   ├── kline-chart.js  # K线图
+│   │   ├── equity-chart.js # 权益曲线
+│   │   ├── drawdown-chart.js # 回撤图
+│   │   ├── heatmap.js      # 月度收益热力图
+│   │   ├── annotation-renderer.js # 标注渲染
+│   │   ├── annotation-filter.js   # 标注过滤
+│   │   ├── backtest-panel.js      # 回测面板
+│   │   ├── optimize-panel.js      # 优化面板
+│   │   ├── evolve-panel.js        # 进化面板
+│   │   ├── toast.js               # Toast 通知
+│   │   ├── logger.js              # 日志系统
+│   │   └── ...                    # 其他模块
+│   └── css/                # CSS 样式
+│       ├── variables.css   # CSS 变量
+│       ├── reset.css       # 样式重置
+│       ├── layout.css      # 布局
+│       ├── components.css  # 组件
+│       ├── pages.css       # 页面
+│       └── main.css        # 统一入口
+├── tests/                  # Vitest 单元测试
+└── e2e/                    # Playwright E2E 测试
 ```
 
-### 2. 模块职责
+### 2. 页面结构
 
-| 模块 | 职责 | 导出 |
+| 页面 | 文件 | 功能 |
 |------|------|------|
-| `chart.js` | ECharts 实例管理、配置、K线图/净值图初始化 | `initKLineChart()`, `initEquityChart()` |
-| `annotation.js` | renderMap、标注类型渲染器 | `renderAnnotations()`, `renderMap` |
-| `data.js` | loadData、getDataUrl、applyDateFilter | `loadData()`, `DataLoader` |
-| `utils.js` | findBarByTimestamp、格式化函数 | `findBarByTimestamp()` |
+| 首页 | index.html | 回测报告列表、策略选择 |
+| 报告页 | report.html | K线图 + 权益曲线 + 交易表 |
+| 策略中心 | strategy.html | 优化/进化/对比面板 |
 
 ### 3. 打包策略
 
 采用 **Vite** 构建：
-- 开发时：`vite dev` 启动开发服务器
-- 生产时：`vite build` 生成单文件 HTML（或多个小文件）
-- 保持 `dist/` 输出与现在 `index.html` 功能等价
+- 开发时：`vite dev` 启动开发服务器（端口 5173）
+- 生产时：`vite build` 生成静态资源到 `dist/`
 
 ### 4. 类型化（可选）
 
@@ -63,15 +81,15 @@ src/caisen/visualization/
 ## Consequences
 
 ### Positive
-- 模块边界清晰，便于维护
+- 模块边界清晰，26 个独立 JS 模块按职责分离
 - 渲染逻辑与图表逻辑分离
-- 便于添加测试
+- Vitest 单元测试 + Playwright E2E 测试覆盖
+- Vite 热更新提升开发效率
 - 团队协作更容易（多人可同时修改不同模块）
 
 ### Negative
 - 引入构建工具（Vite），增加复杂度
 - 需要处理模块化后的代码分割
-- 过渡期需要同时维护单文件和模块化版本
 
 ### Risks
 - 拆分过程中可能引入 bug

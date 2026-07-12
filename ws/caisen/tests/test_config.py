@@ -25,8 +25,8 @@ def test_config_from_dict():
             "slippage": 0.002
         },
         "strategy": {
-            "name": "ma_cross",
-            "file": "./strategies/ma_cross.py"
+            "name": "cai_sen",
+            "file": "./strategies/cai_sen.py"
         },
         "data": {
             "symbol": "TEST",
@@ -38,7 +38,7 @@ def test_config_from_dict():
 
     assert config.backtest.initial_capital == 50000
     assert config.backtest.commission_rate == 0.001
-    assert config.strategy.name == "ma_cross"
+    assert config.strategy.name == "cai_sen"
     assert config.data.symbol == "TEST"
 
 
@@ -66,7 +66,7 @@ def test_yaml_config_roundtrip():
             "commission_rate": 0.0003
         },
         "strategy": {
-            "name": "ma_cross"
+            "name": "cai_sen"
         },
         "data": {
             "symbol": "TEST",
@@ -85,7 +85,7 @@ def test_yaml_config_roundtrip():
     config = Config._from_dict(loaded)
 
     assert config.backtest.initial_capital == 100000
-    assert config.strategy.name == "ma_cross"
+    assert config.strategy.name == "cai_sen"
 
     # 清理
     Path(path).unlink()

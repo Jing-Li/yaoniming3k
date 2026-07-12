@@ -1,23 +1,22 @@
-# Architecture Issue: CLI 策略加载硬编码
+# Architecture Issue: CLI 策略加载硬编码（已解决）
 
 ## Priority
 **Suggestion** - 灵活性不足
 
 ## Problem
-CLI 中的策略加载逻辑硬编码：
+CLI 中的策略加载逻辑曾硬编码 fallback 到 examples 目录：
 
 ```python
-# cli/main.py
-if Path(strategy).exists():
-    strat = load_strategy_from_file(strategy)
-else:
-    # 尝试从 examples 加载
-    try:
-        from examples.ma_cross import MACrossStrategy
-        strat = MACrossStrategy()
-    except ImportError:
-        ...
+# cli/main.py (旧代码，已重构)
+try:
+    from examples.xxx import SomeStrategy
+    strat = SomeStrategy()
+except ImportError:
+    ...
 ```
+
+## Resolution
+已重构为通过 `StrategyRegistry` 动态查找策略模块路径，不再硬编码具体策略名。
 
 ## Impact
 - 策略发现机制不灵活

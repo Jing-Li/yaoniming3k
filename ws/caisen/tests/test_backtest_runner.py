@@ -34,7 +34,7 @@ def test_run_backtest_returns_valid_run_id(tmp_path):
 
     bars = _make_bars(150)
     run_id = BacktestRunner.run_backtest(
-        strategy_name="MACrossStrategy",
+        strategy_name="CaiSenStrategy",
         symbol="TEST",
         freq="1d",
         start="2024-01-01",
@@ -60,7 +60,7 @@ def test_on_progress_called_every_100_bars(tmp_path):
 
     bars = _make_bars(250)
     BacktestRunner.run_backtest(
-        strategy_name="MACrossStrategy",
+        strategy_name="CaiSenStrategy",
         symbol="TEST",
         freq="1d",
         start="2024-01-01",
@@ -87,7 +87,7 @@ def test_raises_when_bars_empty(tmp_path):
 
     with pytest.raises(BacktestError, match="数据为空"):
         BacktestRunner.run_backtest(
-            strategy_name="MACrossStrategy",
+            strategy_name="CaiSenStrategy",
             symbol="TEST",
             freq="1d",
             start="2024-01-01",
@@ -102,7 +102,7 @@ def test_raises_when_strategy_unknown(tmp_path):
     """策略名不存在时抛出明确的 BacktestError"""
     from caisen.backtest.runner import BacktestRunner, BacktestError
 
-    with pytest.raises(BacktestError, match="策略不存在"):
+    with pytest.raises(BacktestError, match="策略模块未注册"):
         BacktestRunner.run_backtest(
             strategy_name="NonExistentStrategy",
             symbol="TEST",

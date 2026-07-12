@@ -1,10 +1,15 @@
 /**
  * Caisen Visualization - Chart Renderer
  * 图表渲染逻辑
+ *
+ * K线图使用 TradingView Lightweight Charts (高性能)
+ * 副图 (净值/回撤/热力图/分布) 继续使用 ECharts
  */
 
 import { appState } from './app-state.js';
-import { buildKLineOption, buildEquityOption } from './chart-builder.js';
+import { buildEquityOption } from './chart-builder.js';
+import { renderKLine, disposeKLine, fitKLineContent, resetKLineZoom } from './kline-chart.js';
+import { createOverlay, renderAnnotationOverlay, setupOverlaySync, removeOverlay } from './annotation-overlay.js';
 import { DEBUG_CONFIG } from './constants.js';
 
 // Track which chart instances have been wired for sync (avoids double-bind on re-render).
@@ -26,10 +31,9 @@ function debounce(fn, delay = 250) {
     };
 }
 
-// Single debounced handler for all chart resizes (shared across render calls).
+// Single debounced handler for ECharts chart resizes (K-line uses its own ResizeObserver).
 const _debouncedResize = debounce(() => {
     const charts = [
-        appState.getChart(),
         appState.getEquityChart(),
         appState.getDrawdownChart(),
         appState.getHeatmapChart(),
@@ -90,7 +94,7 @@ export function lazyInitChart(containerId, initFn) {
 }
 
 /**
- * Render K-Line chart
+ * Render K-Line chart using Lightweight Charts
  */
 export function renderKLineChart() {
     const data = appState.getFilteredData();
@@ -99,41 +103,45 @@ export function renderKLineChart() {
         return;
     }
 
-    DEBUG_CONFIG.log('[KLine] 开始渲染, bars:', data.bars.length);
+    DEBUG_CONFIG.log('[KLine] 开始渲染 (LWC), bars:', data.bars.length);
 
-    const isZoomEnabled = appState.getIsZoomEnabled();
     const showMA = appState.getShowMA();
-    const option = buildKLineOption({ data, isZoomEnabled, showMA });
-
-    if (!option) {
-        DEBUG_CONFIG.error('[KLine] buildKLineOption 返回 null');
+    const container = document.getElementById('kline-chart');
+    if (!container) {
+        DEBUG_CONFIG.error('[KLine] 容器 #kline-chart 不存在');
         return;
     }
 
-    const chart = appState.getChart();
+    // Remove old overlay if any
+    removeOverlay(container);
 
-    if (chart) {
-        try {
-            chart.setOption(option, true);
-            DEBUG_CONFIG.log('[KLine] chart.setOption 完成');
-        } catch (e) {
-            DEBUG_CONFIG.error('[KLine] chart.setOption 失败:', e.message);
-            handleChartError(option);
-        }
-    } else {
-        try {
-            const chartInstance = echarts.init(document.getElementById('kline-chart'));
-            appState.setChart(chartInstance);
-            chartInstance.setOption(option, true);
-            DEBUG_CONFIG.log('[KLine] 新实例初始化完成');
-        } catch (e) {
-            DEBUG_CONFIG.error('[KLine] ECharts 初始化失败:', e.message);
-            handleChartError(option);
-        }
+    // Dispose previous LWC state
+    const prevState = appState.getKlineState();
+    if (prevState) {
+        disposeKLine(prevState);
     }
 
-    // Resize handler (shared debounced)
-    ensureResizeHandler();
+    // Render new K-line chart
+    const klineState = renderKLine({
+        container,
+        data,
+        showMA,
+        existingChart: prevState?.chart || null,
+    });
+
+    if (!klineState) {
+        DEBUG_CONFIG.error('[KLine] renderKLine 返回 null');
+        return;
+    }
+
+    appState.setKlineState(klineState);
+    appState.setChart(klineState.chart);
+
+    // Create annotation overlay
+    const { canvas, ctx } = createOverlay(container);
+    setupOverlaySync(klineState.chart, klineState.candleSeries, canvas, ctx, data);
+
+    DEBUG_CONFIG.log('[KLine] LWC 渲染完成');
 }
 
 /**
@@ -174,30 +182,14 @@ export function renderEquityChart() {
 }
 
 /**
- * Handle chart error with fallback
+ * Handle chart error with fallback — no longer needed for LWC
  */
-function handleChartError(option) {
-    try {
-        const fallbackOption = structuredClone(option);
-        fallbackOption.series[0].markPoint = { data: [] };
-        fallbackOption.series[0].markLine = { data: [] };
-
-        let chart = appState.getChart();
-        if (chart) {
-            chart.setOption(fallbackOption, true);
-        } else {
-            chart = echarts.init(document.getElementById('kline-chart'));
-            appState.setChart(chart);
-            chart.setOption(fallbackOption, true);
-        }
-        DEBUG_CONFIG.log('[KLine] 简化配置成功');
-    } catch (e2) {
-        DEBUG_CONFIG.error('[KLine] 简化配置也失败:', e2.message);
-    }
+function handleChartError() {
+    DEBUG_CONFIG.error('[KLine] 图表渲染异常');
 }
 
 /**
- * Toggle zoom
+ * Toggle zoom on K-line chart
  */
 export function toggleZoom() {
     const isZoomEnabled = appState.toggleZoom();
@@ -206,15 +198,22 @@ export function toggleZoom() {
         btn.classList.toggle('is-active', isZoomEnabled);
         btn.setAttribute('aria-pressed', String(isZoomEnabled));
     }
-    renderKLineChart();
+    const klineState = appState.getKlineState();
+    if (klineState) {
+        fitKLineContent(klineState);
+    }
 }
 
 /**
- * Reset zoom on every linked chart.
+ * Reset zoom on all charts
  */
 export function resetZoom() {
+    const klineState = appState.getKlineState();
+    if (klineState) {
+        resetKLineZoom(klineState);
+    }
+    // ECharts charts
     [
-        appState.getChart(),
         appState.getEquityChart(),
         appState.getDrawdownChart()
     ].forEach(chart => {
@@ -254,13 +253,11 @@ export function toggleMA() {
 }
 
 /**
- * Wire dataZoom + axisPointer synchronization across the K-line, equity and
- * drawdown charts. Safe to call multiple times: only newly added chart
- * instances will have handlers wired (uses WeakSet to track bound charts).
+ * Wire dataZoom + axisPointer synchronization across the equity and
+ * drawdown ECharts charts. K-line (LWC) has its own zoom/scroll system.
  */
 export function setupChartSync() {
     const charts = [
-        appState.getChart(),
         appState.getEquityChart(),
         appState.getDrawdownChart()
     ].filter(Boolean);

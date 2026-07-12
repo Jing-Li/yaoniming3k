@@ -13,22 +13,21 @@ strategy:
   type: llm
 
 data:
-  symbol: ag
+  symbol: sc
   freq: 1d
-  start: "2024-01-01"
-  end: "2024-01-10"
-  data_dir: /home/user/data
+  start: "2025-01-01"
+  end: "2025-06-30"
 
 llm:
   provider: openai
   api_key: dummy
-  base_url: "http://localhost:8080/v1"
+  base_url: "http://localhost:8199/v1"
   model: taiji
-  temperature: 0.3
-  rules: |
-    支撑位买入，阻力位卖出
-    趋势确认后跟进
-  examples: 1
+  temperature: 0.1
+  disable_thinking: true
+  max_tokens: 4096
   cache_enabled: false
+  evolved_rules_path: "configs/strategies/llm_evolved_rules.txt"
+  walk_forward: true
 
 output_dir: ./runs

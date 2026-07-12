@@ -1,7 +1,9 @@
 # ADR-0018: 多周期共振框架
 
 ## Status
-Proposed
+Proposed (未实现)
+
+> **注意**：此方案为未来规划，代码库中尚未实现 MultiTimeframeEngine、TimeframeFilter 或 timeframe_sync 模块。BacktestEngine 仍为单周期模式。
 
 ## Context
 当前回测系统仅支持单一时间周期（如仅 60m 或仅日线）回测，策略所有判断都建立在单一频率的 K 线序列之上。

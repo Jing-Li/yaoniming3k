@@ -8,6 +8,10 @@ import { appState } from './app-state.js';
 import { getStrategyDisplayName } from './constants.js';
 import { renderVersionCompare, disposeVersionCompare } from './version-compare.js';
 import { escapeHtml } from './utils.js';
+import { createLogger } from './logger.js';
+import { toast } from './toast.js';
+
+const log = createLogger('RunsList');
 
 // ==================== Module State ====================
 
@@ -452,7 +456,7 @@ async function loadMiniSparklines(runs) {
             const chart = drawMiniSpark(container, sampled);
             if (chart) _sparkCharts.set(run.run_id, chart);
         } catch (e) {
-            // silent — sparkline is an enhancement only
+            log.warn('Sparkline 加载失败', run.run_id, e.message);
         }
     }));
 }
@@ -560,9 +564,30 @@ export function setupSearch() {
         clearTimeout(timer);
         // Debounce slightly for snappier feel without thrashing layout.
         timer = setTimeout(() => {
-            renderRunsView(applyFilter());
+            const filtered = applyFilter();
+            renderRunsView(filtered);
+            _updateSearchCount(filtered.length, _allRuns.length);
         }, 120);
     });
+}
+
+/**
+ * 更新搜索结果计数显示
+ */
+function _updateSearchCount(filteredCount, totalCount) {
+    let el = document.getElementById('search-result-count');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'search-result-count';
+        el.className = 'search-result-count';
+        const searchBar = document.querySelector('.search-bar');
+        if (searchBar) searchBar.appendChild(el);
+    }
+    if (_searchQuery.trim()) {
+        el.textContent = `找到 ${filteredCount} / ${totalCount} 条记录`;
+    } else {
+        el.textContent = `共 ${totalCount} 条记录`;
+    }
 }
 
 /**
@@ -579,8 +604,10 @@ export async function loadRunsList() {
     renderLoading();
     setupSearch();
 
+    log.time('GET /api/runs');
     try {
         const response = await fetch('/api/runs');
+        const ms = log.timeEnd('GET /api/runs');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -592,6 +619,8 @@ export async function loadRunsList() {
         // do not reshuffle version numbering.
         rebuildVersionIndex(_allRuns);
 
+        log.info(`加载完成: ${_allRuns.length} 条记录 (${ms}ms)`);
+
         if (_allRuns.length === 0) {
             renderHeroStats([]);
             renderEmpty();
@@ -599,9 +628,11 @@ export async function loadRunsList() {
         }
 
         renderRunsView(applyFilter());
+        _updateSearchCount(_allRuns.length, _allRuns.length);
     } catch (error) {
-        console.error('[Runs List] Error:', error);
+        log.error('加载回测列表失败', error);
         renderError(error.message);
+        toast.error('回测列表加载失败', { detail: error.message });
     }
 }
 

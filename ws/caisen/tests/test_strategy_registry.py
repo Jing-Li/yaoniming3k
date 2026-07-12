@@ -4,11 +4,11 @@ from caisen.strategy.registry import StrategyRegistry
 
 
 def test_discovers_builtin_strategies():
-    """至少发现 CaiSenStrategy 和 MACrossStrategy 两个内置策略"""
+    """至少发现 CaiSenStrategy 和 LLMStrategy 两个内置策略"""
     strategies = StrategyRegistry.list_strategies()
     names = [s["name"] for s in strategies]
     assert "CaiSenStrategy" in names
-    assert "MACrossStrategy" in names
+    assert "LLMStrategy" in names
 
 
 def test_llm_strategy_has_correct_type_and_note():
@@ -26,7 +26,7 @@ def test_import_error_is_silently_skipped(monkeypatch):
     original_import = importlib.import_module
 
     def broken_import(name, *args, **kwargs):
-        if "ma_cross" in name:
+        if "llm" in name:
             raise ImportError("模拟导入失败")
         return original_import(name, *args, **kwargs)
 
@@ -35,8 +35,8 @@ def test_import_error_is_silently_skipped(monkeypatch):
     strategies = StrategyRegistry.list_strategies()
     names = [s["name"] for s in strategies]
 
-    # MACrossStrategy 被跳过，但其他策略正常
-    assert "MACrossStrategy" not in names
+    # LLMStrategy 被跳过，但其他策略正常
+    assert "LLMStrategy" not in names
     assert "CaiSenStrategy" in names
 
 

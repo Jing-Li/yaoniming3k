@@ -5,13 +5,22 @@ description: 启动、诊断、监控 caisen 量化回测服务。涵盖一键�
 
 # Caisen Ops — 服务启动、诊断与运维
 
+## 端口约定（固定，勿混用）
+
+| 组件 | 端口 | 说明 |
+|------|------|------|
+| **FastAPI 后端** | **8001** | API 服务，`/api/*` 和 `/ws/*` 端点 |
+| **Vite 前端** | **8000** | 开发服务器，`/api` 请求自动代理到 8001 |
+
+> **记忆口诀**：前端 8000，后端 8001。浏览器访问 8000，Vite 自动转发 API 到 8001。
+
 ## 1. 启动服务
 
 ### 前置条件
 
 ```bash
-# 1. Python 包已安装（提供 caisen CLI）
-pip install -e .
+# 1. Python 包已安装（项目使用 uv，非 pip）
+uv pip install -e . --quiet
 
 # 2. 前端依赖已安装
 cd src/caisen/frontend && npm install && cd -
@@ -159,6 +168,80 @@ tail -100 <log_file> | grep -E "(ERROR|CRITICAL|Exception)"
 3. **时间线** — 错误发生时间点，是否与特定操作关联
 4. **根因推测** — 根据错误信息推断可能原因
 
+### 3.1 前端结构化日志（浏览器 Console）
+
+前端使用 `logger.js` 模块输出结构化日志，格式如下：
+
+```
+[LEVEL] HH:MM:SS.mmm [Module] message {context}
+```
+
+| 缩写 | 级别 | 说明 |
+|------|------|------|
+| `[DBG]` | DEBUG | 详细调试信息（默认不显示） |
+| `[INF]` | INFO | 常规操作日志 |
+| `[WRN]` | WARN | 非致命警告 |
+| `[ERR]` | ERROR | 错误信息 |
+
+**模块标签**（`[Module]`）：
+
+| 标签 | 模块文件 | 职责 |
+|------|---------|------|
+| `[Main]` | `main.js` | 应用入口、全局错误捕获 |
+| `[RunsList]` | `runs-list.js` | 列表加载、搜索过滤、版本标签 |
+| `[BacktestPanel]` | `backtest-panel.js` | 回测表单、WebSocket 进度、表单持久化 |
+| `[DataLoader]` | `data-loader.js` | 报告页数据加载、缓存 |
+
+**动态调整日志级别**：在浏览器地址栏添加 URL 参数：
+
+```
+http://localhost:8000/?log=debug    # 显示全部日志
+http://localhost:8000/?log=warn     # 仅显示 WARN 及以上
+http://localhost:8000/?log=error    # 仅显示 ERROR
+```
+
+**计时器日志**：`log.time()` / `log.timeEnd()` 配对使用，输出含耗时：
+
+```
+[INF] 14:23:01.123 [RunsList] ⏱ GET /api/runs
+[INF] 14:23:01.456 [RunsList] ⏱ GET /api/runs: 333ms
+```
+
+**Toast 通知**：前端操作结果通过右上角 Toast 通知反馈，分四种类型：
+- ✅ success（绿色）— 操作成功，4 秒消失
+- ❌ error（红色）— 操作失败，8 秒消失
+- ⚠️ warn（橙色）— 警告，5 秒消失
+- ℹ️ info（蓝色）— 提示，4 秒消失
+
+### 3.2 后端请求日志
+
+后端 FastAPI 中间件自动记录每个 HTTP 请求：
+
+```
+INFO:root:GET /api/runs → 200 (45ms)
+INFO:root:POST /api/runs → 200 (12350ms)
+WARNING:root:GET /api/runs/nonexist → 404 (3ms)
+```
+
+格式：`METHOD /path → STATUS_CODE (DURATIONms)`
+
+- 状态码 >= 400 自动升级为 WARNING 级别
+- 静态资源请求（`/js/`、`/src/`、`/node_modules/`）不记录
+- POST `/api/runs` 额外记录请求参数（策略名、标的、频率、日期范围、配置预设）
+
+### 3.3 日志排查速查表
+
+| 现象 | 查看日志位置 | 关键词/过滤 |
+|------|-------------|------------|
+| 回测按钮点击无反应 | 浏览器 Console `[BacktestPanel]` | `POST /api/runs` |
+| 回测进度条不动 | 浏览器 Console `[BacktestPanel]` | `WebSocket`、`progress` |
+| 列表页空白 | 浏览器 Console `[RunsList]` | `GET /api/runs`、`error` |
+| 报告页加载失败 | 浏览器 Console `[DataLoader]` | `数据加载`、`error` |
+| API 返回 500 | 终端后端日志 | `500`、`ERROR`、`Exception` |
+| API 响应慢 | 终端后端日志 | 关注 `(XXXms)` 中耗时 > 1000ms |
+| 表单数据丢失 | 浏览器 Console `[BacktestPanel]` | `localStorage`、`form` |
+| 搜索无结果 | 浏览器 Console `[RunsList]` | `search`、`filter` |
+
 ## 4. 问题排查与修复
 
 发现日志问题后，按以下流程排查：
@@ -176,6 +259,10 @@ tail -100 <log_file> | grep -E "(ERROR|CRITICAL|Exception)"
 | `LLMStrategy` / `openai_provider` | LLM 策略 | `src/caisen/strategy/llm/` |
 | `WebSocket` / `progress` | 进度推送 | `src/caisen/web/main.py` (ws端点) |
 | `chart-builder` / `chart-renderer` | 前端图表 | `src/caisen/frontend/src/js/chart-*.js` |
+| `[BacktestPanel]` / `localStorage` | 前端回测面板 | `src/caisen/frontend/src/js/backtest-panel.js` |
+| `[RunsList]` / `search` / `filter` | 前端列表 | `src/caisen/frontend/src/js/runs-list.js` |
+| `[DataLoader]` / `数据加载` | 前端数据加载 | `src/caisen/frontend/src/js/data-loader.js` |
+| `[Main]` / `unhandledrejection` | 前端全局错误 | `src/caisen/frontend/src/js/main.js` |
 
 ### 4.2 修复步骤
 

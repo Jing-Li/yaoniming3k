@@ -72,3 +72,87 @@ def test_full_position_quantity_calculation():
     assert trade.quantity > 0
     # 数量约为 100000 / 100 / 1.0003 ≈ 996
     assert 990 < trade.quantity < 1000
+
+
+# ── 以下合并自 test_equity_final.py ──────────────────────────────
+
+
+from caisen.strategy.base import Strategy, BarResult
+
+
+class _BuyAndHoldStrategy(Strategy):
+    """买入后持有到最后的简单策略"""
+
+    def __init__(self):
+        self.bought = False
+
+    def on_init(self, config):
+        pass
+
+    def on_bar(self, bar: Bar) -> BarResult:
+        if not self.bought and bar.timestamp == datetime(2024, 1, 2):
+            self.bought = True
+            return BarResult(order=Order(symbol="TEST", side=Side.BUY, quantity=100))
+        return BarResult()
+
+    def on_session_end(self):
+        pass
+
+
+def test_final_equity_uses_market_price():
+    """最终净值应该使用市场价计算，而非成本估算"""
+    engine = BacktestEngine(BacktestConfig(initial_capital=100000))
+
+    bars = [
+        Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+        Bar(timestamp=datetime(2024, 1, 2), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+        Bar(timestamp=datetime(2024, 1, 3), symbol="TEST", open=110, high=115, low=105, close=120, volume=1000),
+    ]
+
+    strategy = _BuyAndHoldStrategy()
+    result = engine.run(strategy, bars)
+
+    last_curve_point = result.equity_curve[-1]
+    assert abs(result.final_equity - last_curve_point["equity"]) < 0.01
+
+    cost_based_equity = result.initial_capital - result.trades[0].price * result.trades[0].quantity - result.trades[0].commission
+    assert result.final_equity > cost_based_equity
+
+
+def test_final_equity_matches_last_equity_curve_point():
+    """最终净值应该与净值曲线最后一点一致"""
+    engine = BacktestEngine(BacktestConfig(initial_capital=100000))
+
+    bars = [
+        Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+        Bar(timestamp=datetime(2024, 1, 2), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+        Bar(timestamp=datetime(2024, 1, 3), symbol="TEST", open=110, high=115, low=105, close=120, volume=1000),
+    ]
+
+    strategy = _BuyAndHoldStrategy()
+    result = engine.run(strategy, bars)
+
+    last_curve_point = result.equity_curve[-1]
+    assert abs(result.final_equity - last_curve_point["equity"]) < 0.01
+
+
+def test_total_return_reflects_market_value():
+    """总收益率应该反映市场价计算的真实收益"""
+    from caisen.result.calculator import MetricsCalculator
+
+    engine = BacktestEngine(BacktestConfig(initial_capital=100000))
+
+    bars = [
+        Bar(timestamp=datetime(2024, 1, 1), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+        Bar(timestamp=datetime(2024, 1, 2), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+        Bar(timestamp=datetime(2024, 1, 3), symbol="TEST", open=100, high=100, low=100, close=100, volume=1000),
+    ]
+
+    strategy = _BuyAndHoldStrategy()
+    result = engine.run(strategy, bars)
+
+    calculator = MetricsCalculator()
+    metrics = calculator.calculate(result)
+
+    expected_return = (result.final_equity - result.initial_capital) / result.initial_capital
+    assert abs(metrics.total_return - expected_return) < 0.0001

@@ -4,7 +4,8 @@
  */
 
 import { CHART_COLORS } from './constants.js';
-import { filterValidMarkPoints, filterValidMarkLines } from './utils.js';
+import { filterValidMarkPoints, filterValidMarkLines, buildBarIndex } from './utils.js';
+import { processAnnotations } from './annotation-renderer.js';
 
 // ============================================================
 // Indicator helpers (exported for reuse / testing)
@@ -170,9 +171,21 @@ export function buildKLineOption({ data, isZoomEnabled, showMA = true }) {
 }
 
 /**
- * Build tooltip option (card-style, OHLCV + change %)
+ * Build tooltip option (card-style, OHLCV + change %).
+ * Pre-computes a date→barIndex Map for O(1) annotation lookup on every mouse move.
  */
 function buildTooltipOption(data) {
+    // Pre-build date string → bar index map (done once per render, not per mouse move)
+    const dateToBarIdx = new Map();
+    if (data && data.bars) {
+        data.bars.forEach((bar, idx) => {
+            const dateStr = new Date(bar.timestamp).toLocaleString('zh-CN', {
+                month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            });
+            dateToBarIdx.set(dateStr, idx);
+        });
+    }
+
     return {
         trigger: 'axis',
         axisPointer: {
@@ -186,7 +199,7 @@ function buildTooltipOption(data) {
         textStyle: { color: '#e2e8f0', fontSize: 12 },
         extraCssText: 'box-shadow: 0 4px 16px rgba(0,0,0,0.4); border-radius: 6px;',
         formatter: function(params) {
-            return buildTooltipContent(params, data);
+            return buildTooltipContent(params, data, dateToBarIdx);
         }
     };
 }
@@ -563,9 +576,14 @@ function buildEquitySeriesConfig(equityData, drawdowns, baselineValue, newHighMa
 // ============================================================
 
 /**
- * Build tooltip content for K-Line chart (card-style, with OHLCV + 涨跌幅)
+ * Build tooltip content for K-Line chart (card-style, with OHLCV + 涨跌幅).
+ * Uses pre-computed dateToBarIdx Map for O(1) annotation lookup.
+ *
+ * @param {Object[]} params - ECharts tooltip params
+ * @param {Object} data - Chart data (bars, annotations, etc.)
+ * @param {Map} [dateToBarIdx] - Pre-computed date string → bar index map
  */
-export function buildTooltipContent(params, data) {
+export function buildTooltipContent(params, data, dateToBarIdx) {
     if (!params || params.length === 0) return '';
 
     let header = '';
@@ -576,8 +594,6 @@ export function buildTooltipContent(params, data) {
     params.forEach(param => {
         if (!param) return;
         if (param.seriesType === 'candlestick' && Array.isArray(param.data)) {
-            // Candlestick data: [open, close, low, high]
-            // ECharts may pass extra index at front; handle both shapes
             const arr = param.data;
             const offset = arr.length >= 5 ? 1 : 0;
             const open = +arr[offset];
@@ -611,13 +627,10 @@ export function buildTooltipContent(params, data) {
 
     let result = header + kLineBlock + volumeBlock + (maBlock ? `<div style="margin-top:4px">${maBlock}</div>` : '');
 
-    // Annotation labels at this timestamp
-    if (data && data.bars && data.annotations) {
-        const dates = data.bars.map(bar => new Date(bar.timestamp).toLocaleString('zh-CN', {
-            month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-        }));
-        const idx = dates.indexOf(params[0].axisValue);
-        if (idx >= 0) {
+    // Annotation labels at this timestamp — O(1) lookup via pre-computed Map
+    if (data && data.bars && data.annotations && dateToBarIdx) {
+        const idx = dateToBarIdx.get(params[0].axisValue);
+        if (idx !== undefined) {
             const ts = data.bars[idx].timestamp;
             const related = data.annotations.filter(a => a.timestamp === ts);
             related.forEach(a => {
@@ -634,59 +647,44 @@ export function buildTooltipContent(params, data) {
 // Re-export filter utilities for external use
 export { filterValidMarkPoints, filterValidMarkLines };
 
-// ============================================================
-// Annotation Processing (moved from chart-config.js)
-// ============================================================
+// Re-export processAnnotations from annotation-renderer (single source of truth)
+export { processAnnotations, getAnnotationRenderer } from './annotation-renderer.js';
 
-/**
- * Process annotations into markPoints and markLines
- */
-export function processAnnotations(annotations, bars) {
-    const markPoints = [];
-    const markLines = [];
-
-    if (!annotations) return { markPoints, markLines };
-
-    annotations.forEach((annotation) => {
-        const ctx = { markPoints, markLines };
-        const renderFn = getAnnotationRenderer(annotation.type);
-        if (renderFn) {
-            try {
-                renderFn(ctx, annotation, bars);
-            } catch (e) {
-                console.error(`[ERROR] Annotation render error: ${annotation.type}`, e.message);
-            }
-        }
-    });
-
-    return { markPoints, markLines };
-}
 
 /**
  * Process trades into markPoints.
- * Uses a timestamp→index map for O(1) lookup instead of linear scan.
+ * Uses buildBarIndex for O(1) exact lookups; fuzzy match uses binary search on sorted ms array.
  */
 export function processTrades(trades, bars) {
     const markPoints = [];
     if (!trades || !bars || bars.length === 0) return markPoints;
 
-    // Build fast lookup maps: exact timestamp → index, and Date ms → index
-    const exactMap = new Map();
-    const fuzzyMap = new Map();
-    bars.forEach((bar, idx) => {
-        exactMap.set(bar.timestamp, idx);
-        fuzzyMap.set(new Date(bar.timestamp).getTime(), idx);
-    });
+    // Build fast lookup: exact timestamp → index
+    const barIndex = buildBarIndex(bars);
+
+    // Sorted ms array for binary search fuzzy match
+    const msArr = bars.map((b, i) => ({ ms: new Date(b.timestamp).getTime(), idx: i }));
+    msArr.sort((a, b) => a.ms - b.ms);
 
     trades.forEach((trade) => {
         try {
-            let idx = exactMap.get(trade.timestamp);
+            let idx = barIndex.get(trade.timestamp);
             if (idx === undefined) {
-                // Fuzzy match within 1 hour
+                idx = barIndex.get(new Date(trade.timestamp).getTime());
+            }
+            if (idx === undefined) {
+                // Binary search for closest bar within 1 hour
                 const targetTime = new Date(trade.timestamp).getTime();
-                for (const [ms, barIdx] of fuzzyMap) {
-                    if (Math.abs(ms - targetTime) < 3600000) {
-                        idx = barIdx;
+                let lo = 0, hi = msArr.length - 1;
+                while (lo <= hi) {
+                    const mid = (lo + hi) >> 1;
+                    if (msArr[mid].ms < targetTime) lo = mid + 1;
+                    else hi = mid - 1;
+                }
+                // Check neighbors within 1 hour
+                for (let k = Math.max(0, lo - 1); k <= Math.min(msArr.length - 1, lo + 1); k++) {
+                    if (Math.abs(msArr[k].ms - targetTime) < 3600000) {
+                        idx = msArr[k].idx;
                         break;
                     }
                 }
@@ -709,268 +707,4 @@ export function processTrades(trades, bars) {
     });
 
     return markPoints;
-}
-
-/**
- * Get annotation renderer function by type
- */
-export function getAnnotationRenderer(type) {
-    const renderers = {
-        buy_signal: renderBuySignal,
-        sell_signal: renderSellSignal,
-        neutral_signal: renderNeutralSignal,
-        horizontal_line: renderHorizontalLine,
-        trend_line: renderTrendLine,
-        pattern_mark: renderPatternMark,
-        support_zone: renderSupportZone,
-        resistance_zone: renderResistanceZone,
-        volume_spike: renderVolumeSpike,
-        text_label: renderTextLabel,
-        rectangle: renderRectangle,
-        polygon: renderPolygon
-    };
-    return renderers[type] || null;
-}
-
-// --- Annotation renderer functions ---
-
-function renderBuySignal(ctx, annotation, bars) {
-    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
-    if (!bar) {
-        bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
-    }
-    if (bar) {
-        const idx = bars.indexOf(bar);
-        if (idx >= 0 && bar.close !== undefined && isFinite(bar.close)) {
-            const color = annotation.data.color || '#48bb78';
-            ctx.markPoints.push({
-                coord: [idx, bar.close],
-                value: annotation.data.label || '买入',
-                symbol: 'triangle',
-                symbolSize: 14,
-                itemStyle: { color, borderColor: '#fff', borderWidth: 1 }
-            });
-        }
-    }
-}
-
-function renderSellSignal(ctx, annotation, bars) {
-    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
-    if (!bar) {
-        bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
-    }
-    if (bar) {
-        const idx = bars.indexOf(bar);
-        if (idx >= 0 && bar.close !== undefined && isFinite(bar.close)) {
-            const color = annotation.data.color || '#fc8181';
-            ctx.markPoints.push({
-                coord: [idx, bar.close],
-                value: annotation.data.label || '卖出',
-                symbol: 'triangle',
-                symbolSize: 14,
-                symbolRotate: 180,
-                itemStyle: { color, borderColor: '#fff', borderWidth: 1 }
-            });
-        }
-    }
-}
-
-function renderNeutralSignal(ctx, annotation, bars) {
-    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
-    if (!bar) {
-        bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
-    }
-    if (bar) {
-        const idx = bars.indexOf(bar);
-        if (idx >= 0 && bar.close !== undefined && isFinite(bar.close)) {
-            ctx.markPoints.push({
-                coord: [idx, bar.close],
-                value: annotation.data.label || '中性',
-                symbol: 'diamond',
-                symbolSize: 12,
-                itemStyle: { color: '#a0aec0', borderColor: '#fff', borderWidth: 1 }
-            });
-        }
-    }
-}
-
-function renderHorizontalLine(ctx, annotation, bars) {
-    const price = annotation.data.price;
-    if (typeof price !== 'number' || !isFinite(price)) return;
-
-    ctx.markLines.push({
-        yAxis: price,
-        lineStyle: { color: annotation.data.color || '#60a5fa', type: 'dashed', width: 1 },
-        label: { formatter: annotation.data.label || '', position: 'end' }
-    });
-}
-
-function renderTrendLine(ctx, annotation, bars) {
-    const startTimestamp = annotation.data.start?.timestamp || annotation.data.start;
-    const endTimestamp = annotation.data.end?.timestamp || annotation.data.end;
-
-    const startBar = bars.find(b => new Date(b.timestamp).getTime() === new Date(startTimestamp).getTime());
-    const endBar = bars.find(b => new Date(b.timestamp).getTime() === new Date(endTimestamp).getTime());
-
-    if (startBar && endBar) {
-        const startIdx = bars.indexOf(startBar);
-        const endIdx = bars.indexOf(endBar);
-        if (startIdx >= 0 && endIdx >= 0 && isFinite(startBar.close) && isFinite(endBar.close)) {
-            ctx.markLines.push({
-                coords: [[startIdx, startBar.close], [endIdx, endBar.close]],
-                lineStyle: { color: annotation.data.color || '#ed8936', width: 2 },
-                label: { formatter: annotation.data.label || '', position: 'middle' }
-            });
-        }
-    }
-}
-
-function renderPatternMark(ctx, annotation, bars) {
-    const points = annotation.data.points || [];
-    const color = annotation.data.color || '#9f7aea';
-    const label = annotation.data.label || annotation.data.pattern;
-
-    const coords = [];
-    points.forEach((point) => {
-        const bar = bars.find(b => {
-            const targetTime = new Date(point.timestamp || point).getTime();
-            return new Date(b.timestamp).getTime() === targetTime ||
-                Math.abs(new Date(b.timestamp) - targetTime) < 3600000;
-        });
-        if (bar) {
-            const idx = bars.indexOf(bar);
-            const price = point.price || bar.close;
-            if (idx >= 0 && isFinite(idx) && isFinite(price)) {
-                coords.push([idx, price]);
-            }
-        }
-    });
-
-    if (coords.length >= 2) {
-        ctx.markLines.push({
-            coords,
-            lineStyle: { color, width: 2, type: 'solid' },
-            label: { formatter: label, position: 'middle', color }
-        });
-
-        // Draw neckline for head and shoulders patterns
-        if (annotation.data.neckline && coords.length >= 2) {
-            const necklinePrice = annotation.data.neckline.price;
-            if (typeof necklinePrice === 'number' && isFinite(necklinePrice)) {
-                const startIdx = coords[0][0];
-                const endIdx = coords[coords.length - 1][0];
-                if (isFinite(startIdx) && isFinite(endIdx)) {
-                    ctx.markLines.push({
-                        coords: [[startIdx, necklinePrice], [endIdx, necklinePrice]],
-                        lineStyle: { color, width: 1, type: 'dashed' }
-                    });
-                }
-            }
-        }
-
-        // Draw point markers
-        coords.forEach((coord, idx) => {
-            if (coord && isFinite(coord[0]) && isFinite(coord[1])) {
-                ctx.markPoints.push({
-                    coord,
-                    value: points[idx]?.label || '',
-                    symbol: 'circle',
-                    symbolSize: 8,
-                    itemStyle: { color, borderColor: '#fff', borderWidth: 1 }
-                });
-            }
-        });
-    }
-}
-
-function renderSupportZone(ctx, annotation) {
-    const price = annotation.data.price;
-    if (typeof price !== 'number' || !isFinite(price)) return;
-    ctx.markLines.push({
-        yAxis: price,
-        lineStyle: { color: '#48bb78', width: 2, type: 'dashed' },
-        label: { formatter: annotation.data.label || '支撑', position: 'end' }
-    });
-}
-
-function renderResistanceZone(ctx, annotation) {
-    const price = annotation.data.price;
-    if (typeof price !== 'number' || !isFinite(price)) return;
-    ctx.markLines.push({
-        yAxis: price,
-        lineStyle: { color: '#fc8181', width: 2, type: 'dashed' },
-        label: { formatter: annotation.data.label || '阻力', position: 'end' }
-    });
-}
-
-function renderVolumeSpike() {
-    // Volume spikes handled in volume series, marking is visual cue
-}
-
-function renderTextLabel(ctx, annotation, bars) {
-    let bar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.timestamp).getTime());
-    if (!bar) {
-        bar = bars.find(b => Math.abs(new Date(b.timestamp) - new Date(annotation.timestamp)) < 3600000);
-    }
-    if (bar) {
-        const idx = bars.indexOf(bar);
-        const price = annotation.data.price || bar.close;
-        if (idx >= 0 && isFinite(idx) && isFinite(price)) {
-            ctx.markPoints.push({
-                coord: [idx, price],
-                value: annotation.data.text || '',
-                symbol: 'none',
-                label: {
-                    show: true,
-                    formatter: annotation.data.text || '',
-                    color: annotation.data.color || '#fff',
-                    fontSize: 12,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    padding: [4, 8],
-                    borderRadius: 4
-                }
-            });
-        }
-    }
-}
-
-function renderRectangle(ctx, annotation, bars) {
-    const startBar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.data.start).getTime());
-    const endBar = bars.find(b => new Date(b.timestamp).getTime() === new Date(annotation.data.end).getTime());
-    if (startBar && endBar) {
-        const startIdx = bars.indexOf(startBar);
-        const endIdx = bars.indexOf(endBar);
-        if (startIdx >= 0 && endIdx >= 0 && isFinite(startBar.close) && isFinite(endBar.close)) {
-            ctx.markLines.push({
-                coords: [[startIdx, startBar.close], [endIdx, endBar.close]],
-                lineStyle: { color: annotation.data.color || '#f6ad55', width: 2 }
-            });
-        }
-    }
-}
-
-function renderPolygon(ctx, annotation, bars) {
-    const points = annotation.data.points || [];
-    const coords = [];
-    points.forEach((point) => {
-        const bar = bars.find(b => {
-            const targetTime = new Date(point).getTime();
-            return new Date(b.timestamp).getTime() === targetTime ||
-                Math.abs(new Date(b.timestamp) - targetTime) < 3600000;
-        });
-        if (bar) {
-            const idx = bars.indexOf(bar);
-            if (idx >= 0 && isFinite(bar.close)) {
-                coords.push([idx, bar.close]);
-            }
-        }
-    });
-
-    if (coords.length >= 2) {
-        ctx.markLines.push({
-            coords,
-            lineStyle: { color: annotation.data.color || '#b794f4', width: 2 },
-            label: { formatter: annotation.data.label || '', position: 'middle' }
-        });
-    }
 }

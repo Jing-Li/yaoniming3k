@@ -36,7 +36,7 @@ class TestRunCommand:
     def test_run_mock_data(self, runner):
         """使用 mock 数据运行回测（不需要真实数据文件）。"""
         result = runner.invoke(cli, [
-            "run", "-s", "MACrossStrategy",
+            "run", "-s", "CaiSenStrategy",
             "--mock",
             "--output-dir", "/tmp/caisen_test_runs",
         ])

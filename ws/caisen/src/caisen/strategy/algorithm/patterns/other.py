@@ -60,15 +60,18 @@ class FlagDetector(PatternDetector):
         upper_line, lower_line = flag_result
 
         # 检查突破
+        pole_start_bar = bars[-self.max_bars] if len(bars) >= self.max_bars else bars[0]
         if pole_direction == "up":
             if current_bar.close > upper_line:
                 return self._create_breakout_signal(
-                    current_bar, upper_line, lower_line, pole_height, "long"
+                    current_bar, upper_line, lower_line, pole_height, "long",
+                    pole_start_bar=pole_start_bar,
                 )
         else:
             if current_bar.close < lower_line:
                 return self._create_breakout_signal(
-                    current_bar, upper_line, lower_line, pole_height, "short"
+                    current_bar, upper_line, lower_line, pole_height, "short",
+                    pole_start_bar=pole_start_bar,
                 )
 
         return None
@@ -138,7 +141,8 @@ class FlagDetector(PatternDetector):
         return (upper, lower)
 
     def _create_breakout_signal(
-        self, bar: "Bar", upper: float, lower: float, pole_height: float, direction: str
+        self, bar: "Bar", upper: float, lower: float, pole_height: float, direction: str,
+        pole_start_bar: "Bar" = None,
     ) -> PatternSignal:
         """创建突破信号
 
@@ -148,6 +152,7 @@ class FlagDetector(PatternDetector):
             lower: 下边界
             pole_height: 旗杆高度
             direction: 方向
+            pole_start_bar: 旗杆起始K线
 
         Returns:
             PatternSignal
@@ -168,12 +173,20 @@ class FlagDetector(PatternDetector):
             target = bar.close - pole_height
             stop_loss = upper * 1.02
 
+        # 构造可视化关键点
+        points = []
+        if pole_start_bar is not None:
+            points.append({"timestamp": pole_start_bar.timestamp.isoformat(),
+                           "price": pole_start_bar.close, "label": "旗杆起点"})
+        points.append({"timestamp": bar.timestamp.isoformat(),
+                       "price": bar.close, "label": "突破点"})
+
         return self._create_signal(
             pattern="flag",
             confidence=confidence,
             stop_loss=stop_loss,
             target=target,
-            points=[],
+            points=points,
             direction=direction,
             volume_grade=volume_grade,
         )
@@ -225,6 +238,10 @@ class RectangleDetector(PatternDetector):
         if amplitude / avg_price > self.max_amplitude:
             return None
 
+        # 找上下边界对应的K线（用于可视化关键点）
+        upper_bar = max(recent, key=lambda b: b.high)
+        lower_bar = min(recent, key=lambda b: b.low)
+
         # 检查突破
         if current_bar.close > upper:
             confidence = self._calculate_rect_confidence(bars, amplitude, avg_price, "up")
@@ -236,7 +253,14 @@ class RectangleDetector(PatternDetector):
                 confidence=confidence,
                 stop_loss=stop_loss,
                 target=target,
-                points=[],
+                points=[
+                    {"timestamp": upper_bar.timestamp.isoformat(),
+                     "price": upper, "label": "上沿"},
+                    {"timestamp": lower_bar.timestamp.isoformat(),
+                     "price": lower, "label": "下沿"},
+                    {"timestamp": current_bar.timestamp.isoformat(),
+                     "price": current_bar.close, "label": "突破"},
+                ],
                 upper=upper,
                 lower=lower,
                 direction="long",
@@ -251,7 +275,14 @@ class RectangleDetector(PatternDetector):
                 confidence=confidence,
                 stop_loss=stop_loss,
                 target=target,
-                points=[],
+                points=[
+                    {"timestamp": upper_bar.timestamp.isoformat(),
+                     "price": upper, "label": "上沿"},
+                    {"timestamp": lower_bar.timestamp.isoformat(),
+                     "price": lower, "label": "下沿"},
+                    {"timestamp": current_bar.timestamp.isoformat(),
+                     "price": current_bar.close, "label": "跌破"},
+                ],
                 upper=upper,
                 lower=lower,
                 direction="short",
@@ -355,12 +386,24 @@ class RoundingBottomDetector(PatternDetector):
             target = neckline + amplitude
             stop_loss = bars[-self.min_bars + low_idx].low * self.stop_loss_factor
 
+            # 构造圆弧底可视化关键点
+            left_rim_bar = bars[-self.min_bars - 1] if len(bars) > self.min_bars else bars[0]
+            bottom_bar = bars[-self.min_bars + low_idx]
+            round_points = [
+                {"timestamp": left_rim_bar.timestamp.isoformat(),
+                 "price": left_rim_bar.high, "label": "左沿"},
+                {"timestamp": bottom_bar.timestamp.isoformat(),
+                 "price": bottom_bar.low, "label": "弧底"},
+                {"timestamp": current_bar.timestamp.isoformat(),
+                 "price": current_bar.close, "label": "突破颈线"},
+            ]
+
             return self._create_signal(
                 pattern="rounding_bottom",
                 confidence=confidence,
                 stop_loss=stop_loss,
                 target=target,
-                points=[],
+                points=round_points,
                 neckline=neckline,
                 direction="long",
                 volume_progressive=is_progressive,
@@ -455,12 +498,31 @@ class CupHandleDetector(PatternDetector):
             target = current_bar.close + amplitude
             stop_loss = cup_bottom * self.stop_loss_factor
 
+            # 构造杯柄形态可视化关键点
+            recent = bars[-self.min_bars-1:-1]
+            left_rim_bar = recent[0]
+            max_idx = [b.high for b in recent].index(max(b.high for b in recent))
+            min_before_max = min(b.low for b in recent[:max_idx]) if max_idx > 0 else cup_bottom
+            min_idx = [b.low for b in recent[:max_idx+1]].index(min_before_max) if max_idx > 0 else 0
+            cup_bottom_bar = bars[-self.min_bars - 1 + min_idx]
+            cup_right_bar = bars[-self.min_bars - 1 + max_idx]
+            cup_points = [
+                {"timestamp": left_rim_bar.timestamp.isoformat(),
+                 "price": left_rim_bar.high, "label": "左沿"},
+                {"timestamp": cup_bottom_bar.timestamp.isoformat(),
+                 "price": cup_bottom_bar.low, "label": "杯底"},
+                {"timestamp": cup_right_bar.timestamp.isoformat(),
+                 "price": cup_right_bar.high, "label": "右沿"},
+                {"timestamp": current_bar.timestamp.isoformat(),
+                 "price": current_bar.close, "label": "突破"},
+            ]
+
             return self._create_signal(
                 pattern="cup_handle",
                 confidence=confidence,
                 stop_loss=stop_loss,
                 target=target,
-                points=[],
+                points=cup_points,
                 handle_high=handle_high,
                 cup_high=cup_high,
                 direction="long",
@@ -561,12 +623,21 @@ class BreakoutPullbackDetector(PatternDetector):
             target = current_bar.close + amplitude
             stop_loss = previous_high * self.stop_loss_factor
 
+            # 构造过前高可视化关键点
+            prev_high_bar = max(lookback, key=lambda b: b.high)
+            breakout_points = [
+                {"timestamp": prev_high_bar.timestamp.isoformat(),
+                 "price": prev_high_bar.high, "label": "前高"},
+                {"timestamp": current_bar.timestamp.isoformat(),
+                 "price": current_bar.close, "label": "突破"},
+            ]
+
             return self._create_signal(
                 pattern="breakout_pullback",
                 confidence=confidence,
                 stop_loss=stop_loss,
                 target=target,
-                points=[],
+                points=breakout_points,
                 breakout_high=previous_high,
                 direction="long",
                 volume_grade=volume_grade,

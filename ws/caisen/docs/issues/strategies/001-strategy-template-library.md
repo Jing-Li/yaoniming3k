@@ -4,7 +4,7 @@
 **Critical** - Strategy generation 基础缺失
 
 ## Problem
-当前只有 MA Cross 示例策略，缺少其他常见策略模板：
+当前只有 CaiSenStrategy 蔡森形态策略，缺少其他常见策略模板：
 - ❌ Mean reversion (RSI, Bollinger Bands)
 - ❌ Breakout strategy
 - ❌ Risk management (stop-loss, position sizing)
@@ -24,7 +24,6 @@
 ```
 src/caisen/strategy/templates/
 ├── trend/
-│   ├── ma_cross.py
 │   └── breakout.py
 ├── mean_reversion/
 │   ├── rsi.py

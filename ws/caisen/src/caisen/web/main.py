@@ -1,11 +1,13 @@
 """可视化报告 Web 服务"""
 
+import asyncio
 import json
 import logging
 import queue
 import re
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -19,6 +21,7 @@ from caisen.config.project_config import ProjectConfig
 from caisen.data.scanner import DataSourceScanner
 from caisen.result.persistence import ResultPersister
 from caisen.strategy.registry import StrategyRegistry
+from caisen.web.optimizer import submit_optimize, submit_evolve, get_job
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -54,6 +57,41 @@ class RunRequest(BaseModel):
             raise ValueError(f"日期格式必须为 YYYY-MM-DD，收到：{v}")
         return v
 
+
+class OptimizeRequest(BaseModel):
+    strategy_name: str = "CaiSenStrategy"
+    symbol: str
+    freq: str
+    start: str
+    end: str
+    workers: int = 4
+    top_n: int = 10
+    param_ranges: Optional[Dict[str, list]] = None
+
+    @field_validator("start", "end")
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        if not _DATE_RE.match(v):
+            raise ValueError(f"日期格式必须为 YYYY-MM-DD，收到：{v}")
+        return v
+
+
+class EvolveRequest(BaseModel):
+    symbol: str
+    freq: str
+    start: str
+    end: str
+    max_generations: int = 5
+    base_prompt: Optional[str] = None
+
+    @field_validator("start", "end")
+    @classmethod
+    def validate_date(cls, v: str) -> str:
+        if not _DATE_RE.match(v):
+            raise ValueError(f"日期格式必须为 YYYY-MM-DD，收到：{v}")
+        return v
+
+
 # 配置（从 configs/project.yaml 读取，无文件时用内嵌默认）
 _project_config = ProjectConfig.load()
 output_dir: str = _project_config.output_dir
@@ -82,6 +120,21 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # 请求日志中间件 — 记录每个请求的方法、路径、状态码和耗时
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        start = time.time()
+        response = await call_next(request)
+        duration_ms = int((time.time() - start) * 1000)
+        # 跳过静态资源和健康检查的详细日志
+        path = request.url.path
+        if path.startswith(('/js/', '/src/', '/node_modules/')):
+            return response
+        level = logging.WARNING if response.status_code >= 400 else logging.INFO
+        logger.log(level, '%s %s → %d (%dms)',
+                   request.method, path, response.status_code, duration_ms)
+        return response
+
     # 路由定义（使用闭包捕获 output_dir）
     @app.get("/")
     async def root():
@@ -109,11 +162,16 @@ def create_app() -> FastAPI:
         """触发回测：预校验策略名，后台执行，立即返回 run_id。"""
         known = {s["name"] for s in StrategyRegistry.list_strategies()}
         if req.strategy_name not in known:
+            logger.warning('回测请求策略不存在: %s', req.strategy_name)
             raise HTTPException(status_code=422, detail=f"策略未注册：{req.strategy_name}")
 
         import datetime
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         run_id_placeholder = f"{req.strategy_name}_{ts}"
+
+        logger.info('回测请求: strategy=%s symbol=%s freq=%s range=%s~%s config=%s → run_id=%s',
+                     req.strategy_name, req.symbol, req.freq, req.start, req.end,
+                     req.config_name or '(default)', run_id_placeholder)
 
         def _bg():
             try:
@@ -300,6 +358,228 @@ def create_app() -> FastAPI:
                 break
 
         await websocket.close()
+
+    # ── 策略中心页面 ──────────────────────────────────────
+
+    @app.get("/strategy.html")
+    async def strategy_page():
+        """返回策略管理与优化页面"""
+        html_path = Path(__file__).parent.parent / "frontend" / "strategy.html"
+        if html_path.exists():
+            return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+        raise HTTPException(status_code=404, detail="策略中心页面未找到")
+
+    # ── 策略详情 ──────────────────────────────────────────
+
+    @app.get("/api/strategies/{name}")
+    async def get_strategy(name: str):
+        """返回单个策略的完整信息：params_schema, config_presets, type, note"""
+        strategies = StrategyRegistry.list_strategies()
+        for s in strategies:
+            if s["name"] == name:
+                return s
+        raise HTTPException(status_code=404, detail=f"策略未注册：{name}")
+
+    # ── 网格搜索优化 ─────────────────────────────────────
+
+    def _load_bars_for_task(symbol: str, freq: str, start: str, end: str):
+        """加载 K 线数据（供优化/进化任务使用）"""
+        from caisen.backtest.runner import _load_bars
+        return _load_bars(_project_config.data_dir, symbol, freq, start, end)
+
+    @app.post("/api/optimize", status_code=202)
+    async def create_optimize(req: OptimizeRequest):
+        """提交网格搜索优化任务，返回 job_id"""
+        try:
+            bars = _load_bars_for_task(req.symbol, req.freq, req.start, req.end)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"数据加载失败：{e}")
+
+        if not bars:
+            raise HTTPException(status_code=422, detail="数据为空，请检查品种/频率/日期范围")
+
+        msg_queue: queue.Queue = queue.Queue()
+
+        def on_progress(completed: int, total: int, msg: str):
+            msg_queue.put({"status": "running", "progress": completed, "total": total, "message": msg})
+
+        job_id = submit_optimize(
+            bars=bars,
+            param_ranges=req.param_ranges,
+            n_workers=req.workers,
+            top_n=req.top_n,
+            on_progress=on_progress,
+        )
+
+        logger.info('优化任务提交: job_id=%s symbol=%s freq=%s', job_id, req.symbol, req.freq)
+        return {"job_id": job_id}
+
+    @app.get("/api/optimize/{job_id}")
+    async def get_optimize_result(job_id: str):
+        """查询优化任务状态和结果"""
+        job = get_job(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail=f"任务未找到：{job_id}")
+        return job.to_dict()
+
+    @app.websocket("/ws/optimize/{job_id}/progress")
+    async def ws_optimize_progress(websocket: WebSocket, job_id: str):
+        """WebSocket 实时推送优化进度"""
+        await websocket.accept()
+
+        job = get_job(job_id)
+        if not job:
+            await websocket.send_json({"status": "error", "message": f"任务未找到：{job_id}"})
+            await websocket.close()
+            return
+
+        try:
+            last_progress = -1
+            while True:
+                job = get_job(job_id)
+                if not job:
+                    break
+
+                # 推送进度更新
+                if job.progress != last_progress:
+                    last_progress = job.progress
+                    await websocket.send_json({
+                        "status": job.status.value,
+                        "progress": job.progress,
+                        "total": job.total,
+                        "message": job.message,
+                    })
+
+                # 终态退出
+                if job.status in ("done", "error"):
+                    if job.status == "done" and job.results:
+                        await websocket.send_json({
+                            "status": "done",
+                            "progress": job.total,
+                            "total": job.total,
+                            "message": job.message,
+                            "results": job.results,
+                        })
+                    elif job.status == "error":
+                        await websocket.send_json({
+                            "status": "error",
+                            "message": job.error or "未知错误",
+                        })
+                    break
+
+                await asyncio.sleep(0.5)
+
+        except Exception:
+            pass  # 客户端已断开
+        finally:
+            try:
+                await websocket.close()
+            except Exception:
+                pass
+
+    # ── Prompt 进化 ───────────────────────────────────────
+
+    @app.post("/api/prompt-evolve", status_code=202)
+    async def create_evolve(req: EvolveRequest):
+        """提交 Prompt 进化任务，返回 job_id"""
+        try:
+            bars = _load_bars_for_task(req.symbol, req.freq, req.start, req.end)
+        except Exception as e:
+            raise HTTPException(status_code=422, detail=f"数据加载失败：{e}")
+
+        if not bars:
+            raise HTTPException(status_code=422, detail="数据为空，请检查品种/频率/日期范围")
+
+        # 将 Bar 对象转为 dict 列表（LLM 策略使用 dict 格式）
+        bars_dict = [
+            {
+                "timestamp": b.timestamp.isoformat(),
+                "open": b.open,
+                "high": b.high,
+                "low": b.low,
+                "close": b.close,
+                "volume": b.volume,
+            }
+            for b in bars
+        ]
+
+        msg_queue: queue.Queue = queue.Queue()
+
+        def on_progress(gen: int, total: int, msg: str):
+            msg_queue.put({"status": "running", "progress": gen, "total": total, "message": msg})
+
+        job_id = submit_evolve(
+            bars=bars_dict,
+            symbol=req.symbol,
+            freq=req.freq,
+            max_generations=req.max_generations,
+            base_prompt=req.base_prompt,
+            on_progress=on_progress,
+        )
+
+        logger.info('进化任务提交: job_id=%s symbol=%s freq=%s', job_id, req.symbol, req.freq)
+        return {"job_id": job_id}
+
+    @app.get("/api/prompt-evolve/{job_id}")
+    async def get_evolve_result(job_id: str):
+        """查询进化任务状态和结果"""
+        job = get_job(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail=f"任务未找到：{job_id}")
+        return job.to_dict()
+
+    @app.websocket("/ws/prompt-evolve/{job_id}/progress")
+    async def ws_evolve_progress(websocket: WebSocket, job_id: str):
+        """WebSocket 实时推送进化进度"""
+        await websocket.accept()
+
+        job = get_job(job_id)
+        if not job:
+            await websocket.send_json({"status": "error", "message": f"任务未找到：{job_id}"})
+            await websocket.close()
+            return
+
+        try:
+            last_progress = -1
+            while True:
+                job = get_job(job_id)
+                if not job:
+                    break
+
+                if job.progress != last_progress:
+                    last_progress = job.progress
+                    await websocket.send_json({
+                        "status": job.status.value,
+                        "progress": job.progress,
+                        "total": job.total,
+                        "message": job.message,
+                    })
+
+                if job.status in ("done", "error"):
+                    if job.status == "done" and job.results:
+                        await websocket.send_json({
+                            "status": "done",
+                            "progress": job.total,
+                            "total": job.total,
+                            "message": job.message,
+                            "results": job.results,
+                        })
+                    elif job.status == "error":
+                        await websocket.send_json({
+                            "status": "error",
+                            "message": job.error or "未知错误",
+                        })
+                    break
+
+                await asyncio.sleep(0.5)
+
+        except Exception:
+            pass  # 客户端已断开
+        finally:
+            try:
+                await websocket.close()
+            except Exception:
+                pass
 
     return app
 

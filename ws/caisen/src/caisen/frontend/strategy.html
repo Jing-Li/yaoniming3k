@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>策略中心 — 策微 CeWei</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="sp-nav">
+        <div class="sp-nav__brand">
+            <a href="/" class="sp-nav__logo">📈 策微</a>
+        </div>
+        <div class="sp-nav__links">
+            <a href="/" class="sp-nav__link">回测中心</a>
+            <a href="/strategy.html" class="sp-nav__link sp-nav__link--active">策略中心</a>
+        </div>
+    </nav>
+
+    <div class="sp-container">
+        <!-- 页面标题 -->
+        <header class="sp-header">
+            <h1 class="sp-header__title">策略中心</h1>
+            <p class="sp-header__subtitle">策略浏览 · 参数优化 · Prompt 进化</p>
+        </header>
+
+        <!-- 主布局：左侧策略浏览器 + 右侧上下文操作面板 -->
+        <div class="sp-main">
+            <!-- 左侧：策略浏览器 -->
+            <aside id="sp-explorer" class="sp-explorer">
+                <h2 class="sp-section-title">策略列表</h2>
+                <div id="sp-strategy-list" class="sp-strategy-list">
+                    <div class="sp-loading">
+                        <div class="spinner"></div>
+                        <span>加载策略...</span>
+                    </div>
+                </div>
+
+                <!-- 策略详情面板（点击卡片展开） -->
+                <div id="sp-strategy-detail" class="sp-strategy-detail" style="display:none;">
+                    <div class="sp-detail-header">
+                        <h3 id="sp-detail-name"></h3>
+                        <span id="sp-detail-type" class="sp-type-badge"></span>
+                    </div>
+                    <div id="sp-detail-note" class="sp-detail-note"></div>
+
+                    <!-- 参数 Schema -->
+                    <h4 class="sp-subsection-title">可调参数</h4>
+                    <div id="sp-params-table" class="sp-params-table"></div>
+
+                    <!-- 配置预设 -->
+                    <h4 class="sp-subsection-title">配置预设</h4>
+                    <div id="sp-presets-list" class="sp-presets-list"></div>
+                </div>
+            </aside>
+
+            <!-- 右侧：上下文操作面板（根据策略类型切换） -->
+            <main class="sp-content">
+
+                <!-- 空状态提示（未选策略时） -->
+                <div id="sp-empty-hint" class="sp-empty-state">
+                    <div class="sp-empty-state__icon">👈</div>
+                    <p>请从左侧选择一个策略</p>
+                </div>
+
+                <!-- === 网格搜索面板（Code 策略） === -->
+                <section id="sp-panel-grid" class="sp-panel" style="display:none;">
+                    <div class="sp-panel-header">
+                        <h2 class="sp-panel-header__title">
+                            <span class="sp-type-badge sp-type--code">Code</span>
+                            网格搜索参数优化
+                        </h2>
+                        <p class="sp-panel-header__desc" id="grid-strategy-label">蔡森策略 — 遍历参数组合找最优回测</p>
+                    </div>
+
+                    <form id="opt-form" class="sp-form" autocomplete="off">
+                        <!-- 策略 & 品种选择 -->
+                        <div class="sp-form-section">
+                            <h4 class="sp-form-section__title">策略与数据</h4>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-strategy">策略</label>
+                                    <select id="opt-strategy" class="sp-select">
+                                        <option value="">加载中...</option>
+                                    </select>
+                                </div>
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-symbol">品种</label>
+                                    <select id="opt-symbol" class="sp-select">
+                                        <option value="">加载中...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-freq">频率</label>
+                                    <select id="opt-freq" class="sp-select">
+                                        <option value="1d">日线</option>
+                                        <option value="60m">60分钟</option>
+                                        <option value="30m">30分钟</option>
+                                        <option value="15m">15分钟</option>
+                                    </select>
+                                </div>
+                                <div class="sp-field sp-field--empty"></div>
+                            </div>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-start">开始日期</label>
+                                    <input type="date" id="opt-start" class="sp-input">
+                                </div>
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-end">结束日期</label>
+                                    <input type="date" id="opt-end" class="sp-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 数值参数范围 -->
+                        <div class="sp-form-section">
+                            <h4 class="sp-form-section__title">搜索范围</h4>
+                            <div id="opt-param-ranges" class="opt-param-ranges">
+                                <p class="sp-muted">加载中...</p>
+                            </div>
+                            <div class="opt-summary" id="opt-summary">
+                                <span class="opt-summary__count" id="opt-total-count">总组合数: —</span>
+                                <span class="opt-summary__time" id="opt-est-time">预估耗时: —</span>
+                            </div>
+                        </div>
+
+                        <!-- 形态预设 -->
+                        <div class="sp-form-section">
+                            <h4 class="sp-form-section__title">形态组合预设</h4>
+                            <div id="opt-pattern-presets" class="opt-pattern-presets"></div>
+                        </div>
+
+                        <!-- 高级选项 -->
+                        <div class="sp-form-section">
+                            <h4 class="sp-form-section__title">高级选项</h4>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-workers">并行线程</label>
+                                    <input type="number" id="opt-workers" class="sp-input" value="4" min="1" max="16">
+                                </div>
+                                <div class="sp-field">
+                                    <label class="sp-label" for="opt-topn">返回 Top N</label>
+                                    <input type="number" id="opt-topn" class="sp-input" value="10" min="1" max="100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="sp-btn sp-btn--primary" id="opt-submit">
+                            开始优化
+                        </button>
+                    </form>
+
+                    <!-- 进度区域 -->
+                    <div id="opt-progress" class="sp-progress" style="display:none;">
+                        <div class="sp-progress__header">
+                            <span class="sp-progress__label">优化进行中...</span>
+                            <span class="sp-progress__pct" id="opt-progress-pct">0%</span>
+                        </div>
+                        <div class="sp-progress__track">
+                            <div class="sp-progress__bar" id="opt-progress-bar"></div>
+                        </div>
+                        <div class="sp-progress__info" id="opt-progress-info">准备中...</div>
+                    </div>
+
+                    <!-- 结果区域（内联在同一面板） -->
+                    <div id="opt-results-area" style="display:none;">
+                        <div class="sp-divider"></div>
+                        <div id="results-table-wrap" class="sp-panel-card" style="display:none;">
+                            <h3 class="sp-panel-title">Top-N 排行</h3>
+                            <div class="sp-table-wrap">
+                                <table class="sp-table" id="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>排名</th>
+                                            <th>评分</th>
+                                            <th>年化收益</th>
+                                            <th>最大回撤</th>
+                                            <th>夏普比率</th>
+                                            <th>胜率</th>
+                                            <th>交易数</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="results-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="results-charts" class="results-charts" style="display:none;">
+                            <div class="sp-panel-card">
+                                <h3 class="sp-panel-title">参数热力图</h3>
+                                <div id="heatmap-chart" class="sp-chart"></div>
+                            </div>
+                            <div class="sp-panel-card">
+                                <h3 class="sp-panel-title">雷达图对比</h3>
+                                <p class="sp-panel-desc">在排行表中勾选 2~3 组参数进行对比</p>
+                                <div id="radar-chart" class="sp-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- === Prompt 进化面板（LLM 策略） === -->
+                <section id="sp-panel-evolve" class="sp-panel" style="display:none;">
+                    <div class="sp-panel-header">
+                        <h2 class="sp-panel-header__title">
+                            <span class="sp-type-badge sp-type--llm">LLM</span>
+                            Prompt 进化
+                        </h2>
+                        <p class="sp-panel-header__desc">LLM 驱动的交易规则自动进化 — 由模型自主学习最优规则表述</p>
+                    </div>
+
+                    <form id="evo-form" class="sp-form" autocomplete="off">
+                        <div class="sp-form-section">
+                            <h4 class="sp-form-section__title">策略与数据</h4>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-strategy">策略</label>
+                                    <select id="evo-strategy" class="sp-select">
+                                        <option value="">加载中...</option>
+                                    </select>
+                                </div>
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-symbol">品种</label>
+                                    <select id="evo-symbol" class="sp-select">
+                                        <option value="">加载中...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-freq">频率</label>
+                                    <select id="evo-freq" class="sp-select">
+                                        <option value="1d">日线</option>
+                                        <option value="60m">60分钟</option>
+                                        <option value="30m">30分钟</option>
+                                        <option value="15m">15分钟</option>
+                                    </select>
+                                </div>
+                                <div class="sp-field sp-field--empty"></div>
+                            </div>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-start">开始日期</label>
+                                    <input type="date" id="evo-start" class="sp-input">
+                                </div>
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-end">结束日期</label>
+                                    <input type="date" id="evo-end" class="sp-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sp-form-section">
+                            <h4 class="sp-form-section__title">进化配置</h4>
+                            <div class="sp-form-row">
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-generations">最大代数</label>
+                                    <input type="number" id="evo-generations" class="sp-input" value="5" min="1" max="20">
+                                </div>
+                                <div class="sp-field">
+                                    <label class="sp-label" for="evo-base-prompt">基础 Prompt</label>
+                                    <textarea id="evo-base-prompt" class="sp-textarea" rows="3" placeholder="可选：输入初始交易规则..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="sp-btn sp-btn--accent" id="evo-submit">
+                            开始进化
+                        </button>
+                    </form>
+
+                    <!-- 进化进度 -->
+                    <div id="evo-progress" class="sp-progress" style="display:none;">
+                        <div class="sp-progress__header">
+                            <span class="sp-progress__label">进化进行中...</span>
+                            <span class="sp-progress__pct" id="evo-progress-pct">0%</span>
+                        </div>
+                        <div class="sp-progress__track">
+                            <div class="sp-progress__bar" id="evo-progress-bar"></div>
+                        </div>
+                        <div class="sp-progress__info" id="evo-progress-info">准备中...</div>
+                    </div>
+
+                    <!-- 实时进化趋势图 -->
+                    <div id="evo-chart-wrap" class="evo-chart-wrap" style="display:none;">
+                        <div id="evo-chart" class="evo-chart"></div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initStrategyPage } from '/js/strategy-page.js';
+        document.addEventListener('DOMContentLoaded', initStrategyPage);
+    </script>
+</body>
+</html>

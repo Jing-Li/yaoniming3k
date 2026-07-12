@@ -5,6 +5,13 @@
  * 策略参数由服务端 configs/strategies/*.yaml 管理，前端只选配置预设名。
  */
 
+import { createLogger } from './logger.js';
+import { toast } from './toast.js';
+
+const log = createLogger('BacktestPanel');
+
+const STORAGE_KEY = 'caisen_bp_form';
+
 // ---------------------------------------------------------------------------
 // 纯函数（可测试）
 // ---------------------------------------------------------------------------
@@ -69,11 +76,169 @@ export function handleWsMessage(msg) {
 }
 
 // ---------------------------------------------------------------------------
+// 日期快选 Chips
+// ---------------------------------------------------------------------------
+
+const RANGE_DAYS = {
+  '1w': 7,
+  '1m': 30,
+  '3m': 90,
+  '6m': 180,
+  '1y': 365,
+};
+
+/**
+ * 格式化日期为 YYYY-MM-DD
+ */
+function _fmtDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * 点击日期快选 chip 时计算并填充日期
+ * @param {string} rangeKey - '1w' | '1m' | '3m' | '6m' | '1y' | 'all'
+ */
+function _onChipClick(rangeKey) {
+  const startEl = document.getElementById('bp-start');
+  const endEl = document.getElementById('bp-end');
+  if (!startEl || !endEl) return;
+
+  // 获取数据源的可用范围
+  const dsRange = _getCurrentDataSourceRange();
+
+  if (rangeKey === 'all') {
+    // "全部" = 数据源的完整范围
+    if (dsRange) {
+      startEl.value = dsRange.start;
+      endEl.value = dsRange.end;
+    }
+  } else {
+    const days = RANGE_DAYS[rangeKey];
+    if (!days) return;
+
+    // end = 数据源的结束日期 或 今天
+    const endStr = dsRange?.end || _fmtDate(new Date());
+    const endDate = new Date(endStr);
+
+    // start = end - N days
+    const startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - days);
+
+    // 不能早于数据源的起始日期
+    if (dsRange && startDate < new Date(dsRange.start)) {
+      startDate.setTime(new Date(dsRange.start).getTime());
+    }
+
+    endEl.value = endStr;
+    startEl.value = _fmtDate(startDate);
+  }
+
+  // 高亮当前 chip
+  _highlightChip(rangeKey);
+  _saveFormState();
+  log.info('日期快选 →', rangeKey, { start: startEl.value, end: endEl.value });
+}
+
+/**
+ * 获取当前选中数据源的日期范围
+ */
+function _getCurrentDataSourceRange() {
+  const dsVal = document.getElementById('bp-datasource')?.value;
+  if (!dsVal) return null;
+  const [symbol, freq] = dsVal.split('|');
+  const source = _dataSourcesCache.find(s => s.symbol === symbol && s.freq === freq);
+  return source?.date_range || null;
+}
+
+/**
+ * 高亮选中的 chip，取消其他 chip
+ */
+function _highlightChip(rangeKey) {
+  document.querySelectorAll('#bp-date-chips .bp-chip').forEach(btn => {
+    btn.classList.toggle('is-active', btn.dataset.range === rangeKey);
+  });
+}
+
+/**
+ * 清除 chip 高亮（手动修改日期时调用）
+ */
+function _clearChipSelection() {
+  document.querySelectorAll('#bp-date-chips .bp-chip').forEach(btn => {
+    btn.classList.remove('is-active');
+  });
+}
+
+// ---------------------------------------------------------------------------
 // DOM 操作（页面加载时初始化）
 // ---------------------------------------------------------------------------
 
 /** 策略列表缓存（strategy_name → strategy 对象），供切换策略时查预设 */
 let _strategiesCache = [];
+/** 数据源缓存 */
+let _dataSourcesCache = [];
+
+/**
+ * 保存表单状态到 localStorage
+ */
+function _saveFormState() {
+  try {
+    const state = {
+      strategy: document.getElementById('bp-strategy')?.value || '',
+      datasource: document.getElementById('bp-datasource')?.value || '',
+      preset: document.getElementById('bp-preset')?.value || '',
+      start: document.getElementById('bp-start')?.value || '',
+      end: document.getElementById('bp-end')?.value || '',
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    log.debug('表单状态已保存', state);
+  } catch (e) {
+    log.warn('保存表单状态失败', e);
+  }
+}
+
+/**
+ * 恢复表单状态从 localStorage
+ */
+function _restoreFormState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const state = JSON.parse(raw);
+
+    const strategyEl = document.getElementById('bp-strategy');
+    const dsEl = document.getElementById('bp-datasource');
+    const startEl = document.getElementById('bp-start');
+    const endEl = document.getElementById('bp-end');
+
+    if (state.strategy && strategyEl) strategyEl.value = state.strategy;
+    if (state.datasource && dsEl) dsEl.value = state.datasource;
+    if (state.start && startEl) startEl.value = state.start;
+    if (state.end && endEl) endEl.value = state.end;
+
+    // Trigger strategy change to update presets
+    if (state.strategy) {
+      _onStrategyChange({ target: strategyEl });
+      if (state.preset) {
+        const presetEl = document.getElementById('bp-preset');
+        if (presetEl) presetEl.value = state.preset;
+      }
+    }
+
+    // Trigger datasource change to update range hint (without overwriting dates)
+    if (state.datasource && dsEl) {
+      const [sym, frq] = (state.datasource || '').split('|');
+      const src = _dataSourcesCache.find(s => s.symbol === sym && s.freq === frq);
+      _updateDsRangeHint(src?.date_range || null);
+    }
+
+    log.info('表单状态已恢复', state);
+  } catch (e) {
+    log.warn('恢复表单状态失败', e);
+  }
+}
 
 /**
  * 初始化"新建回测"面板
@@ -83,7 +248,7 @@ export async function initBacktestPanel() {
   const panel = document.getElementById('backtest-panel');
   if (!panel) return;
 
-  console.log('[BacktestPanel] 初始化开始');
+  log.info('初始化开始');
 
   // 并行加载策略和数据源
   const [strategiesOk, sourcesOk] = await Promise.all([
@@ -91,8 +256,8 @@ export async function initBacktestPanel() {
     _loadDataSources(),
   ]);
 
-  if (!strategiesOk) console.warn('[BacktestPanel] 策略列表加载失败，表单不可用');
-  if (!sourcesOk) console.warn('[BacktestPanel] 数据源列表加载失败，表单不可用');
+  if (!strategiesOk) log.warn('策略列表加载失败，表单不可用');
+  if (!sourcesOk) log.warn('数据源列表加载失败，表单不可用');
 
   // 策略切换 → 更新配置预设下拉
   const strategySelect = document.getElementById('bp-strategy');
@@ -100,46 +265,81 @@ export async function initBacktestPanel() {
     strategySelect.addEventListener('change', _onStrategyChange);
   }
 
+  // 数据源切换 → 自动填充日期 + 显示范围
+  const dsSelect = document.getElementById('bp-datasource');
+  if (dsSelect) {
+    dsSelect.addEventListener('change', _onDataSourceChange);
+  }
+
+  // 日期快选 chips
+  const chipsWrap = document.getElementById('bp-date-chips');
+  if (chipsWrap) {
+    chipsWrap.addEventListener('click', (e) => {
+      const chip = e.target.closest('.bp-chip');
+      if (chip?.dataset.range) _onChipClick(chip.dataset.range);
+    });
+  }
+
+  // 手动修改日期 → 清除 chip 高亮
+  const startInput = document.getElementById('bp-start');
+  const endInput = document.getElementById('bp-end');
+  if (startInput) startInput.addEventListener('change', _clearChipSelection);
+  if (endInput) endInput.addEventListener('change', _clearChipSelection);
+
   // 表单提交
   const form = document.getElementById('bp-form');
   if (form) {
     form.addEventListener('submit', _onFormSubmit);
+    // 表单变化时保存状态
+    form.addEventListener('change', _saveFormState);
   }
 
-  console.log('[BacktestPanel] 初始化完成');
+  // 恢复上次填写的表单状态
+  _restoreFormState();
+
+  log.info('初始化完成');
 }
 
 async function _loadStrategies() {
+  log.time('GET /api/strategies');
   try {
     const resp = await fetch('/api/strategies');
     if (!resp.ok) {
-      console.error('[BacktestPanel] GET /api/strategies 返回', resp.status);
+      log.error('GET /api/strategies 返回', resp.status);
+      toast.error('策略列表加载失败', { detail: `HTTP ${resp.status}` });
       return false;
     }
     const data = await resp.json();
     _strategiesCache = data.strategies || [];
     _populateStrategySelect(_strategiesCache);
-    console.log('[BacktestPanel] 策略列表加载成功，共', _strategiesCache.length, '个');
+    log.timeEnd('GET /api/strategies');
+    log.info('策略列表加载成功，共', _strategiesCache.length, '个');
     return true;
   } catch (e) {
-    console.error('[BacktestPanel] GET /api/strategies 异常', e);
+    log.error('GET /api/strategies 异常', e);
+    toast.error('策略列表加载失败', { detail: e.message });
     return false;
   }
 }
 
 async function _loadDataSources() {
+  log.time('GET /api/data-sources');
   try {
     const resp = await fetch('/api/data-sources');
     if (!resp.ok) {
-      console.error('[BacktestPanel] GET /api/data-sources 返回', resp.status);
+      log.error('GET /api/data-sources 返回', resp.status);
+      toast.error('数据源列表加载失败', { detail: `HTTP ${resp.status}` });
       return false;
     }
     const data = await resp.json();
-    _populateDataSourceSelect(data.data_sources || []);
-    console.log('[BacktestPanel] 数据源加载成功，共', (data.data_sources || []).length, '个');
+    _dataSourcesCache = data.data_sources || [];
+    _populateDataSourceSelect(_dataSourcesCache);
+    log.timeEnd('GET /api/data-sources');
+    log.info('数据源加载成功，共', _dataSourcesCache.length, '个');
     return true;
   } catch (e) {
-    console.error('[BacktestPanel] GET /api/data-sources 异常', e);
+    log.error('GET /api/data-sources 异常', e);
+    toast.error('数据源列表加载失败', { detail: e.message });
     return false;
   }
 }
@@ -196,8 +396,50 @@ function _onStrategyChange(e) {
   // 配置预设下拉
   _populatePresetSelect(strategy?.config_presets || []);
 
-  console.log('[BacktestPanel] 策略切换 →', strategyName,
-    '预设数量:', strategy?.config_presets?.length ?? 0);
+  log.info('策略切换 →', strategyName, '预设数量:', strategy?.config_presets?.length ?? 0);
+}
+
+/**
+ * 数据源切换时自动填充日期范围 + 显示范围提示
+ */
+function _onDataSourceChange(e) {
+  const dsVal = e.target.value;
+  if (!dsVal) {
+    _updateDsRangeHint(null);
+    return;
+  }
+
+  const [symbol, freq] = dsVal.split('|');
+  const source = _dataSourcesCache.find(s => s.symbol === symbol && s.freq === freq);
+
+  _updateDsRangeHint(source?.date_range);
+
+  if (source?.date_range) {
+    const startEl = document.getElementById('bp-start');
+    const endEl = document.getElementById('bp-end');
+    // 始终填充：如果用户没手动改过就用数据源范围
+    if (startEl) startEl.value = source.date_range.start;
+    if (endEl) endEl.value = source.date_range.end;
+    // 自动高亮"全部" chip
+    _highlightChip('all');
+    _saveFormState();
+    log.info('数据源切换 → 自动填充日期', source.date_range);
+  }
+}
+
+/**
+ * 更新数据源范围提示文本
+ */
+function _updateDsRangeHint(dateRange) {
+  const hintEl = document.getElementById('bp-ds-range');
+  if (!hintEl) return;
+  if (!dateRange) {
+    hintEl.textContent = '';
+    hintEl.style.display = 'none';
+    return;
+  }
+  hintEl.textContent = `📅 ${dateRange.start} ~ ${dateRange.end}`;
+  hintEl.style.display = 'block';
 }
 
 async function _onFormSubmit(e) {
@@ -212,36 +454,41 @@ async function _onFormSubmit(e) {
 
   // 前端必填校验
   _clearError();
-  if (!strategyName) { _showError('请选择策略'); return; }
-  if (!symbol || !freq) { _showError('请选择数据源'); return; }
-  if (!start) { _showError('请填写开始日期'); return; }
-  if (!end) { _showError('请填写结束日期'); return; }
-  if (start > end) { _showError('开始日期不能晚于结束日期'); return; }
+  if (!strategyName) { _showError('请选择策略'); toast.warn('请选择策略'); return; }
+  if (!symbol || !freq) { _showError('请选择数据源'); toast.warn('请选择数据源'); return; }
+  if (!start) { _showError('请填写开始日期'); toast.warn('请填写开始日期'); return; }
+  if (!end) { _showError('请填写结束日期'); toast.warn('请填写结束日期'); return; }
+  if (start > end) { _showError('开始日期不能晚于结束日期'); toast.warn('开始日期不能晚于结束日期'); return; }
 
   const reqBody = buildRunRequest({ strategy_name: strategyName, symbol, freq, start, end, config_name: configName });
-  console.log('[BacktestPanel] 提交回测请求', reqBody);
+  log.info('提交回测请求', reqBody);
 
   _showProgress();
+  toast.info('回测已提交，正在执行...', { detail: `${strategyName} ${symbol}/${freq}` });
 
+  log.time('POST /api/runs');
   try {
     const resp = await fetch('/api/runs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqBody),
     });
+    log.timeEnd('POST /api/runs');
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       const msg = err.detail || `HTTP ${resp.status}`;
-      console.error('[BacktestPanel] POST /api/runs 失败', resp.status, err);
+      log.error('POST /api/runs 失败', resp.status, err);
       _showError(msg);
+      toast.error('回测提交失败', { detail: msg });
       return;
     }
     const { run_id } = await resp.json();
-    console.log('[BacktestPanel] run_id', run_id, '，开始 WebSocket 进度监听');
+    log.info('run_id', run_id, '，开始 WebSocket 进度监听');
     _connectWebSocket(run_id, reqBody);
   } catch (err) {
-    console.error('[BacktestPanel] POST /api/runs 异常', err);
+    log.error('POST /api/runs 异常', err);
     _showError(String(err));
+    toast.error('回测提交异常', { detail: err.message });
   }
 }
 
@@ -256,7 +503,7 @@ function _connectWebSocket(runId, reqBody) {
   if (reqBody.config_name) wsParams.config_name = reqBody.config_name;
 
   const url = buildWsUrl(runId, wsParams);
-  console.log('[BacktestPanel] WebSocket 连接', url);
+  log.info('WebSocket 连接', url);
   const ws = new WebSocket(url);
 
   // Connection timeout: abort if not connected within 10 s
@@ -264,66 +511,72 @@ function _connectWebSocket(runId, reqBody) {
   const IDLE_TIMEOUT_MS = 60_000;
   let connectTimer = setTimeout(() => {
     if (ws.readyState === WebSocket.CONNECTING) {
-      console.error('[BacktestPanel] WebSocket 连接超时');
+      log.error('WebSocket 连接超时 (10s)');
       ws.close();
       _showError('WebSocket 连接超时，请检查后端服务');
+      toast.error('WebSocket 连接超时', { detail: '请检查后端服务是否正常运行' });
     }
   }, CONNECT_TIMEOUT_MS);
 
   // Idle timeout: reset on every message
   let idleTimer = setTimeout(() => {
-    console.error('[BacktestPanel] WebSocket 无响应超时');
+    log.error('WebSocket 无响应超时 (60s)');
     ws.close();
     _showError('回测无响应，请检查后端服务');
+    toast.error('回测无响应', { detail: 'WebSocket 60秒无消息' });
   }, IDLE_TIMEOUT_MS);
 
   ws.onopen = () => {
     clearTimeout(connectTimer);
-    console.log('[BacktestPanel] WebSocket 已连接');
+    log.info('WebSocket 已连接');
   };
 
   ws.onmessage = (event) => {
     // Reset idle timer on every message
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      console.error('[BacktestPanel] WebSocket 无响应超时');
+      log.error('WebSocket 无响应超时 (60s)');
       ws.close();
       _showError('回测无响应，请检查后端服务');
+      toast.error('回测无响应', { detail: 'WebSocket 60秒无消息' });
     }, IDLE_TIMEOUT_MS);
 
     let msg;
     try {
       msg = JSON.parse(event.data);
     } catch (e) {
-      console.error('[BacktestPanel] WS 消息解析失败', event.data, e);
+      log.error('WS 消息解析失败', event.data, e);
       return;
     }
-    console.log('[BacktestPanel] WS 消息', msg.status, msg);
+    log.debug('WS 消息', msg.status, msg);
     const result = handleWsMessage(msg);
     if (result.action === 'progress') {
       _updateProgress(result.payload);
     } else if (result.action === 'redirect') {
       clearTimeout(idleTimer);
-      console.log('[BacktestPanel] 回测完成，跳转', result.payload);
-      location.href = result.payload;
+      log.info('回测完成，跳转', result.payload);
+      toast.success('回测完成！', { detail: `run_id: ${msg.run_id}` });
+      setTimeout(() => { location.href = result.payload; }, 800);
     } else if (result.action === 'error') {
       clearTimeout(idleTimer);
-      console.error('[BacktestPanel] 回测失败', result.payload);
+      log.error('回测失败', result.payload);
       _showError(result.payload);
+      toast.error('回测失败', { detail: result.payload });
     }
   };
 
   ws.onerror = (e) => {
     clearTimeout(connectTimer);
     clearTimeout(idleTimer);
-    console.error('[BacktestPanel] WebSocket 错误', e);
+    log.error('WebSocket 错误', e);
     _showError('WebSocket 连接失败');
+    toast.error('WebSocket 连接失败');
   };
 
   ws.onclose = (e) => {
     clearTimeout(connectTimer);
     clearTimeout(idleTimer);
-    console.log('[BacktestPanel] WebSocket 关闭，code:', e.code);
+    log.info('WebSocket 关闭，code:', e.code, 'reason:', e.reason || '(none)');
   };
 }
 

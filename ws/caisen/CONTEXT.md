@@ -12,13 +12,25 @@ _Avoid_: 模拟交易、策略测试
 由用户实现的、遵循约定接口的交易逻辑。回测系统负责加载并执行策略。一个策略定义了何时买入、何时卖出、仓位管理等规则。
 
 **Code Strategy（代码策略）**:
-以 Python 代码形式实现的策略。继承 `Strategy` 基类，硬编码交易逻辑（如 MA 金叉死叉）。
+以 Python 代码形式实现的策略。继承 `Strategy` 基类，硬编码交易逻辑（如蔡森形态识别）。
 
 **LLM Strategy（LLM 策略）**:
-以大语言模型驱动的策略。通过 Prompt 描述交易逻辑，LLM 根据历史数据自主决策。策略提供数据，LLM 提供决策。采用离线预计算模式：历史数据一次性喂给 LLM，决策结果缓存后逐帧回放给回测引擎。
+以大语言模型驱动的策略。通过 Prompt 描述交易逻辑，LLM 根据历史数据自主决策。策略提供数据，LLM 提供决策。采用**递增窗口预计算**模式：on_init 阶段逐根 K 线调用 LLM（每根 bar 看到从第一根到当前的完整历史），LLM 返回当前 bar 的交易信号和形态标注，缓存后逐帧回放给回测引擎。不改变回测引擎逻辑。
+
+**递增窗口（Expanding Window）**:
+LLM 策略的默认分析模式。对第 i 根 K 线，向 LLM 发送 `bars[0:i+1]`（从第一根到当前根的全部历史），LLM 基于完整历史自主判断并输出当前 bar 的信号。确保每根 bar 只能看到 ≤ 自身时间戳的数据，无未来数据泄漏。模拟真实交易者在每个时间点能看到的全部历史K线图。
+_Avoid_: 滚动窗口、固定 lookback
+_参见_: `LLMStrategy._analyze_walk_forward()`（`src/caisen/strategy/llm/strategy.py`）
 
 **离线预计算（Offline Pre-computation）**:
-LLM 策略的架构模式。将完整历史数据一次性发送给 LLM 分析，LLM 返回所有时间点的信号和标注，策略缓存后逐帧回放。不改变回测引擎逻辑。
+LLM 策略的架构模式。在 on_init 阶段完成所有 LLM 调用（递增窗口或批量），将信号和标注缓存后逐帧回放。递增窗口是默认模式（无未来数据泄漏），批量模式（walk_forward=False）为快速验证备选（有未来数据泄漏，日志会输出 WARNING）。
+
+**MA 预计算（MA Pre-computation）**:
+在 LLM 调用前，为每根 bar 预计算 MA5、MA20 等移动平均线并注入 bar 数据字典。LLM 是语言模型，算术能力弱（多位数加减乘除经常出错），预计算确保指标数值精确，让 LLM 专注于逻辑判断（如 `ma5 > ma20 → 上升趋势`）。
+_参见_: `LLMStrategy._enrich_bars_with_ma()`（`src/caisen/strategy/llm/strategy.py`）
+
+**信号标注同源（Signal-Annotation Co-source）**:
+LLM 策略的交易信号（buy/sell/hold）与技术形态标注（W底、头肩等）必须由同一轮 LLM 调用生成，保持因果一致性。信号决策基于当前窗口内识别出的形态，标注是信号的可视化解释。禁止将信号生成与形态标注拆分为独立的两阶段调用。标注收集采用 timestamp+type 去重，避免重复。
 
 **Strategy Plugin（策略插件）**:
 一种具体的 Strategy 实现，以独立的 Python 文件形式存放在约定目录中。回测系统通过配置文件指定路径加载。
@@ -135,7 +147,7 @@ Python 插件机制。caisen 定义 `caisen.datasources` 入口点，数据源�
 YAML 格式的回测参数文件。包含初始资金、手续费率、策略参数、数据范围、LLM 配置、Checkpoint 配置等。
 
 **Run ID（运行ID）**:
-一次 Run 的唯一标识符，格式为 `{策略名}_{YYYYMMDD}_{序号}`，如 `MACrossStrategy_20260518_1`。序号从 1 开始，同一策略同日多次运行自动递增。用于关联结果文件和后续查询。
+一次 Run 的唯一标识符，格式为 `{策略名}_{YYYYMMDD}_{序号}`，如 `CaiSenStrategy_20260518_1`。序号从 1 开始，同一策略同日多次运行自动递增。用于关联结果文件和后续查询。
 
 **Run Directory（结果目录）**:
 `./runs/{run_id}/` 下的目录结构，保存一次回测的所有输出文件。
@@ -252,7 +264,31 @@ _参见_: `strategy/algorithm/caisen_components/position_manager.py`
 
 **Walk-Forward Validation（滚动窗口验证）**:
 参数优化的防过拟合验证方法。将历史数据分为N段，每段前70%用于训练优化、后30%用于测试验证，窗口逐步向前滚动。最终指标取所有测试段的平均值，代表参数的样本外真实表现。
+_Avoid_: 样本外测试
 _参见_: ADR-0019
+
+**LLM 递增窗口验证（LLM Expanding Window）**:
+LLM 策略的防未来数据泄漏机制。对每根 K 线只发送 ≤ 当前时间戳的历史数据，确保 LLM 决策时无法看到未来。与 Walk-Forward Validation 不同：前者用于参数优化的防过拟合，后者用于 LLM 策略的防数据泄漏。
+_参见_: 递增窗口（Expanding Window）
+
+**网格暴力参数法（Grid Search）**:
+CaiSenStrategy 的参数优化方式。将 8 个参数维度离散为有限组合（~2160 组），`itertools.product` 笛卡尔积遍历所有组合，按综合评分排序选优。实现于 `caisen_optimizer.py`，CLI 命令 `caisen optimize`。
+_参见_: ADR-0019
+
+**策略中心（Strategy Center）**:
+前端策略浏览与优化的专用页面（`strategy.html`）。左侧栏为策略浏览器（`strategy-explorer.js`），展示 params_schema 和搜索范围；右侧为网格搜索面板（`optimize-panel.js`，CaiSen 专属）和进化面板（`evolve-panel.js`，LLM 专属），根据策略类型自动切换。
+_参见_: `strategy-page.js`、`switchPanel()`
+
+**params_schema 增强（params_schema Enrichment）**:
+`registry.py` 在 `list_strategies()` 中对 CaiSen 策略调用 `_enrich_schema_with_ranges()`，将 `optimize_config` 的真实 GridSearchConfig 搜索值注入 `params_schema.options` 字段；对 LLM 策略调用 `_build_llm_schema()`，生成含 prompt 模板（`type="text"` + `full_text`）的专用 schema。前端据此展示真实参数范围而非硬编码默认值。
+_参见_: `StrategyRegistry`（`src/caisen/strategy/registry.py`）
+
+**网格智能蔡森参数法（LLM Param Optimizer）**:
+CaiSenStrategy 的智能参数优化方式。LLM 理解蔡森理论后推理参数值，每轮回测后分析指标反馈，迭代 10~20 轮收敛。与网格暴力参数法互补，不替代。
+
+**智能蔡森策略（LLMStrategy）**:
+纯 LLM 驱动的交易策略，不使用蔡森形态检测器。LLM 直接分析 K 线数据出信号，通过 Prompt Evolution 进化交易规则。
+_参见_: ADR-0004
 
 **Adaptive Optimization（自适应优化）**:
 策略参数的自动迭代更新机制。当近期表现显著劣于历史基线（夏普比率衰退>30%或回撤超限）时，自动触发增量重优化。基于上次最优参数附近搜索（warm-start），而非从头全局搜索。
@@ -272,6 +308,8 @@ _参见_: ADR-0019
 - **Annotation** 按 **AnnotationType** 分类，**Annotation Filter** 控制各类标注在可视化报告中的可见性
 - **LLM Strategy** 调用 **LLM Provider** 获取决策，响应缓存在 **LLM Cache** 中
 - **LLM Strategy** 的决策可能包含 **Annotation**，用于回测报告可视化
+- **LLM Strategy** 采用**递增窗口**模式逐根分析，每根 bar 的**信号与标注同源**（同一轮 LLM 调用产出）
+- **LLM Strategy** 在调用 LLM 前进行 **MA 预计算**，注入 MA5/MA20 等指标供 LLM 做逻辑判断
 - **Code Strategy** 和 **LLM Strategy** 可通过 **Compare Mode** 对比
 - **Data Fetcher** 从 **DataSource** 获取数据，写入本地存储；回测时 **BacktestEngine** 从本地加载
 - **Checkpoint** 可保存和恢复 **BacktestEngine** 的运行状态，实现断点续传
@@ -284,6 +322,8 @@ _参见_: ADR-0019
 - **ProjectConfig** 为 **BacktestRunner**、**Web API**、**CLI** 提供统一的 `data_dir`、`output_dir` 配置，消除硬编码路径
 - **StrategyRegistry** 实现 **Strategy Discovery**，供 **Web API** `/api/strategies` 端点消费，前端渲染策略下拉和配置预设下拉
 - **DataSourceScanner** 扫描 `ProjectConfig.data_dir`，供 **Web API** `/api/data-sources` 端点消费，前端渲染数据源下拉
+- **策略中心** 消费 **StrategyRegistry** 的 `params_schema`（含增强后的真实搜索范围），`switchPanel()` 根据策略类型自动切换网格搜索面板或进化面板
+- **StrategyRegistry** 的 `_enrich_schema_with_ranges()` 将 `GridSearchConfig` 参数范围注入 **params_schema**，`_build_llm_schema()` 为 LLM 策略生成含 prompt 模板的专用 schema
 
 ## Example dialogue
 
@@ -291,7 +331,7 @@ _参见_: ADR-0019
 > **Domain expert:** "市价单在下一根 K 线开盘价成交。引擎调用撮合逻辑，更新 **Portfolio** 和 **Position**，生成一条 **Trade** 记录。"
 
 > **Dev:** "LLM 策略和代码策略有什么区别？"
-> **Domain expert:** "**Code Strategy** 是硬编码的交易逻辑（如 MA 金叉），**LLM Strategy** 通过 Prompt 让大模型自主决策。两者接口一致，都返回 **Order**，但 LLM 策略可能返回额外的 **Annotation** 用于可视化。"
+> **Domain expert:** "**Code Strategy** 是硬编码的交易逻辑（如蔡森形态识别），**LLM Strategy** 通过 Prompt 让大模型自主决策。两者接口一致，都返回 **Order**，但 LLM 策略可能返回额外的 **Annotation** 用于可视化。"
 
 > **Dev:** "回测中断后怎么继续？"
 > **Domain expert:** "引擎会定期保存 **Checkpoint**，包含已处理的 K 线索引和 **Portfolio** 状态。使用 `caisen run --resume <checkpoint_file>` 从断点继续。"
@@ -337,9 +377,12 @@ src/caisen/
 ├── frontend/          # 前端代码（Vite 项目，ES6 模块化，详见 ADR-0010）
 │   └── src/js/
 │       ├── backtest-panel.js  # 新建回测面板（表单、WebSocket 进度、参数渲染）
+│       ├── strategy-page.js   # 策略中心主控（策略/品种下拉、面板切换）
+│       ├── strategy-explorer.js # 策略浏览器侧栏（卡片、params_schema 展示）
+│       ├── optimize-panel.js  # 网格搜索面板（CaiSen 专属，真实参数范围）
+│       ├── evolve-panel.js    # Prompt 进化面板（LLM 专属）
 │       └── ...（其余模块）
-├── cli/               # 命令行工具
-└── lint_structure.py  # 目录结构检查
+└── cli/               # 命令行工具
 
 根目录结构：
 ├── configs/                  # 配置文件（YAML）

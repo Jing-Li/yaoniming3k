@@ -54,20 +54,20 @@ caisen --help
 无需准备数据，使用模拟数据快速测试：
 
 ```bash
-# 运行均线交叉策略
-caisen run -s MACrossStrategy --mock
+# 运行蔡森策略
+caisen run -s CaiSenStrategy --mock
 
 # 指定回测参数
-caisen run -s MACrossStrategy --mock --symbol ag --start 2024-01-01 --end 2024-12-31
+caisen run -s CaiSenStrategy --mock --symbol ag --start 2024-01-01 --end 2024-12-31
 ```
 
 输出示例：
 ```
 Loaded 365 mock bars for ag
-Running backtest with strategy: MACrossStrategy
+Running backtest with strategy: CaiSenStrategy
 
 Backtest Complete!
-Run ID: MACrossStrategy_20260518_1
+Run ID: CaiSenStrategy_20260518_1
 Total Trades: 12
 Final Equity: 108542.50
 Total Return: 8.54%
@@ -80,7 +80,7 @@ Total Return: 8.54%
 caisen list-runs
 
 # 查看详细指标
-caisen show-result MACrossStrategy_20260518_1
+caisen show-result CaiSenStrategy_20260518_1
 ```
 
 ### 3. 启动可视化服务
@@ -90,7 +90,7 @@ caisen show-result MACrossStrategy_20260518_1
 caisen serve
 
 # 指定端口和直接打开某个回测
-caisen serve --port 8080 --run-id MACrossStrategy_20260518_1
+caisen serve --port 8080 --run-id CaiSenStrategy_20260518_1
 ```
 
 打开浏览器访问 `http://localhost:8000` 查看可视化报告。
@@ -113,7 +113,7 @@ caisen-data fetch --symbol ag --start 2024-01-01 --end 2024-12-31 --freq 1h
 然后回到 caisen 运行回测：
 
 ```bash
-caisen run -s MACrossStrategy --symbol ag --start 2024-01-01 --end 2024-12-31
+caisen run -s CaiSenStrategy --symbol ag --start 2024-01-01 --end 2024-12-31
 ```
 
 ## CLI 命令
@@ -142,10 +142,10 @@ Options:
 caisen run -s ./strategies/my_strategy.py --symbol ag --mock
 
 # 使用配置文件
-caisen run -s MACrossStrategy -c config/backtest.yaml
+caisen run -s CaiSenStrategy -c config/backtest.yaml
 
 # 指定输出目录
-caisen run -s MACrossStrategy --mock --output-dir /tmp/results
+caisen run -s CaiSenStrategy --mock --output-dir /tmp/results
 ```
 
 ### `caisen list-runs`
@@ -190,7 +190,7 @@ Options:
 
 ```
 runs/
-├── MACrossStrategy_20260518_1/
+├── CaiSenStrategy_20260518_1/
 │   ├── meta.json          # 元数据
 │   ├── data.json          # 可视化数据（前端专用）
 │   ├── bars.parquet       # K 线数据
@@ -204,7 +204,7 @@ runs/
 
 `{策略名}_{YYYYMMDD}_{序号}`
 
-- 示例：`MACrossStrategy_20260518_1`
+- 示例：`CaiSenStrategy_20260518_1`
 - 同日同名策略重复运行，序号自动递增
 
 ### data.json 结构
@@ -214,7 +214,7 @@ runs/
 ```json
 {
   "meta": {
-    "strategy_name": "MACrossStrategy",
+    "strategy_name": "CaiSenStrategy",
     "symbol": "ag",
     "start": "2024-01-01T00:00:00",
     "end": "2024-12-31T00:00:00",
@@ -305,8 +305,8 @@ caisen/
 │   │   └── loader.py     # 数据加载器
 │   ├── strategy/         # 策略实现
 │   │   ├── base.py       # 策略基类
-│   │   ├── ma_cross.py   # 均线策略
-│   │   └── cai_sen.py    # 蔡森形态
+│   │   ├── cai_sen.py    # 蔡森形态策略
+│   │   └── llm/          # LLM 策略
 │   ├── result/           # 结果分析
 │   │   ├── persistence.py # 结果持久化
 │   │   └── metrics.py    # 绩效指标

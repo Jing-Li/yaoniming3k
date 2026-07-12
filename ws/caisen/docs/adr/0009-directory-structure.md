@@ -21,32 +21,64 @@ Accepted
 
 ```
 src/caisen/
-├── core/          # 回测引擎核心
-│   ├── engine.py  # BacktestEngine
-│   ├── config.py  # Config 类
-│   ├── bar.py     # Bar 数据类型
-│   └── order.py   # Order 数据类型
-├── strategy/      # 策略实现
-│   ├── base.py    # Strategy 基类
-│   ├── patterns/  # 形态检测器（W底、M头、三角等）
-│   ├── llm/       # LLM 策略（离线预计算）
-│   └── *.py       # 其他策略（MACrossStrategy 等）
-├── data/          # 数据加载模块
-│   ├── source.py  # DataSource 接口
-│   ├── local_source.py  # 本地数据源实现
-│   ├── config.py  # DataConfig
-│   ├── registry.py  # 数据源注册表
+├── core/              # 回测引擎核心
+│   ├── engine.py      # BacktestEngine
+│   ├── config.py      # BacktestConfig
+│   ├── bar.py         # Bar 数据类型
+│   ├── bar_result.py  # BarResult（策略输出）
+│   ├── order.py       # Order 数据类型
+│   ├── position.py    # Position 持仓
+│   ├── portfolio.py   # Portfolio 组合
+│   ├── trade.py       # Trade 成交
+│   └── annotation.py  # Annotation + AnnotationType（14 种）
+├── strategy/          # 策略实现
+│   ├── base.py        # Strategy 基类
+│   ├── registry.py    # StrategyRegistry 策略注册表
+│   ├── algorithm/     # 蔡森策略（Code Strategy）
+│   │   ├── cai_sen.py             # CaiSenStrategy 主策略
+│   │   ├── detector.py            # PatternDetector + ConfidenceFactors
+│   │   ├── caisen_config.py       # 策略配置加载
+│   │   ├── caisen_optimizer.py    # 网格暴力参数法（Grid Search）
+│   │   ├── patterns/              # 形态检测器（12 种）
+│   │   └── caisen_components/     # 组件（Factory/Aggregator/PositionMgr/VolumeAnalyzer）
+│   └── llm/           # LLM 策略（智能蔡森策略）
+│       ├── strategy.py    # LLMStrategy 主策略（离线预计算+回放）
+│       ├── prompt.py      # PromptBuilder
+│       ├── provider.py    # OpenAIProvider
+│       ├── client.py      # LLMClient 接口
+│       ├── evolver.py     # PromptEvolver 进化器
+│       ├── cache.py       # 信号缓存
+│       ├── response.py    # ResponseParser
+│       └── prompts/       # Prompt 模板
+├── data/              # 数据加载模块
+│   ├── source.py      # DataSource 接口
+│   ├── local_source.py # LocalDataSource 实现
+│   ├── scanner.py     # DataSourceScanner
+│   ├── config.py      # DataConfig
+│   ├── registry.py    # 数据源注册表
 │   └── exceptions.py  # 数据异常
-├── result/        # 回测结果处理
-│   ├── types.py   # BacktestResult 数据类型
-│   ├── metrics.py # 绩效指标计算
-│   ├── persistence.py  # 结果持久化
-│   └── base.py    # Annotation 等基础类型
-├── visualization/ # 可视化模块
-│   ├── web/       # Python Web 服务（FastAPI）
-│   └── frontend/  # 前端代码（Vite 项目）
-└── cli/           # 命令行工具
-    └── main.py    # CLI 入口
+├── result/            # 回测结果处理
+│   ├── types.py       # BacktestResult 数据类型
+│   ├── metrics.py     # 绩效指标定义
+│   ├── calculator.py  # MetricsCalculator
+│   └── persistence.py # ResultPersister（Parquet + JSON）
+├── backtest/          # 回测运行器
+│   └── runner.py      # BacktestRunner（CLI 统一入口）
+├── config/            # 项目配置
+│   └── project_config.py  # ProjectConfig（加载 project.yaml）
+├── frontend/          # 前端可视化（Vite 项目）
+│   ├── index.html     # 入口
+│   ├── report.html    # K线图详情页
+│   ├── strategy.html  # 策略中心页
+│   ├── src/js/        # 26 个 JS 模块
+│   ├── src/css/       # CSS 样式
+│   ├── tests/         # Vitest 单元测试
+│   └── e2e/           # Playwright E2E 测试
+├── web/               # Web API 服务
+│   ├── main.py        # FastAPI 应用
+│   └── optimizer.py   # 异步优化任务管理器
+└── cli/               # 命令行工具
+    └── main.py        # CLI 入口
 ```
 
 ### 2. 命名规范
@@ -96,7 +128,9 @@ patterns/
    - 有 `on_bar` 方法 → `strategy/`
    - 处理回测结果 → `result/`
    - 加载行情数据 → `data/`
-   - Web 服务 → `visualization/web/`
+   - Web 服务 → `web/`
+   - 前端代码 → `frontend/`
+   - 回测运行/编排 → `backtest/`
 
 2. **命名检查**：是否符合命名规范？
 

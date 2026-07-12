@@ -152,6 +152,59 @@ export function findBarByTimestamp(bars, timestamp) {
 }
 
 /**
+ * Build a timestamp→index Map for O(1) bar lookups.
+ * Call once per render cycle and reuse across all annotation renderers.
+ *
+ * Returns a Map with two types of keys:
+ *   - exact ISO timestamp string → index
+ *   - numeric ms timestamp → index  (for fuzzy matching fallback)
+ *
+ * @param {Object[]} bars - Array of bar objects with `timestamp`
+ * @returns {Map} Combined lookup map
+ */
+export function buildBarIndex(bars) {
+    const map = new Map();
+    if (!bars) return map;
+    bars.forEach((bar, idx) => {
+        map.set(bar.timestamp, idx);
+        map.set(new Date(bar.timestamp).getTime(), idx);
+    });
+    return map;
+}
+
+/**
+ * Find bar index using a pre-built index Map (O(1) exact match, O(n) fuzzy fallback).
+ * Returns {index, bar} or null if not found.
+ *
+ * @param {Object[]} bars - Array of bar objects
+ * @param {Map} barIndex - Map from buildBarIndex()
+ * @param {string|number} timestamp - Timestamp to search for
+ * @returns {{index: number, bar: Object}|null}
+ */
+export function findBarByIndex(bars, barIndex, timestamp) {
+    if (!timestamp || !barIndex) return null;
+
+    // O(1) exact match
+    let idx = barIndex.get(timestamp);
+    if (idx === undefined) {
+        const ms = new Date(timestamp).getTime();
+        idx = barIndex.get(ms);
+    }
+    if (idx !== undefined) {
+        return { index: idx, bar: bars[idx] };
+    }
+
+    // Fuzzy match within 1 hour (only for small point counts, e.g. pattern points)
+    const targetTime = new Date(timestamp).getTime();
+    for (let i = 0; i < bars.length; i++) {
+        if (Math.abs(new Date(bars[i].timestamp).getTime() - targetTime) < 3600000) {
+            return { index: i, bar: bars[i] };
+        }
+    }
+    return null;
+}
+
+/**
  * Apply date filter to data
  * @param {Object} data - Raw data object
  * @param {string} startDate - Start date string (YYYY-MM-DD)

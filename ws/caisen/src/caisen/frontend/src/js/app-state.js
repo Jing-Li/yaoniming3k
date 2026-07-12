@@ -5,11 +5,12 @@
 
 export const createAppState = () => {
     // Core state
-    let chart = null;
-    let equityChart = null;
-    let heatmapChart = null;
-    let drawdownChart = null;
-    let tradeDistributionChart = null;
+    let chart = null;           // LWC kline chart state (from kline-chart.js)
+    let klineState = null;      // Full LWC state object { chart, candleSeries, resizeObserver, ... }
+    let equityChart = null;     // ECharts equity chart
+    let heatmapChart = null;    // ECharts heatmap
+    let drawdownChart = null;   // ECharts drawdown
+    let tradeDistributionChart = null; // ECharts distribution
     let rawData = null;
     let filteredData = null;
     let isZoomEnabled = false;
@@ -20,6 +21,7 @@ export const createAppState = () => {
     return {
         // Getters
         getChart: () => chart,
+        getKlineState: () => klineState,
         getEquityChart: () => equityChart,
         getHeatmapChart: () => heatmapChart,
         getDrawdownChart: () => drawdownChart,
@@ -33,6 +35,7 @@ export const createAppState = () => {
 
         // Setters
         setChart: (instance) => { chart = instance; },
+        setKlineState: (state) => { klineState = state; },
         setEquityChart: (instance) => { equityChart = instance; },
         setHeatmapChart: (instance) => { heatmapChart = instance; },
         setDrawdownChart: (instance) => { drawdownChart = instance; },
@@ -61,6 +64,7 @@ export const createAppState = () => {
         // Reset
         reset: function() {
             chart = null;
+            klineState = null;
             equityChart = null;
             heatmapChart = null;
             drawdownChart = null;

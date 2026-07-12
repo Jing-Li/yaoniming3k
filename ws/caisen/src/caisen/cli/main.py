@@ -100,14 +100,11 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
     if Path(strategy).exists():
         strat = load_strategy_from_file(strategy)
     else:
-        # 尝试从内置策略加载
-        builtin_strategies = {
-            "MACrossStrategy": "caisen.strategy.algorithm.ma_cross",
-            "CaiSenStrategy": "caisen.strategy.algorithm.cai_sen",
-        }
+        # 尝试从内置策略加载（通过 StrategyRegistry）
+        from caisen.strategy.registry import StrategyRegistry
+        module_path = StrategyRegistry.get_module_path(strategy)
 
-        # 如果指定了策略配置文件，且策略是蔡森策略
-        if strategy_config and strategy in ("CaiSenStrategy", "CaiSenStrategyOptimized"):
+        if strategy_config and strategy == "CaiSenStrategy":
             try:
                 from caisen.strategy.algorithm.cai_sen import CaiSenStrategy
                 strat = CaiSenStrategy.from_config(strategy_config)
@@ -115,9 +112,9 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
             except Exception as e:
                 click.echo(f"Failed to load strategy config: {e}")
                 sys.exit(1)
-        elif strategy in builtin_strategies:
+        elif module_path:
             try:
-                mod = __import__(builtin_strategies[strategy], fromlist=[""])
+                mod = __import__(module_path, fromlist=[""])
                 # 找到指定的 Strategy 子类
                 target_class = None
                 for name in dir(mod):
@@ -126,7 +123,6 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
                         if name == strategy:
                             target_class = obj
                             break
-                        # 如果没有精确匹配，记录第一个找到的
                         if target_class is None:
                             target_class = obj
                 if target_class:
@@ -138,13 +134,9 @@ def run(strategy: str, strategy_type: str, symbol: str, freq: str, start: str, e
                 click.echo(f"Failed to import {strategy}: {e}")
                 sys.exit(1)
         else:
-            # 尝试从 examples 加载
-            try:
-                from examples.ma_cross import MACrossStrategy
-                strat = MACrossStrategy()
-            except ImportError:
-                click.echo(f"Strategy '{strategy}' not found")
-                sys.exit(1)
+            click.echo(f"Strategy '{strategy}' not found. "
+                       f"Available: {[s['name'] for s in StrategyRegistry.list_strategies()]}")
+            sys.exit(1)
 
     # 加载数据或使用 mock 数据
     if mock:
@@ -275,12 +267,12 @@ def report(run_id: str, port: int, host: str, output_dir: str, backend_port: int
         **os.environ,
         'VITE_API_PROXY': f'http://localhost:{backend_port}',
     }
+    import shutil
+    npx_cmd = shutil.which("npx") or "npx"
     vite_process = subprocess.Popen(
-        [sys.executable, "-m", "npm", "run", "dev", "--", "--port", str(port)],
+        [npx_cmd, "vite", "--port", str(port), "--host", host],
         cwd=str(frontend_dir),
         env=vite_env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
 
     click.echo("\nPress Ctrl+C to stop")
@@ -361,6 +353,114 @@ def optimize(symbol: str, freq: str, start: str, end: str, output_dir: str, work
         config_path = Path(output_dir) / f"caisen_optimized_{timestamp}.yaml"
         generate_optimized_config(best, str(config_path))
         click.echo(f"\n最优配置已保存到: {config_path}")
+
+        # 自动注册为配置预设（保存到 configs/strategies/）
+        preset_path = Path(__file__).parent.parent.parent.parent / "configs" / "strategies" / "caisen_optimized.yaml"
+        preset_path.parent.mkdir(parents=True, exist_ok=True)
+        generate_optimized_config(best, str(preset_path))
+        click.echo(f"已自动注册为配置预设: {preset_path}")
+        click.echo(f"可直接使用: caisen run -s CaiSenStrategy -c caisen_optimized")
+
+
+@cli.command("evolve-prompt")
+@click.option("--config", "-c", required=True, help="LLM 策略配置文件（YAML）")
+@click.option("--iterations", default=5, help="进化迭代次数")
+@click.option("--output", default="configs/strategies/llm_evolved_rules.txt", help="进化规则输出路径")
+@click.option("--mock", is_flag=True, help="使用模拟数据")
+def evolve_prompt(config: str, iterations: int, output: str, mock: bool):
+    """运行 LLM Prompt 进化，产出最优规则文件"""
+    import yaml as _yaml
+    from ..strategy.llm.provider import OpenAIProvider
+    from ..strategy.llm.evolver import PromptEvolver
+
+    # 加载 LLM 配置
+    config_path = Path(config)
+    if not config_path.exists():
+        click.echo(f"配置文件不存在: {config_path}")
+        sys.exit(1)
+
+    with open(config_path, encoding="utf-8") as f:
+        raw = _yaml.safe_load(f)
+
+    llm_data = raw.get("llm", {})
+    api_key = llm_data.get("api_key", "dummy")
+    base_url = llm_data.get("base_url", "http://localhost:8199/v1")
+    model = llm_data.get("model", "gpt-4o")
+    temperature = llm_data.get("temperature", 0.3)
+
+    # 创建 LLM 客户端
+    provider_kwargs = {}
+    for key in ("disable_thinking", "max_tokens"):
+        if key in llm_data:
+            provider_kwargs[key] = llm_data[key]
+
+    client = OpenAIProvider(
+        api_key=api_key,
+        model=model,
+        temperature=temperature,
+        base_url=base_url,
+        **provider_kwargs,
+    )
+
+    # 加载数据
+    data_cfg_raw = raw.get("data", {})
+    symbol = data_cfg_raw.get("symbol", "TEST")
+    freq = data_cfg_raw.get("freq", "1d")
+    start = data_cfg_raw.get("start", "2024-01-01")
+    end = data_cfg_raw.get("end", "2024-12-31")
+
+    if mock:
+        bars = [
+            {"timestamp": f"2024-01-{i+1:02d}", "open": 100 + i, "high": 102 + i,
+             "low": 99 + i, "close": 101 + i, "volume": 1000000 + i * 10000}
+            for i in range(30)
+        ]
+    else:
+        data_cfg = DataConfig(
+            symbol=symbol, freq=freq, start=start, end=end,
+            data_dir=ProjectConfig.load().data_dir,
+        )
+        try:
+            raw_bars = load_bars(data_cfg)
+        except DataNotFoundError:
+            click.echo("No data found. Use --mock flag to generate test data.")
+            sys.exit(1)
+        # 转换为 dict 列表供 evolver 使用
+        bars = []
+        for bar in raw_bars:
+            if hasattr(bar, "to_dict"):
+                bars.append(bar.to_dict())
+            else:
+                bars.append({
+                    "timestamp": str(bar.timestamp),
+                    "open": bar.open, "high": bar.high,
+                    "low": bar.low, "close": bar.close,
+                    "volume": bar.volume,
+                })
+
+    click.echo(f"Loaded {len(bars)} bars for {symbol} ({freq})")
+    click.echo(f"开始 Prompt 进化（{iterations} 次迭代）...")
+
+    # 运行进化
+    evolver = PromptEvolver(
+        llm_client=client,
+        bars=bars,
+        max_iterations=iterations,
+    )
+
+    from ..strategy.llm.prompts.caisen_pattern import RULES_FRAMEWORK
+    result = evolver.evolve(initial_rules=RULES_FRAMEWORK)
+
+    # 保存最优规则
+    output_path = Path(output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(result.prompt, encoding="utf-8")
+
+    click.echo(f"\n进化完成!")
+    click.echo(f"  最佳评分: {result.score:.4f}")
+    click.echo(f"  迭代次数: {len(evolver.history)}")
+    click.echo(f"  最优规则已保存到: {output_path}")
+    click.echo(f"  下次回测将自动加载此规则（需在 YAML 配置中设置 evolved_rules_path）")
 
 
 def main():

@@ -9,10 +9,11 @@ LLM 策略返回可视化标注（Annotation），与回测结果一起持久化
 
 **存储**：`runs/{run_id}/data.json`，包含标注类型、位置、颜色等信息。
 
-**渲染**：`src/caisen/visualization/index.html` 使用 ECharts 生成交互式 K 线图，叠加 Annotation。
+**渲染**：`src/caisen/frontend/` 使用 ECharts + Vite 生成交互式 K 线图，叠加 Annotation。
 - buy_signal: 绿色向上三角
 - sell_signal: 红色向下三角
 - pattern_mark: 形态连线（头肩底、W 底等）
+- AnnotationType 已扩展至 14 种（含 RECTANGLE、POLYGON 等）
 
 **报告**：`data.json` 格式（见 ADR-0007），前端渲染器独立。
 

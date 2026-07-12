@@ -27,9 +27,10 @@ class StrategyConfig:
 class LLMStrategyConfig:
     """LLM 策略配置
 
-    基于离线预计算架构：
-    - 一次性分析历史数据
-    - 结果缓存后逐帧回放
+    基于递增窗口预计算架构：
+    - 逐根 K 线调用 LLM（bars[0:i+1]），无未来数据泄漏
+    - 预计算 MA5/MA20 注入 bar 数据
+    - 信号与标注同源，缓存后逐帧回放
     """
     provider: str = "openai"  # openai / anthropic / 本地模型
     api_key: str = ""  # API Key，支持环境变量 ${VAR}
@@ -40,10 +41,14 @@ class LLMStrategyConfig:
     # Prompt 配置
     rules: str = ""  # 规则框架
     examples: int = 2  # Few-shot 示例数量
+    evolved_rules_path: str = ""  # 进化后的规则文件路径，存在时覆盖默认 RULES_FRAMEWORK
 
     # 缓存配置
     cache_enabled: bool = True
     cache_dir: str = "./cache"  # 缓存目录
+
+    # Walk-Forward 模式（消除未来数据泄漏）
+    walk_forward: bool = True  # True=递增窗口逐根分析（正确），False=批量发送（快但有未来数据泄漏）
 
 
 @dataclass

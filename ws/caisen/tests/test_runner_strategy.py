@@ -12,10 +12,6 @@ class TestGetModulePath:
         path = StrategyRegistry.get_module_path("CaiSenStrategy")
         assert path == "caisen.strategy.algorithm.cai_sen"
 
-    def test_builtin_ma_cross(self):
-        path = StrategyRegistry.get_module_path("MACrossStrategy")
-        assert path == "caisen.strategy.algorithm.ma_cross"
-
     def test_builtin_llm(self):
         path = StrategyRegistry.get_module_path("LLMStrategy")
         assert path == "caisen.strategy.llm.strategy"
@@ -28,11 +24,6 @@ class TestGetModulePath:
 class TestInstantiateStrategy:
     """_instantiate_strategy 测试。"""
 
-    def test_instantiate_ma_cross(self):
-        strategy = _instantiate_strategy("MACrossStrategy", {})
-        assert strategy is not None
-        assert type(strategy).__name__ == "MACrossStrategy"
-
     def test_instantiate_caisen(self):
         strategy = _instantiate_strategy("CaiSenStrategy", {})
         assert strategy is not None
@@ -40,7 +31,7 @@ class TestInstantiateStrategy:
 
     def test_instantiate_with_params(self):
         """传入参数时，只传递 __init__ 接受的参数。"""
-        strategy = _instantiate_strategy("MACrossStrategy", {
+        strategy = _instantiate_strategy("CaiSenStrategy", {
             "fast_period": 10,
             "slow_period": 30,
             "nonexistent_param": 999,  # 应被过滤
@@ -70,7 +61,7 @@ class TestRunnerIntegration:
             ))
 
         run_id = BacktestRunner.run_backtest(
-            strategy_name="MACrossStrategy",
+            strategy_name="CaiSenStrategy",
             symbol="TEST",
             freq="1d",
             start="2024-01-01",

@@ -13,6 +13,10 @@ import { renderHeatmapChart } from './heatmap-chart.js';
 import { renderDrawdownChart } from './drawdown-chart.js';
 import { renderTradeDistribution } from './trade-distribution.js';
 import { escapeHtml } from './utils.js';
+import { createLogger } from './logger.js';
+import { toast } from './toast.js';
+
+const log = createLogger('DataLoader');
 
 // ==================== Data Cache ====================
 const dataCache = new Map();
@@ -185,14 +189,18 @@ export async function loadData() {
             return;
         }
 
+        log.info('开始加载数据', { runId });
+        toast.info('正在加载回测数据...', { detail: runId });
+
         // Check cache first
         let rawData;
         if (dataCache.has(runId)) {
-            DEBUG_CONFIG.log('[Data] 命中缓存:', runId);
+            log.info('命中缓存', runId);
             rawData = dataCache.get(runId);
         } else {
             const apiBase = getApiBase();
 
+            log.time('数据加载');
             if (apiBase && window.location.host) {
                 const response = await fetch(apiBase);
                 if (!response.ok) {
@@ -207,18 +215,20 @@ export async function loadData() {
                 }
                 rawData = await response.json();
             }
+            log.timeEnd('数据加载');
 
             // Store in cache
             dataCache.set(runId, rawData);
-            DEBUG_CONFIG.log('[Data] 已缓存:', runId);
+            log.info('已缓存', runId);
         }
 
-        // 数据有效性验证：不合法的数据不进入渲染流程
+        // 数据有效性检查：不合法的数据不进入渲染流程
         const validation = validateVisualizationData(rawData);
         if (!validation.valid) {
-            DEBUG_CONFIG.error('[Data] 数据验证失败:', validation.message);
+            log.error('数据验证失败', validation.message);
             hideRunsList();
             showDataError(validation.message);
+            toast.error('数据不可用', { detail: validation.message });
             return;
         }
 
@@ -242,9 +252,19 @@ export async function loadData() {
         // After all charts are initialized, wire up cross-chart synchronization
         // (idempotent: only binds the first time it's called).
         setupChartSync();
+
+        log.info('数据加载完成', {
+            bars: rawData.bars?.length,
+            trades: rawData.trades?.length,
+            annotations: rawData.annotations?.length,
+        });
+        toast.success('数据加载完成', {
+            detail: `${rawData.bars?.length || 0} 根K线, ${rawData.trades?.length || 0} 笔交易`
+        });
     } catch (error) {
-        DEBUG_CONFIG.error('[Data] 加载失败:', error.message);
+        log.error('加载失败', error);
         showError(error.message);
+        toast.error('数据加载失败', { detail: error.message });
     }
 }
 

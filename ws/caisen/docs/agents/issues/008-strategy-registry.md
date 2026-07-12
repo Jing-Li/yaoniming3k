@@ -51,7 +51,7 @@
 ## Acceptance criteria
 
 - [x] `StrategyRegistry` 模块存在，可返回策略列表
-- [x] 至少发现 `CaiSenStrategy` 和 `MACrossStrategy` 两个内置策略（顺带修复了 ma_cross.py 的相对导入 bug）
+- [x] 至少发现 `CaiSenStrategy` 和 `LLMStrategy` 两个内置策略
 - [x] LLM 策略标记 `type: "llm"` 并附带 `note` 说明
 - [x] `params_schema` 从 `__init__` 签名提取（float/int/bool/str 四种类型）
 - [x] 某策略导入失败时跳过该策略，不抛出异常
