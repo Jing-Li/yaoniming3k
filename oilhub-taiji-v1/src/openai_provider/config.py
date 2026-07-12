@@ -32,6 +32,15 @@ class Settings(BaseSettings):
     TAIJI_SESSION_ID: int = 0
     TAIJI_SESSION_COOKIE: str = ""
 
+    # --- 文本转图片扩容 ---
+    # 当 text 超过 max_text_length 时，将截断部分渲染为图片附件发送给 Taiji
+    TAIJI_TEXT_TO_IMAGE: bool = False
+    TAIJI_TEXT_IMAGE_MAX: int = Field(default=5, ge=1, le=5)  # 最大图片数
+
+    # --- Taiji 高级能力 ---
+    TAIJI_WEB_SEARCH: bool = False   # 开启联网搜索
+    TAIJI_THINKING: bool = False     # 开启深度思考
+
     # --- Provider 认证（可选）---
     API_KEY: str = ""
 

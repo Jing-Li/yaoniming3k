@@ -70,11 +70,24 @@ class ToolChoice(OpenAIModel):
 # Messages & Request
 # ---------------------------------------------------------------------------
 
+class ContentPart(OpenAIModel):
+    """A single content part for multimodal messages (text or image_url)."""
+
+    type: Literal["text", "image_url"]
+    text: str | None = None
+    image_url: dict[str, Any] | None = None
+
+
 class ChatMessage(OpenAIModel):
-    """A single message in a chat conversation."""
+    """A single message in a chat conversation.
+
+    Supports multimodal content (OpenAI vision format):
+    - str: plain text
+    - list[ContentPart]: multimodal parts (text + image_url)
+    """
 
     role: Literal["system", "user", "assistant", "tool"]
-    content: str | None = None
+    content: str | list[ContentPart] | None = None
     name: str | None = None
     tool_call_id: str | None = None
     tool_calls: list[ToolCall] | None = None
@@ -98,6 +111,9 @@ class ChatCompletionRequest(OpenAIModel):
     user: str | None = None
     tools: list[ToolDefinition] | None = None
     tool_choice: str | ToolChoice | None = None
+    # Taiji 扩展能力（非标准 OpenAI 字段）
+    thinking: bool | None = None   # None = 使用服务端默认值
+    web_search: bool | None = None  # None = 使用服务端默认值
 
 
 # ---------------------------------------------------------------------------

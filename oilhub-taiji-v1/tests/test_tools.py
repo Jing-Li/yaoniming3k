@@ -319,8 +319,8 @@ def test_chat_completions_streaming_normal_with_tools(mock_taiji_stream_normal_w
     assert chunks[0]["object"] == "chat.completion.chunk"
     assert chunks[0]["choices"][0]["delta"]["role"] == "assistant"
     assert chunks[0]["choices"][0]["delta"]["content"] == "Hello"
-    # _strip_think_tags calls .strip() which removes leading space
-    assert chunks[1]["choices"][0]["delta"]["content"] == "world"
+    # _strip_think_tags no longer strips whitespace to preserve newlines in streaming chunks
+    assert chunks[1]["choices"][0]["delta"]["content"] == " world"
     assert chunks[-2]["choices"][0]["finish_reason"] == "stop"
     assert chunks[-1] == "[DONE]"
 

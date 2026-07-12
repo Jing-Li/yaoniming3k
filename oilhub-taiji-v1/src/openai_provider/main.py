@@ -182,6 +182,29 @@ async def chat_completions(
         )
         return JSONResponse(status_code=400, content=error_body)
 
+    # Parsed request summary for ops analysis
+    tools_count = len(req.tools) if req.tools else 0
+    tool_names = [t.function.name for t in req.tools] if req.tools else []
+    msg_roles = [m.role for m in req.messages]
+    logger_raw_req.info(
+        f"Request: {len(req.messages)} messages, "
+        f"tools={tools_count} ({','.join(tool_names[:5]) if tool_names else 'none'}), "
+        f"stream={req.stream}, model={req.model}",
+        extra={
+            "request_id": request_id,
+            "extra": {
+                "message_count": len(req.messages),
+                "message_roles": msg_roles,
+                "tools_count": tools_count,
+                "tool_names": tool_names,
+                "tool_choice": req.tool_choice,
+                "stream": req.stream,
+                "temperature": req.temperature,
+                "max_tokens": req.max_tokens,
+            },
+        },
+    )
+
     if req.stream:
         async def stream_generator():
             all_chunks = []
@@ -191,20 +214,49 @@ async def chat_completions(
                     yield f"data: {chunk}\n\n"
                 yield "data: [DONE]\n\n"
                 
-                # Log the full streaming response for debugging
-                logger_raw_resp.debug(
-                    "Outgoing response (streaming)",
+                # Log streaming response summary with tool_calls info
+                # Extract finish_reason and tool_calls from the last few chunks
+                has_tool_calls_chunk = any('"tool_calls"' in c for c in all_chunks[-5:])
+                finish_reasons = []
+                for c in all_chunks:
+                    if '"finish_reason"' in c:
+                        try:
+                            obj = json.loads(c)
+                            fr = obj.get("choices", [{}])[0].get("finish_reason")
+                            if fr:
+                                finish_reasons.append(fr)
+                        except (json.JSONDecodeError, IndexError, KeyError):
+                            pass
+                logger_raw_resp.info(
+                    f"Outgoing streaming: {len(all_chunks)} chunks, "
+                    f"finish={','.join(finish_reasons) if finish_reasons else 'unknown'}, "
+                    f"has_tool_calls={has_tool_calls_chunk}",
                     extra={
                         "request_id": request_id,
                         "extra": {
                             "total_chunks": len(all_chunks),
-                            "chunks_preview": all_chunks[:5] if len(all_chunks) > 5 else all_chunks,
+                            "finish_reasons": finish_reasons,
+                            "has_tool_calls_in_output": has_tool_calls_chunk,
+                            "chunks_preview": all_chunks[:3] if len(all_chunks) > 3 else all_chunks,
+                            "chunks_tail": all_chunks[-3:] if len(all_chunks) > 3 else [],
                         },
                     },
                 )
             except Exception as exc:
+                error_msg = str(exc)
+                logger_raw_resp.error(
+                    f"Streaming error: {error_msg}",
+                    extra={
+                        "request_id": request_id,
+                        "extra": {
+                            "error_type": type(exc).__name__,
+                            "error_message": error_msg,
+                            "total_chunks_before_error": len(all_chunks),
+                        },
+                    },
+                )
                 error_chunk = json.dumps(
-                    {"error": {"message": str(exc), "type": "provider_error", "code": None}}
+                    {"error": {"message": error_msg, "type": "provider_error", "code": None}}
                 )
                 yield f"data: {error_chunk}\n\n"
 
@@ -242,14 +294,28 @@ async def chat_completions(
 
     resp_dict = resp.model_dump()
 
-    # 日志：返回给客户端的响应
-    logger_raw_resp.debug(
-        "Outgoing response",
+    # 日志：返回给客户端的响应（非流式）
+    choices_summary = []
+    for choice in resp_dict.get("choices", []):
+        msg = choice.get("message", {})
+        tc = msg.get("tool_calls")
+        choices_summary.append({
+            "role": msg.get("role"),
+            "finish_reason": choice.get("finish_reason"),
+            "content_length": len(msg.get("content") or ""),
+            "tool_calls_count": len(tc) if tc else 0,
+            "tool_call_names": [t.get("function", {}).get("name") for t in tc] if tc else [],
+        })
+    logger_raw_resp.info(
+        f"Outgoing response: finish={choices_summary[0]['finish_reason'] if choices_summary else '?'}, "
+        f"content_len={choices_summary[0]['content_length'] if choices_summary else 0}, "
+        f"tool_calls={choices_summary[0]['tool_calls_count'] if choices_summary else 0}",
         extra={
             "request_id": request_id,
             "extra": {
                 "status_code": 200,
-                "body": resp_dict,
+                "choices_summary": choices_summary,
+                "usage": resp_dict.get("usage"),
             },
         },
     )

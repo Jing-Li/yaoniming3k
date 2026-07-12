@@ -440,8 +440,8 @@ class TestXMLToolCallsE2E:
 class TestToolChoiceParameter:
 
     @pytest.mark.asyncio
-    async def test_tool_choice_required_injects_mandatory(self):
-        """tool_choice=required 应注入 MUST call 指令。"""
+    async def test_tool_choice_required_accepted(self):
+        """tool_choice=required 应被接受，但不注入额外指令。"""
         captured = {}
 
         async def capture(*a, **kw):
@@ -456,11 +456,12 @@ class TestToolChoiceParameter:
                 "tool_choice": "required",
             })
         assert resp.status_code == 200
-        assert "MUST call at least one tool" in captured["json"]["text"]
+        # tool_choice 不再注入强制指令，只验证参数被接受
+        assert "RESPONSE FORMAT" in captured["json"]["text"]
 
     @pytest.mark.asyncio
-    async def test_tool_choice_none_injects_prohibition(self):
-        """tool_choice=none 应注入 MUST NOT call 指令。"""
+    async def test_tool_choice_none_accepted(self):
+        """tool_choice=none 应被接受，但不注入禁用指令。"""
         captured = {}
 
         async def capture(*a, **kw):
@@ -475,11 +476,11 @@ class TestToolChoiceParameter:
                 "tool_choice": "none",
             })
         assert resp.status_code == 200
-        assert "MUST NOT call any tools" in captured["json"]["text"]
+        assert "RESPONSE FORMAT" in captured["json"]["text"]
 
     @pytest.mark.asyncio
     async def test_tool_choice_auto_default(self):
-        """tool_choice 未设置时默认为 auto。"""
+        """tool_choice 未设置时默认为 auto，不注入额外指令。"""
         captured = {}
 
         async def capture(*a, **kw):
@@ -493,7 +494,7 @@ class TestToolChoiceParameter:
                 "tools": [{"type": "function", "function": {"name": "fn", "parameters": {}}}],
             })
         assert resp.status_code == 200
-        assert "WHEN TO USE TOOLS" in captured["json"]["text"]
+        assert "RESPONSE FORMAT" in captured["json"]["text"]
 
 
 # ===========================================================================
