@@ -109,9 +109,28 @@ All skills run with `projects/v{N}/` as their working directory.
 - Log which traps were successfully injected vs skipped
 
 **Post-step verification** (after each skill completes):
-- Verify expected output files exist
-- Verify output files are in correct locations
-- If a skill fails or produces nothing → halt, log failure, mark as AD
+
+For each skill, verify BOTH existence AND non-empty content of expected outputs:
+
+| Skill | Expected Outputs | Verification |
+|-------|-----------------|---------------|
+| `/arch-init` | AGENTS.md, docs/bc/{slug}/kanban/BOARD.md | Files exist AND contain BC Registry / Board table |
+| `/arch-align` | align/LANGUAGE.md, align/BRD.md | Files exist AND contain glossary terms / business rules |
+| `/arch-design` | design/ARCHITECTURE.md, design/adr/ADR-*.md | Files exist AND contain layer definitions / decision records |
+| `/arch-detail` | detail/DESIGN.md, detail/modules/*/module.md | Files exist AND contain module specs / interface contracts |
+| `/devtdd` | Source code files in cmd/, internal/; test files *_test.go | Files exist AND contain actual implementation code (not just stubs) |
+| `/arch-review` | review/REVIEW.md | File exists AND contains score + AD items |
+
+**Content checks** (not just file existence):
+- File size > 0 bytes
+- File contains expected section headers or key content markers
+- For code files: contains at least one function/type definition
+- For doc files: contains at least one section header (`##`)
+
+**Failure handling**:
+- If file missing → **HALT** immediately, log as critical failure
+- If file exists but empty/placeholder only → **HALT**, log as "empty output" failure
+- Log all verification results to `reports/cycle-{N}.md` §Post-step Verification Results
 
 ---
 
@@ -221,12 +240,23 @@ Read `evolution` section from bench.yaml:
 | ID | Description | Resolution |
 |----|------------|-----------|
 
-## 4. Skill Improvement Suggestions
+## 4. Post-step Verification Results
+
+| Skill | Expected Outputs | Status | Details |
+|-------|-----------------|--------|--------|
+| arch-init | AGENTS.md, BOARD.md | ✅/❌ | (empty/missing/wrong format) |
+| arch-align | LANGUAGE.md, BRD.md | ✅/❌ | |
+| arch-design | ARCHITECTURE.md, ADR-*.md | ✅/❌ | |
+| arch-detail | DESIGN.md, modules/*/module.md | ✅/❌ | |
+| devtdd | cmd/*, internal/*, *_test.go | ✅/❌ | |
+| arch-review | review/REVIEW.md | ✅/❌ | |
+
+## 5. Skill Improvement Suggestions
 
 | Skill | Issue | Suggested Change | Priority |
 |-------|-------|-----------------|----------|
 
-## 5. Summary
+## 6. Summary
 
 - **Architecture Score**: {N}/100
 - **Pipeline Health Score**: {N}/100
@@ -234,6 +264,32 @@ Read `evolution` section from bench.yaml:
 - **Trend**: ↑ / → / ↓
 - **Convergence**: Yes/No (N cycles remaining)
 - **Next Action**: (specific recommendation)
+
+## 7. 🔴 Actionable Issues (Copy-Paste to Skill Author)
+
+> This section is designed to be directly copy-pasted to each skill's issue tracker.
+
+### arch-align
+
+```
+[bench-run cycle-{N}] 产出问题：
+- 问题：LANGUAGE.md 为空文件（0 bytes）
+- 期望：包含双语术语字典（Domain/Application/Infrastructure 分层）
+- bench.yaml §3 已提供 glossary 预定义数据，但 skill 未消费
+- 建议：检查 Grilling 流程是否正确读取 bench.yaml §3.glossary 并写入 LANGUAGE.md
+```
+
+### arch-design
+
+```
+[bench-run cycle-{N}] 产出问题：
+- 问题：ARCHITECTURE.md 为空文件
+- 期望：包含 Clean Architecture 分层定义 + Mermaid 依赖图
+- bench.yaml §4 NFR + §5 Tech Stack + §6 Decisions 已提供预置答案
+- 建议：检查 NFR 对话是否正确消费 bench.yaml §4-§6 数据
+```
+
+（每个有问题的 skill 生成一段类似的格式化文本，可直接粘贴到 skill 作者）
 ```
 
 ---
