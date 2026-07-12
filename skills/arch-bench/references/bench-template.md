@@ -139,7 +139,7 @@ design_decisions:
 
 ## §7 Mutation Tests
 
-变异测试陷阱，验证 arch-review + arch-critic 的检测能力。
+变异测试陷阱，验证 arch-review 的检测能力（含内置批判推理模式）。
 
 ```yaml
 mutation_tests:
@@ -168,7 +168,7 @@ evolution:
   convergence_score: 90                   # Combined Score 目标
   convergence_consecutive_cycles: 2       # 连续 N 轮达标才算收敛
   stagnation_threshold: 3                 # 连续 N 轮无提升判定停滞
-  auto_critic_threshold: 60               # 低于此分自动触发 /arch-critic
+  auto_critic_threshold: 60               # 低于此分自动触发 /arch-review 深度批判模式
 ```
 
 **追问**：

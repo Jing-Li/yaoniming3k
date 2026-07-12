@@ -172,7 +172,7 @@ Read `evolution` section from bench.yaml:
 |-----------|--------|
 | Combined Score ≥ `convergence_score` for `convergence_consecutive_cycles` consecutive cycles | Declare **CONVERGED** — pipeline is stable |
 | Combined Score unchanged for `stagnation_threshold` consecutive cycles | Declare **STAGNATION** — recommend human review of skill definitions |
-| Combined Score < `auto_critic_threshold` | Auto-suggest running `/arch-critic` for deeper analysis |
+| Combined Score < `auto_critic_threshold` | Auto-suggest running `/arch-review` with deeper critical reasoning for analysis |
 
 ---
 

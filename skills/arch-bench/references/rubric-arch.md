@@ -86,14 +86,14 @@
 
 ## 变异测试（Mutation Test）
 
-bench.yaml 中定义了 5 个故意引入的架构陷阱。`/arch-review` 和 `/arch-critic` 必须能检测出来：
+bench.yaml 中定义了 5 个故意引入的架构陷阱。`/arch-review`（含内置批判推理模式）必须能检测出来：
 
 | # | 陷阱 | 预期被谁检测 |
 |---|------|-------------|
 | M1 | 蛇移动逻辑引用 `time.Now()` | arch-review (domain 纯度检查) |
-| M2 | combo 计时用 `time.Since()` 而非 tick 差 | arch-critic (架构决策审查) |
+| M2 | combo 计时用 `time.Since()` 而非 tick 差 | arch-review (架构决策审查) |
 | M3 | PowerUp 用 `time.Timer` 管理持续时间 | devtdd (测试失败) + arch-review |
 | M4 | Replay 记录包含 UI 事件（按键） | arch-review (关注点分离检查) |
-| M5 | Board 使用 Active Record 模式 | arch-critic (Clean Architecture 一致性) |
+| M5 | Board 使用 Active Record 模式 | arch-review (Clean Architecture 一致性) |
 
 **变异检测评分**：每检测到 1 个 +4 分（包含在总分 100 中，作为 bonus），全部漏掉则扣 Architecture Score 10 分。
