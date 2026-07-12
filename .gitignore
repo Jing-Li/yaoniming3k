@@ -32,3 +32,13 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# AI tools
+.qoder/
+.lingma/
+.comate/
+.scratch/
+
+# Data files
+*.parquet
+ws/data/
