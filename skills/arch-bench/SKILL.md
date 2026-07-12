@@ -58,7 +58,14 @@ The entire benchmark runs with **only 2 human confirmations**.
 2. Interview the user section by section (§1 → §8), asking structured questions
 3. Fill the template with user responses
 4. Write the completed `bench.yaml` to the current working directory
-5. Create empty `EVOLUTION.md` and `reports/` directory
+5. Create the project directory structure:
+   ```
+   .
+   ├── bench.yaml       ← just created
+   ├── EVOLUTION.md     ← empty log
+   ├── reports/         ← empty
+   └── projects/        ← empty (versioned project outputs go here)
+   ```
 6. **Present bench.yaml summary and wait for user confirmation**
 
 **Hard constraints**:
@@ -72,13 +79,17 @@ The entire benchmark runs with **only 2 human confirmations**.
 
 ### Phase 2: Automated Pipeline Execution
 
-**Purpose**: Run the entire arch-skills pipeline, using bench.yaml to answer all skill questions.
+**Purpose**: Run the entire arch-skills pipeline inside `projects/v{N}/`, using bench.yaml to answer all skill questions.
+
+**Directory isolation**: Each cycle runs in its own `projects/v{N}/` directory. Pipeline outputs (docs/, code, AGENTS.md, etc.) are written ONLY inside `projects/v{N}/`, never in the top-level benchmark directory.
 
 **Execution sequence** (strict order, no skipping):
 
+All skills run with `projects/v{N}/` as their working directory.
+
 | Step | Skill | bench.yaml sections consumed | What bench-run does |
 |------|-------|------------------------------|--------------------|
-| 1 | `/arch-init` | §2 Case | Triggers init; verifies it creates AGENTS.md + docs/ structure + BOARD.md |
+| 1 | `/arch-init` | §2 Case | Triggers init in `projects/v{N}/`; verifies it creates AGENTS.md + docs/ + BOARD.md |
 | 2 | `/arch-align` | §3 Domain (rules, glossary, invariants, scope, open_questions) | Answers Grilling questions from §3 data; verifies LANGUAGE.md + BRD.md produced |
 | 3 | `/arch-design` | §4 NFR + §5 Tech Stack + §6 Decisions | Answers NFR dialogue from §4; provides tech choices from §5; gives ADR decisions from §6; verifies ARCHITECTURE.md + ADRs produced |
 | 4 | `/arch-detail` | §3 Domain (glossary, rules) | Answers clarification questions from §3; verifies DESIGN.md + module specs produced |
@@ -106,11 +117,11 @@ The entire benchmark runs with **only 2 human confirmations**.
 
 ### Phase 3: Automated Evaluation
 
-**Purpose**: Score the pipeline outputs and generate the cycle report.
+**Purpose**: Score the pipeline outputs in `projects/v{N}/` and generate the cycle report.
 
 **Process**:
 1. Read `bench.yaml` from the current working directory
-2. Scan the project for all pipeline outputs (docs/bc/*, code, tests)
+2. Scan `projects/v{N}/` for all pipeline outputs (docs/bc/*, code, tests)
 3. Evaluate against [references/rubric-arch.md](references/rubric-arch.md) (Architecture Score)
 4. Evaluate against [references/rubric-pipeline.md](references/rubric-pipeline.md) (Pipeline Health Score)
 5. Check mutation trap detection (§7 of bench.yaml)
