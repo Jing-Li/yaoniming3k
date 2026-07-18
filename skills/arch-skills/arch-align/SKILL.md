@@ -131,7 +131,7 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
 ### On Startup
 
 1. Read `docs/bc/<bc-slug>/kanban/BOARD.md` (if it exists).
-2. Find own row (`arch-align`). If `doing` has a task → continue it. If `doing` is empty and `new` has tasks → pick leftmost. If both empty → this is a **new task** (see Task Creation below).
+2. Find own row (`arch-align`). If `doing` has a task → continue it. If `doing` is empty and `new` has tasks → pick leftmost. If both empty → check archived T{N}.md files for unresolved ADs targeting arch-align: if found → add T{N} back to own `doing` column, enter AD fix mode; if not found → this is a **new task** (see Task Creation below).
 3. If a T{N} is found, read `kanban/tasks/T{N}.md` → check References section for existing align content.
 4. **AD Check**: Scan `Architecture Discrepancies → arch-align` section. If unresolved AD entries exist → enter AD fix mode: read own existing output (LANGUAGE.md, BRD.md), read AD description, fix only what's required in LANGUAGE.md/BRD.md, mark Resolved. Skip remaining startup steps.
 5. **Migration Mode Detection (v2.1.0+)**: Before normal grilling, check:
