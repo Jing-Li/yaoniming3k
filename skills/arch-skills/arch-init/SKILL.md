@@ -50,8 +50,6 @@ docs/bc/<slug>/
 │   └── adr/                       # ADR files
 ├── detail/                        # arch-detail outputs
 │   └── modules/                   # Per-module design + interface contracts
-├── review/                        # arch-review outputs
-│   └── reviews/                   # Review archives
 └── ops/                           # ops skill outputs (future)
 ```
 

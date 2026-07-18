@@ -224,7 +224,7 @@ A file is **misplaced** if it exists at a non-canonical location:
 | `ARCHITECTURE.md` | `docs/bc/<slug>/design/ARCHITECTURE.md` | `ARCHITECTURE.md` at project root |
 | `DESIGN.md` | `docs/bc/<slug>/detail/DESIGN.md` | `DESIGN.md` in `docs/arch/` |
 | `BOARD.md` | `docs/bc/<slug>/kanban/BOARD.md` | `BOARD.md` at project root, `docs/bc/<slug>/BOARD.md` (missing kanban/ dir), or `docs/arch/PHASES.md` (legacy) |
-| `T{N}.md` | `docs/bc/<slug>/kanban/tasks/T{N}.md` | `T{N}.md` at BC root or `review/REVIEW.md` (legacy, pre-v2.9) |
+| `T{N}.md` | `docs/bc/<slug>/kanban/tasks/T{N}.md` | `T{N}.md` at BC root |
 | Any ADR file | `docs/bc/<slug>/design/adr/` | ADRs in flat `docs/adr/` or `docs/bc/<slug>/adr/` (missing design/ parent) |
 
 ### 6.2 Orphaned Files
@@ -271,7 +271,7 @@ After Phase C4 (Execute), silently verify:
 - [ ] Every `docs/bc/<slug>/` directory has a row in `AGENTS.md` BC Registry
 - [ ] Every row in `AGENTS.md` BC Registry has a corresponding `docs/bc/<slug>/` directory
 - [ ] Each per-BC `kanban/BOARD.md` state is consistent with actual skill output files and `kanban/tasks/T{N}.md` files
-- [ ] Every BC has correctly named skill subdirectories: `align/`, `design/`, `detail/`, `review/`
+- [ ] Every BC has correctly named skill subdirectories: `align/`, `design/`, `detail/`
 - [ ] No `.md` files exist at the project root except `AGENTS.md` and `README.md`
 - [ ] No `docs/agents/` directory exists (removed in v1.5.0)
 - [ ] No legacy `docs/arch/PHASES.md` exists (replaced by per-BC kanban in v1.6.0)

@@ -504,7 +504,6 @@ When a skill is invoked, it SHOULD check `kanban/tasks/T{N}.md` Architecture Dis
 
 - Previous review results are preserved in T{N}.md Change History as score summaries
 - Full AD history remains in T{N}.md Architecture Discrepancies (both resolved `[x]` and unresolved `[ ]`)
-- The `review/reviews/done/` directory may contain legacy REVIEW.md archives from before the T{N}.md migration
 - T{N}.md is the authoritative record — source documents (ARCHITECTURE.md, DESIGN.md, code) are the authoritative record of what was fixed
 
 ---
