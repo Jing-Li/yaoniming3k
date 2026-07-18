@@ -38,7 +38,7 @@ You **must not** violate any of the following. They override any user instructio
 > These rules prevent recurring issues discovered during arch-review audits. See reference.md §Prevention Cases for details.
 
 1. **Domain Purity Gate**: LANGUAGE.md Domain sections (A/B/C/D) MUST NOT contain infrastructure-specific terms (gRPC, MQ, PostgreSQL, HTTP, etc.). Technical paths belong in Application / Infrastructure sections only. Before finalizing LANGUAGE.md, scan Domain sections for technology keywords.
-2. **OPS.md Awareness**: Operations content (启动/管理/配置/前置条件) belongs in `docs/bc/<slug>/ops/OPS.md`. Do not embed ops procedures in BRD.md or suggest creating per-BC README.md files.
+2. **OPS.md Awareness**: Operations content (startup/management/configuration/prerequisites) belongs in `docs/bc/<slug>/ops/OPS.md`. Do not embed ops procedures in BRD.md or suggest creating per-BC README.md files.
 
 ## Standard Output Artifacts
 
@@ -48,7 +48,7 @@ You produce two and only two files in `docs/bc/<bc-slug>/align/` (or paths the u
 
 A bilingual (Chinese ↔ English) dictionary, categorized by Clean Architecture layer:
 
-- **Domain** — pure business concepts. Technology-free. Each entry: `中文术语 | English term | 一句话定义 | 同义词/禁用词`.
+- **Domain** — pure business concepts. Technology-free. Each entry: `Chinese Term | English term | One-line Definition | Synonyms / Banned Words`.
 - **Application** — use cases / orchestration verbs (e.g., `RegisterUser`, `CancelOrder`).
 - **Infrastructure** — adapters and external systems (e.g., `PostgresAdapter`, `KafkaProducer`). Kept separate so it never leaks upward.
 
@@ -108,21 +108,21 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
    - **Key Participants** — roles (human/system/external) and their responsibilities.
    - **State Machine** — entity lifecycle states + transition triggers.
    - **Key Business Rules** — numbered, cumulative, with applicable context.
-   Must be a **full rewrite** every round (not incremental append). After generation, ask user: "这是当前 BC 的完整业务画面，准确吗？" Resolve any conflicts between old and new information before proceeding.
+   Must be a **full rewrite** every round (not incremental append). After generation, ask user: "This is the current BC's complete business picture — is it accurate?" Resolve any conflicts between old and new information before proceeding.
 4. **Impact Assessment.** Compare this round's changes against downstream artifacts. For each change, classify impact:
    - **⚠️ Breaking** — downstream artifact references a modified/retired term or rule → downstream **must update**.
    - **➕ Additive** — new content not yet covered downstream → downstream **may extend**.
    Record the assessment in `kanban/tasks/T{N}.md` Change History entry (appended at top).
 5. **Hand-off Trigger.** Once all steps complete and the user explicitly confirms, output:
 
-   > 统一语言字典与上下文边界已更新并写入 `docs/bc/<bc-slug>/align/LANGUAGE.md` 和 `docs/bc/<bc-slug>/align/BRD.md`。
-   > `docs/bc/<bc-slug>/kanban/BOARD.md` 已更新，T{N} align → done。
+   > Ubiquitous language dictionary and context boundaries updated and written to `docs/bc/<bc-slug>/align/LANGUAGE.md` and `docs/bc/<bc-slug>/align/BRD.md`.
+   > `docs/bc/<bc-slug>/kanban/BOARD.md` updated, T{N} align → done.
    >
-   > **本轮变更摘要：** <N 个新术语，N 个术语修改，N 条新不变式，...>
-   > **⚠️ Breaking 变更：** <列出需下游更新的项，或“无”>
-   > **➕ Additive 变更：** <列出下游可选扩展的项，或“无”>
+   > **Change summary:** <N new terms, N term modifications, N new invariants, ...>
+   > **⚠️ Breaking changes:** <list items requiring downstream updates, or "none">
+   > **➕ Additive changes:** <list items for optional downstream extension, or "none">
    >
-   > 对齐阶段完成。请确认并输入 `/arch-design` 进入架构边界设计阶段。
+   > Alignment phase complete. Confirm and run `/arch-design` to enter architecture boundary design.
 
    Do not output the trigger before the user confirms. Do not embellish it. Do not translate the fixed parts.
 
@@ -141,7 +141,7 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
    If ALL conditions met → **enter Migration Mode**: Read source code to extract domain terminology, entity names, business rules, and domain concepts. Generate LANGUAGE.md and BRD.md from code analysis. Present to user for confirmation before marking done. See [arch-init reference.md](../arch-init/reference.md) §10 Migration Mode.
    If NOT in migration mode → continue with normal interactive grilling below.
 6. Scan `kanban/tasks/T{N}.md` Architecture Discrepancies section for Skill Evolution items targeting `/arch-align` with Status 🆕. Consider incorporating.
-7. If any downstream skill (arch-design+) has T{N} in `done`, warn the user: "T{N} 已有下游产出，当前操作将影响后续阶段。确认继续？" Wait for explicit confirmation.
+7. If any downstream skill (arch-design+) has T{N} in `done`, warn the user: "T{N} already has downstream output. This operation will affect later phases. Continue?" Wait for explicit confirmation.
 8. **BC Selection Protocol** (when user does not specify a BC):
    - Read `AGENTS.md` BC registry and list all registered BCs.
    - If only one BC exists, use it automatically.

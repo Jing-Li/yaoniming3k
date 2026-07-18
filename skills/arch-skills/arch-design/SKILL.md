@@ -74,7 +74,7 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
    - Choosing a third-party service or SaaS (auth provider, payment gateway)
    - Choosing to **NOT** adopt a commonly expected pattern (with justification)
    - **Choosing a PoEAA implementation pattern** (Domain Model / Transaction Script / Table Module) *(v1.10.0+)*
-   
+
    Each ADR follows the template in [references/adr-guide.md](references/adr-guide.md). After creating all ADRs, update ARCHITECTURE.md §5 ADR Index table to link every ADR. **Phase 2 completion gate**: all ADRs must reach `Accepted` or `Superseded` status — no `Proposed` ADR is allowed when Phase 2 is marked ✅.
    **Redo ADR management**: On redo cycles, review existing ADRs — decisions affected by align changes or architecture shifts must be Superseded (with link to replacing ADR) or Updated. Do not silently carry stale ADRs.
 
@@ -82,11 +82,11 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
    - **Domain Model** — rich behavior on entities, complex invariants, deep aggregate trees.
    - **Transaction Script** — flat procedural workflows, thin entities, mostly orchestration.
    - **Table Module** — one in-memory module per table, set-oriented logic.
-   
+
    **Devil's Advocate (mandatory):** After selecting a pattern, generate 1–2 strongest counter-arguments grounded in align-phase signals. Present the challenge and wait for user response before finalizing. Record both the counter-argument and user's rebuttal in ARCHITECTURE.md.
-   
+
    **Tracer Bullet Goal:** Define the single thinnest end-to-end vertical slice that proves the architecture works: one sentence with actor → action → observable outcome.
-   
+
    Record PoEAA pick (with justification + Devil's Advocate exchange) and Tracer Bullet Goal in ARCHITECTURE.md. See [references/poeaa-guide.md](references/poeaa-guide.md) for the full decision matrix.
 
 3. **Design Boundaries**: Map out the Clean Architecture boundaries:

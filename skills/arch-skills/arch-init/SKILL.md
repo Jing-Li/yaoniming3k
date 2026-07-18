@@ -154,17 +154,17 @@ After all items are resolved (either automatically for unambiguous cases, or via
 2. Output a governance report:
 
 ```
-## 治理报告
+## Governance Report
 
-### 发现 (N 项)
-- [已修复] <description>
-- [已删除] <description>
-- [保留例外] <description + user's reason>
+### Findings (N items)
+- [Fixed] <description>
+- [Deleted] <description>
+- [Kept Exception] <description + user's reason>
 
-### 最终状态
-- BC 数量: N
-- 漂移项: 0
-- 结构合规: ✅
+### Final State
+- BC count: N
+- Drift items: 0
+- Structural compliance: ✅
 ```
 
 3. Output the hand-off trigger.
@@ -189,23 +189,23 @@ After governance is complete, scan each BC for missing skill output files to ide
 2. **Gap report**: Present findings to the user:
 
    ```
-   ## 迁移缺口分析
+   ## Migration Gap Analysis
 
    [<bc-slug>]
-   - ✅ align/LANGUAGE.md — 已存在
-   - ❌ align/BRD.md — 缺失 (align-gap)
-   - ❌ design/ARCHITECTURE.md — 缺失 (design-gap)
-   - ❌ detail/DESIGN.md — 缺失 (detail-gap)
-   - ✅ 源代码 — Clean Architecture 结构已存在
+   - ✅ align/LANGUAGE.md — exists
+   - ❌ align/BRD.md — missing (align-gap)
+   - ❌ design/ARCHITECTURE.md — missing (design-gap)
+   - ❌ detail/DESIGN.md — missing (detail-gap)
+   - ✅ Source code — Clean Architecture structure exists
 
-   需要运行: /arch-align → /arch-design → /arch-detail → /devtdd → /arch-review
+   Pipeline run needed: /arch-align → /arch-design → /arch-detail → /devtdd → /arch-review
    ```
 
 3. **User confirmation (MANDATORY)**: Ask the user exactly one question:
 
-   > 发现 N 个文档缺口。是否要创建迁移任务并逐个运行管线 skill 来逆向生成文档？
-   > - **是** — 创建迁移任务 T{N}，从 /arch-align 开始
-   > - **否** — 仅保留当前结构，后续手动运行
+   > Found N documentation gaps. Create a migration task and run pipeline skills to reverse-generate docs?
+   > - **Yes** — Create migration task T{N}, start from /arch-align
+   > - **No** — Keep current structure, run manually later
 
    Do NOT proceed without explicit user confirmation. This is a hard constraint.
 
@@ -224,16 +224,16 @@ See [reference.md](reference.md) §10 Migration Mode for downstream skill behavi
 ## Hand-off Trigger
 
 **Mode A:**
-> 架构管线文档结构已初始化。请运行 `/arch-align` 开始第一个 BC 的概念与术语对齐。
+> Architecture pipeline document structure initialized. Run `/arch-align` to start concept and terminology alignment for the first BC.
 
 **Mode B:**
-> BC `<slug>` 已注册。请运行 `/arch-align` 开始 <BC Name> 的概念与术语对齐。
+> BC `<slug>` registered. Run `/arch-align` to start concept and terminology alignment for <BC Name>.
 
 **Mode C:**
-> 文档结构治理完成，N 项漂移已修复，M 项保留例外。结构已符合规范。
+> Document structure governance complete, N drift items fixed, M kept as exceptions. Structure now compliant.
 >
 > _(If Phase C6 ran and user confirmed migration:)_
-> 迁移任务 T{N} 已创建。请运行 `/arch-align` 开始逆向生成文档。
+> Migration task T{N} created. Run `/arch-align` to reverse-generate documentation.
 
 Do not output the trigger before the user confirms. Do not embellish. Do not translate.
 

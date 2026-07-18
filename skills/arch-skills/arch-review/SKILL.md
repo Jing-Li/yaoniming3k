@@ -125,7 +125,7 @@ Your response **must** use exactly 9 sections in this order. Full templates with
    Analysis: Domain layer imports `google.golang.org/grpc` in `domain/engine.go:12`,
    violating Clean Architecture's zero-external-import rule.
    Evidence: `grep -rn "google.golang.org/grpc" domain/` returns 1 match.
-   
+
    Question: "How should AD-D3 (Domain gRPC import leak) be handled?"
    Header: "arch-design"
    Options:
