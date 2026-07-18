@@ -54,13 +54,24 @@ After applying each fix:
 3. Append to T{N}.md Change History: `{date} | arch-review-fix | Resolved {AD-ID}: {what changed}`
 4. Report: "✅ {AD-ID} resolved. {Remaining} ADs remaining."
 
-**Step 5 — Completion:**
+**Step 5 — Completion & Mandatory Archive:**
 
-When all ADs are processed:
-1. Output summary: Resolved N / Deferred M / Skipped K
-2. If any deferred: list them for user review
-3. If all resolved: suggest re-running `/arch-review` for verification
-4. Update BOARD.md if needed (e.g., move task status)
+When all ADs are processed, execute the following steps **in order** — none are optional:
+
+1. **Output summary**: Resolved N / Deferred M / Skipped K
+2. **If any deferred**: list them for user review, skip to step 6 (no archive)
+3. **Update T{N}.md Status table**: For every skill that had at least one AD resolved in this session → set Status = `done`, Started/Completed = today's date. This reflects that the skill's redo obligation is fulfilled.
+4. **Update BOARD.md**: For every skill updated in step 3 → add T{N} to that skill's `done` column in BOARD.md Board table.
+5. **Archive check** (MANDATORY when all ADs resolved):
+   - Condition: ALL skills in T{N}.md Status table are `done` AND no unresolved `[ ]` Architecture Discrepancy entries exist in T{N}.md
+   - If condition met:
+     a. Remove T{N} from ALL skill rows in BOARD.md Board table
+     b. Add T{N} row to BOARD.md Archive table: `| T{N} | {comma-separated skill list} | {date} |`
+   - If condition NOT met (e.g., some skills still `new` with no ADs targeting them): leave T{N} in Board table, note reason in summary
+6. **Append to T{N}.md Change History**: `{date} | arch-review-fix | All ADs resolved. T{N} archived.` (or: `... T{N} not archived: {reason}.`)
+7. Suggest re-running `/arch-review` for verification
+
+> **Why mandatory?** Tasks left in Board table after all ADs resolved create visual noise and confuse future skill runs. Archive is the terminal state — every resolved task MUST reach it.
 
 ## Fix Scope Matrix
 

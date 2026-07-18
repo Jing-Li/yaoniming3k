@@ -40,6 +40,8 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clea
 
 8. **CHANGE HISTORY INTEGRITY**: When writing to T{N}.md Change History, validate: (a) new entry date ≥ all existing entry dates (monotonic non-decreasing), (b) Architecture Discrepancies resolved items use `[x]` checkbox — never remove resolved items, only mark them. On date violation, warn and use the correct date.
 
+9. **MANDATORY POST-FIX ARCHIVE (v3.3.0+)**: After Fix Guidance Mode resolves ALL ADs in a T{N}.md, archiving is **mandatory** — not optional. Steps: (a) update T{N}.md Status table: all skills with resolved ADs → `done`, (b) update BOARD.md: add T{N} to each skill's `done` column, (c) check archive condition: if ALL skills are `done` AND no unresolved `[ ]` ADs → move T{N} from Board table to Archive table. Never leave a fully-resolved task sitting in the Board table. See [references/fix-guidance-mode.md](references/fix-guidance-mode.md) Step 5 for the complete protocol.
+
 ---
 
 ## 📊 Standard Review Report
