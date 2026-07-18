@@ -49,6 +49,13 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 7. **DOCUMENT OWNERSHIP & UPSTREAM CONSISTENCY GATE**: `arch-detail` is the **sole owner** of `DESIGN.md`, `detail/modules/*/module.md`, and `detail/modules/*/interfaces/*.md`. It produces detailed design only — it does NOT write source code (that is `/devtdd`'s job) and does NOT modify `ARCHITECTURE.md` or `LANGUAGE.md` (owned by `/arch-design` and `/arch-align` respectively). It MAY read `BRD.md` for business context. When writing `module.md §3` (runtime behavior), arch-detail MUST compare against `ARCHITECTURE.md §2.x`. If any semantic conflict exists, arch-detail MUST write an **Architecture Discrepancy (AD)** to `T{N}.md → Architecture Discrepancies → arch-design section` — it must NOT directly modify ARCHITECTURE.md. The AD should include: the conflicting component name, ARCHITECTURE.md's current description, module.md's refined description, and suggested resolution.
 
+## Prevention Rules (from AD history)
+
+> These rules prevent recurring issues discovered during arch-review audits. See reference.md §Prevention Cases for details.
+
+1. **Design-Only Sections**: DESIGN.md Diagnosis Checklist (§7) MUST contain only design-level architectural constraints (import rules, interface signatures, structural invariants). NEVER mix in implementation status tracking (`[x]`/`[ ]` with Task references like "Task 10 ✅"). Implementation status is tracked exclusively in kanban T{N}.md.
+2. **Verifiable Task Descriptions**: DESIGN.md §5 Task Summary descriptions MUST accurately reflect the implementation approach. Do not describe a component as "standalone binary" if it's actually a driving adapter, or imply a separate process when it's embedded. Cross-check descriptions against the module.md files for consistency.
+
 ---
 
 ## 🚶 Steps to Execute (执行步骤)
@@ -189,7 +196,7 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 ## Kanban Protocol
 
-See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
+See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
 ---
 

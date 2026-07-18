@@ -31,7 +31,7 @@ next_task_id: 0
 - **Each cell** contains comma-separated task IDs (e.g., `T1, T2`)
 - **Empty cell** = no tasks in that state for that skill
 - **Counter** starts at `0`; incremented each time a new task is created by arch-align
-- **See [kanban-spec.md](../arch-kanban/references/kanban-spec.md)** for the full interaction protocol
+- **See [kanban-spec.md](../arch-conventions/references/kanban-spec.md)** for the full interaction protocol
 
 ---
 
@@ -62,7 +62,7 @@ All file paths are relative to the target BC directory `docs/bc/<slug>/`.
 
 ## Writing Protocol
 
-Each skill **must** update `kanban/BOARD.md` and `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-kanban/references/kanban-spec.md) protocol:
+Each skill **must** update `kanban/BOARD.md` and `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md) protocol:
 
 | Skill | On Completion |
 |-------|---------------|
@@ -116,7 +116,7 @@ After scaffolding, silently verify:
 
 ### Mode B (New BC)
 
-- [ ] `docs/bc/<slug>/` directory exists with: `kanban/tasks/`, `align/brds/`, `design/adr/`, `detail/modules/`, `review/reviews/`
+- [ ] `docs/bc/<slug>/` directory exists with all directories from the canonical structure (see SKILL.md Mode A tree)
 - [ ] `docs/bc/<slug>/kanban/BOARD.md` exists with counter=0 and all skill rows empty
 - [ ] `AGENTS.md` BC Registry has a new row for the slug
 - [ ] No task files (T{N}.md) or Phase 1-4 content files were created inside the new BC

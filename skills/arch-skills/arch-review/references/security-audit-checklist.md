@@ -91,6 +91,6 @@ The Security Posture axis evaluates OWASP Top 10 compliance and CVSS-scored find
 | Multi | Semgrep | `semgrep --config=auto` |
 | Multi | Trivy | `trivy fs --scanners vuln .` |
 
-## Recording in REVIEW.md
+## Recording in T{N}.md
 
-Security findings are included in the standard AD table with Route = `/devtdd` (code fix) or `/arch-detail` (design gap). The Security Posture score is reported as part of the architecture health score.
+Security findings are included in the standard AD table in T{N}.md → Architecture Discrepancies with Route = `/devtdd` (code fix) or `/arch-detail` (design gap). The Security Posture score is reported as part of the architecture health score.

@@ -31,6 +31,13 @@ You are a Senior System Architect. Your task is to design a robust, clean, and h
 
 4. **STRICT DICTIONARY ALIGNMENT**: You must strictly use the terms and English mappings defined in `LANGUAGE.md`. Do not invent or introduce any unaligned components or names.
 
+## Prevention Rules (from AD history)
+
+> These rules prevent recurring issues discovered during arch-review audits. See reference.md §Prevention Cases for details.
+
+1. **Ghost Path Prevention**: ARCHITECTURE.md MUST NOT reference files, packages, or directories that don't exist in the codebase. Before writing any path (e.g., `cmd/taiyi/main.go`), verify it exists via glob/grep.
+2. **Cross-BC No Duplication**: Cross-BC event contracts belong in each BC's ARCHITECTURE.md §6. Do NOT generate separate system-level topology documents (e.g., SYSTEM.md) — they become stale and duplicate ARCHITECTURE.md content.
+
 ---
 
 ## 📐 Architecture Specification Blueprint (架构设计标准)
@@ -69,7 +76,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 
 6. **Open Questions / Deferred Decisions**: Unresolved items.
 
-7. **Version History**: removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-kanban/references/kanban-spec.md).
+7. **Version History**: removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
 
 8. **Cross-Cutting Strategies (v1.14.0+)**: Architecture-level decisions for concerns that span all layers. Each item records only the **strategy choice** (A vs B) and **which layer** owns it — not implementation details (those belong to detail). Items: Error Handling, Data Consistency, DI Strategy, Concurrency Model, Configuration Management, Observability.
 
@@ -241,7 +248,7 @@ For ADR management and supplementary references, see the `references/` subdirect
 
 ## Kanban Protocol
 
-See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for:
+See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for:
 - Common Startup/Completion sequences (§4.1, §4.2)
 - Redo protocol (§4.4)
 - T{N}.md structure (§3)

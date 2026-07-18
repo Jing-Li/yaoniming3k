@@ -167,7 +167,7 @@ internal/
 ## 7. Change History (in T{N}.md)
 
 > No longer in ARCHITECTURE.md. Change history is tracked per-task in `kanban/tasks/T{N}.md`.
-> See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) §3 for T{N}.md format.
+> See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) §3 for T{N}.md format.
 
 ## 8. Cross-Cutting Strategies
 
@@ -268,3 +268,25 @@ If the alignment artifacts (`LANGUAGE.md` / `BRD.md`) are ambiguous on a boundar
 
 Example:
 > "用户在 NFR 对话中提到需要 PostgreSQL 和 local FS 两种持久化。Should `Imprint` use a single `ImprintStore` port covering both, or split into `ImprintMetaRepo` (Postgres) + `ImprintBlobStore` (FS)? — Pick one."
+
+---
+
+## Prevention Cases (from AD history)
+
+### Case P1: Ghost Paths in Architecture Documents (AD-D1, 2026-07-18)
+
+**Trigger**: arch-review found ARCHITECTURE.md §4 and SYSTEM.md referenced `platform/cmd/taiyi/main.go` — a path that doesn't exist in the codebase.
+
+**Root Cause**: ARCHITECTURE.md was written based on planned structure, not verified against actual code. The `cmd/taiyi/` CLI entry was planned but never implemented.
+
+**Fix Applied**: Deleted SYSTEM.md (redundant + ghost paths), simplified AGENTS.md repo structure to top-level only.
+
+**Lesson**: Before writing any file/package path in ARCHITECTURE.md, verify it exists via glob/grep. If a path is planned but not yet implemented, mark it explicitly as `"(planned)"` rather than listing it as existing.
+
+### Case P2: Cross-BC System Document Redundancy (AD-D1, 2026-07-18)
+
+**Trigger**: arch-review found `docs/arch/SYSTEM.md` duplicated cross-BC information already present in each BC's ARCHITECTURE.md §6.
+
+**Root Cause**: The skill generated a system-level topology document to provide a "bird's eye view", but this created a second source of truth that became stale as individual ARCHITECTURE.md files evolved independently.
+
+**Lesson**: Cross-BC event contracts are Published Language — each BC's ARCHITECTURE.md §6 is the canonical source. Do NOT generate separate system-level documents. If a bird's eye view is needed, AGENTS.md's BC Registry table serves that purpose.

@@ -767,3 +767,25 @@ If `ARCHITECTURE.md` or `DESIGN.md` is ambiguous on a detail (e.g., column nulla
 
 Example:
 > "`ARCHITECTURE.md` lists `CensusSweeper` as a port but does not specify whether sweep is triggered by cron or by API. Which one? — Pick one."
+
+---
+
+## Prevention Cases (from AD history)
+
+### Case P1: Implementation Tracking in Design Documents (AD-Dt1, 2026-07-18)
+
+**Trigger**: arch-review found AYuan DESIGN.md §7 mixed design constraints with implementation status (`[x] Engine interface has 4 methods — **Task 10** ✅`). §8 "Code↔Design Alignment Status" and §10 "Adapter Implementation Status" were pure implementation tracking tables.
+
+**Root Cause**: During devtdd cycles, implementers naturally added status tracking to DESIGN.md as a convenient place to mark progress. The skill didn't have an explicit rule separating design constraints from implementation status.
+
+**Fix Applied**: §7 rewritten to pure design constraints only (no Task references, all `[ ]` for verification). §8 and §10 deleted entirely.
+
+**Lesson**: DESIGN.md Diagnosis Checklist (§7) is a design-time verification list — "what MUST be true about the architecture." Implementation progress ("what has been done") belongs in kanban T{N}.md. These are fundamentally different concerns and must never mix.
+
+### Case P2: Task Description Architecture Mismatch (AD-Dt2, 2026-07-18)
+
+**Trigger**: arch-review found DESIGN.md §5 Task 7 described as "TaiyiCLI Watch (gRPC Streaming Client)" — implying a standalone CLI binary, when the actual implementation is a driving adapter within the platform daemon (`infra/cli/watch.go`).
+
+**Root Cause**: The task description was written during initial design, before implementation revealed the actual architecture. It was never updated to reflect the realized design.
+
+**Lesson**: Task descriptions in §5 must accurately reflect the implementation approach. After devtdd completes a task, verify the DESIGN.md description still matches. If the implementation approach changed, update the description to match reality.

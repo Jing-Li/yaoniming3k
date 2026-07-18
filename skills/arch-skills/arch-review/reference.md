@@ -327,7 +327,7 @@ Every Architecture Debt item MUST be assigned exactly one Route. Use this table 
 | Structural violation: DIP / package layout / port placement | `/arch-design` | ARCHITECTURE.md | Domain imports infrastructure package |
 | Design gap: missing interface / missing DDL / module omission | `/arch-detail` | DESIGN.md, module.md, interfaces/ | No Data Mapper for a persisted entity |
 | Code implementation issue: missing file / missing test / TODO stub | `/devtdd` | source code, test files | Port interface has no adapter implementation |
-| Skill self-defect: checklist missing a rule / rubric gap | `/arch-review-self` | REVIEW.md, reference.md | No check for Go `embed` misuse in §1.1 |
+| Skill self-defect: checklist missing a rule / rubric gap | `/arch-review-self` | reference.md, SKILL.md | No check for Go `embed` misuse in §1.1 |
 
 ### Priority When Multiple Routes Apply
 
@@ -370,7 +370,7 @@ Root Cause Analysis:
 
 ### Special Case: First Review
 
-On the first review (no prior REVIEW.md), all findings default to:
+On the first review (no prior scores in T{N}.md Change History), all findings default to:
 - Missed By: the phase most relevant to the finding
 - Miss Reason: Checklist Gap (assume the checklist hasn't been battle-tested yet)
 
@@ -378,7 +378,7 @@ On the first review (no prior REVIEW.md), all findings default to:
 
 ## 9. Architecture Debt Item Template
 
-Full structure for each AD entry in REVIEW.md:
+Full structure for each AD entry in T{N}.md → Architecture Discrepancies:
 
 ```markdown
 ### AD-NNN: <Short Title>
@@ -415,7 +415,7 @@ Full structure for each AD entry in REVIEW.md:
 - IDs are **sequential integers** starting from 001
 - IDs are **never reused** — even after resolution, the ID remains in history
 - When a resolved item regresses, it gets its original ID back with Status 🔄 Recurring
-- IDs are scoped to a single BC's REVIEW.md; cross-BC reference format: `<bc-slug>/AD-NNN`
+- IDs are scoped to a single BC's T{N}.md; cross-BC reference format: `<bc-slug>/AD-NNN`
 
 ---
 
@@ -445,7 +445,7 @@ Suggestions for improving arch-review itself or other pipeline skills.
 
 ### Consumption Protocol
 
-When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/review/REVIEW.md` for any SE items targeting it (Status 🆕) and consider incorporating them before proceeding.
+When a skill is invoked, it SHOULD check `kanban/tasks/T{N}.md` Architecture Discrepancies for any AD items targeting it (Status `[ ]`) and consider incorporating them before proceeding.
 
 ---
 
@@ -453,12 +453,12 @@ When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/review/REVIEW.md` fo
 
 ### When to Compare
 
-- After scoring (Step 7) and before writing REVIEW.md (Step 10)
-- Only when a previous REVIEW.md exists (skip on first review)
+- After scoring (Step 7) and before writing T{N}.md (Step 10)
+- Only when T{N}.md Change History contains previous review scores (skip on first review)
 
 ### Comparison Algorithm
 
-1. **Parse Previous Architecture Debt Table**: Extract all items with Status != ✅ Resolved from the previous REVIEW.md.
+1. **Parse Previous ADs from T{N}.md**: Extract all items with Status `[x]` (previously resolved) from T{N}.md Architecture Discrepancies.
 2. **Match Current Findings to Previous ADs**:
    - Match by: Location + Violation type + Description similarity
    - If matched → mark as 🔄 Recurring (if still open) or ✅ Resolved (if fixed)
@@ -488,22 +488,12 @@ When a skill is invoked, it SHOULD check `docs/bc/<bc-slug>/review/REVIEW.md` fo
 **Regressions**: AD-xxx (was resolved in v{M}, reappeared)
 ```
 
-### Archive Naming Convention
+### Archive of Archived Reviews
 
-- Current file: `REVIEW.md` (always at BC root for easy access by other skills)
-- Active archive: `reviews/v{N}.md` — contains unresolved AD items (full snapshot at time of archiving)
-- Closed archive: `reviews/done/v{N}.md` — all AD items resolved (full snapshot preserved)
-
-### Archive Lifecycle
-
-1. When `/arch-review` runs and a previous `REVIEW.md` exists:
-   a. Check all AD items in the current `REVIEW.md`.
-   b. If **all AD Status = ✅ Resolved** → move to `reviews/done/v{N}.md`.
-   c. If **any AD Status ≠ ✅ Resolved** → move to `reviews/v{N}.md`.
-2. Create `reviews/` and `reviews/done/` directories if they don't exist.
-3. Archives are NEVER deleted — they form an immutable audit trail.
-4. **REVIEW.md is a lightweight dashboard** — it does NOT contain a Resolved Debt table. Resolved items exist only in archives and in the stdout Version Diff Summary.
-5. Other skills consume REVIEW.md for active debt tracking only — source documents (ARCHITECTURE.md, DESIGN.md, code) are the authoritative record of what was fixed.
+- Previous review results are preserved in T{N}.md Change History as score summaries
+- Full AD history remains in T{N}.md Architecture Discrepancies (both resolved `[x]` and unresolved `[ ]`)
+- The `review/reviews/done/` directory may contain legacy REVIEW.md archives from before the T{N}.md migration
+- T{N}.md is the authoritative record — source documents (ARCHITECTURE.md, DESIGN.md, code) are the authoritative record of what was fixed
 
 ---
 
@@ -571,4 +561,4 @@ When arch-review generates an Execution Plan:
 1. If any AD routes to Phase 1-3 (upstream of devtdd): update `kanban/tasks/T{N}.md` Change History
 2. Note affected upstream skills in Change History for redo detection
 3. If only `/devtdd` ADs exist: do NOT increment Cycle (Phase 4 internal iteration)
-4. Write the new Cycle number and Phase 🔄/⏭ marks atomically with REVIEW.md
+4. Write the new Cycle number and Phase 🔄/⏭ marks atomically with T{N}.md update

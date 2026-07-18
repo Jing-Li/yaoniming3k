@@ -100,7 +100,7 @@ Progressive-disclosure companion to `SKILL.md`. Load only when actively running 
 ## 5. Change History (in T{N}.md)
 
 > No longer in BRD.md. Change history is tracked per-task in `kanban/tasks/T{N}.md`.
-> See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) §3 for T{N}.md format.
+> See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) §3 for T{N}.md format.
 ```
 
 ---
@@ -203,3 +203,27 @@ When the user pushes back on a constraint, follow this exact sequence:
 5. **Wait.** Do not proceed until they pick (a) or (b).
 
 Never silently bend a hard constraint. Never proceed on assumption.
+
+---
+
+## Prevention Cases (from AD history)
+
+> Case studies that motivated Prevention Rules in SKILL.md. Each case includes: the AD that triggered it, what was found, and the fix applied.
+
+### Case P1: Domain Section Technology Leakage (AD-A3, 2026-07-18)
+
+**Trigger**: arch-review found LANGUAGE.md Domain A and C contained "gRPC UpsertCensus" — an infrastructure term in the technology-free Domain section.
+
+**Root Cause**: During grilling, the discussion naturally drifted to implementation details. The output writer didn't enforce the Domain/Application boundary when writing the 写入路径 and 灵簿层要点 sections.
+
+**Fix Applied**: Replaced `"元 直接调用平台 gRPC UpsertCensus"` with business-semantic description `"元 广播 online 事件 → 平台感知后自动更新灵簿"`. Technology terms moved to Application section where they belong.
+
+**Lesson**: After writing each Domain section (A/B/C/D), do a final scan for infrastructure keywords: gRPC, MQ, PostgreSQL, HTTP, SQL, file I/O, etc. If found, move to Application/Infrastructure sections.
+
+### Case P2: Operations Content Misplacement (AD-A1, AD-A2, 2026-07-18)
+
+**Trigger**: arch-review found per-BC README.md files containing ops content (启动/管理/配置) that should be in `ops/OPS.md`.
+
+**Root Cause**: BRD.md grilling may surface ops procedures, and there was no explicit rule about where ops content goes.
+
+**Lesson**: If BRD.md discussion produces ops content, note that it belongs in `ops/OPS.md` (managed by future ops skill). Never embed ops procedures in LANGUAGE.md or BRD.md.

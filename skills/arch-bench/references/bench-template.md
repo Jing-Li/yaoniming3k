@@ -4,6 +4,31 @@
 
 ---
 
+## 输出目录结构
+
+bench.yaml 生成后，所有产物位于 `bench-{name}/` 目录（`{name}` 取自 §2 `case.name`）：
+
+```
+bench-{name}/
+├── bench.yaml                    ← 本文件（IMMUTABLE after confirm）
+├── EVOLUTION.md                  ← 跨轮次进化日志
+├── reports/
+│   └── cycle-{N}.md              ← 每轮评估报告
+└── v{N}/                         ← Cycle N 管线产出（隔离目录）
+    ├── AGENTS.md
+    ├── docs/bc/{slug}/
+    │   ├── kanban/
+    │   ├── align/
+    │   ├── design/
+    │   ├── detail/
+    │   └── review/
+    ├── src/
+    ├── tests/
+    └── (config files)
+```
+
+---
+
 ## §1 Benchmark Meta
 
 harness 元信息，自动填充，无需追问。

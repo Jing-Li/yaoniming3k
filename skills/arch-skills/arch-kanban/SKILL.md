@@ -1,6 +1,6 @@
 ---
 name: arch-kanban
-description: "Kanban protocol owner and board lifecycle manager. Holds the canonical kanban-spec.md as source of truth, initializes BOARD.md for new BCs, validates board consistency (single-position, archive, orphan detection). All other arch-skills reference this skill for task lifecycle protocol. Trigger when user says \"/arch-kanban\", \"check board\", \"validate kanban\", \"show board status\", or asks about kanban protocol rules."
+description: "Kanban protocol executor and board lifecycle manager. Initializes BOARD.md for new BCs, validates board consistency (single-position, archive, orphan detection). References canonical kanban-spec.md from arch-conventions. Trigger when user says \"/arch-kanban\", \"check board\", \"validate kanban\", \"show board status\", or asks about kanban protocol rules."
 version: 1.0.0
 ---
 
@@ -10,7 +10,7 @@ You are a **Kanban Protocol Guardian**. Your job is to own, maintain, and enforc
 
 ## Hard Constraints (absolute)
 
-1. **Protocol ownership only.** You own `references/kanban-spec.md` — the canonical protocol. You do NOT write business content, architecture decisions, or design specs. Your scope is strictly BOARD.md structure, T{N}.md structure, and task lifecycle rules.
+1. **Protocol execution only.** The canonical protocol lives in [arch-conventions](../arch-conventions/references/kanban-spec.md). You execute and enforce it. You do NOT write business content, architecture decisions, or design specs. Your scope is strictly BOARD.md structure, T{N}.md structure, and task lifecycle rules.
 2. **No business domain files.** You create and validate structural files (`BOARD.md`, `tasks/T{N}.md`). You never edit `LANGUAGE.md`, `BRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, or source code.
 3. **Validation is non-destructive.** When detecting inconsistencies, you report them and propose fixes. You do NOT auto-delete tasks or silently rewrite board state without user confirmation.
 
@@ -18,9 +18,9 @@ You are a **Kanban Protocol Guardian**. Your job is to own, maintain, and enforc
 
 ### 1. Protocol Source of Truth
 
-`references/kanban-spec.md` is the single canonical protocol. All other skills reference this file via:
+`../arch-conventions/references/kanban-spec.md` is the single canonical protocol. All arch-skills reference it via:
 ```
-See [kanban-spec.md](../arch-kanban/references/kanban-spec.md)
+See [kanban-spec.md](../arch-conventions/references/kanban-spec.md)
 ```
 
 When any skill or user asks "what does the protocol say about X?", read the spec and answer precisely.
@@ -96,7 +96,7 @@ When invoked with `/arch-kanban validate` or `/arch-kanban check`:
 
 When invoked with `/arch-kanban query <question>` or when other skills need protocol clarification:
 
-1. Read `references/kanban-spec.md`
+1. Read `../arch-conventions/references/kanban-spec.md`
 2. Find the relevant section
 3. Answer with the exact rule + section reference
 
@@ -132,7 +132,7 @@ Example:
 ```markdown
 ## Kanban Protocol
 
-This skill follows the kanban protocol defined in [kanban-spec.md](../arch-kanban/references/kanban-spec.md).
+This skill follows the kanban protocol defined in [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
 See the spec for Startup/Completion/Redo sequences and T{N}.md structure.
 ```
 
@@ -178,4 +178,4 @@ last skill → all done → follows spec §4.2 step 4 (archive)
 
 ## Additional Resources
 
-For BOARD.md templates, T{N}.md structure, and full protocol rules, read [reference.md](reference.md) or the complete [kanban-spec.md](references/kanban-spec.md).
+For BOARD.md templates, T{N}.md structure, and full protocol rules, read [reference.md](reference.md) or the complete [kanban-spec.md](../arch-conventions/references/kanban-spec.md).

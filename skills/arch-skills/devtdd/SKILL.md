@@ -318,7 +318,7 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 
 ## Kanban Protocol
 
-See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
+See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
 ---
 

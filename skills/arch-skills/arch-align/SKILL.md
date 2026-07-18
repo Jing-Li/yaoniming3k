@@ -21,7 +21,14 @@ You **must not** violate any of the following. They override any user instructio
 1. **No code, no DDL, no diagrams.** This phase produces only `LANGUAGE.md` and `BRD.md`. No Mermaid, no SQL, no Go/Java/Python.
 2. **Restricted tool surface.** You are only permitted to read, create, or edit `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, `docs/bc/<bc-slug>/align/brds/`, `docs/bc/<bc-slug>/kanban/BOARD.md`, and `docs/bc/<bc-slug>/kanban/tasks/T{N}.md`. You do not touch `ARCHITECTURE.md`, `DESIGN.md`, source code, schema files, or build configs.
 3. **One decision per response.** When clarifying ambiguity, ask exactly one sharp question at a time. When the candidate answers form a finite set, prefer **structured options** (via `AskUserQuestions`) presenting 2–4 choices with brief descriptions. Never batch multiple questions; never proceed on assumption when a term is unclear.
-4. **Align before everything.** If the user tries to skip to design, you refuse and re-anchor to the alignment task. The hand-off trigger is the only exit.
+5. **ALIGN before everything.** If the user tries to skip to design, you refuse and re-anchor to the alignment task. The hand-off trigger is the only exit.
+
+## Prevention Rules (from AD history)
+
+> These rules prevent recurring issues discovered during arch-review audits. See reference.md §Prevention Cases for details.
+
+1. **Domain Purity Gate**: LANGUAGE.md Domain sections (A/B/C/D) MUST NOT contain infrastructure-specific terms (gRPC, MQ, PostgreSQL, HTTP, etc.). Technical paths belong in Application / Infrastructure sections only. Before finalizing LANGUAGE.md, scan Domain sections for technology keywords.
+2. **OPS.md Awareness**: Operations content (启动/管理/配置/前置条件) belongs in `docs/bc/<slug>/ops/OPS.md`. Do not embed ops procedures in BRD.md or suggest creating per-BC README.md files.
 
 ## Standard Output Artifacts
 
@@ -45,7 +52,7 @@ Captures, in this order:
 2. **In / Out of scope** — bullet lists.
 3. **Open Questions** — anything still ambiguous, blocking `/arch-design`.
 4. **Business Overview** — holistic summary of the BC's complete business picture (see Step 3). Contains: core business flow, key participants, state machine, key business rules. Overwritten each round.
-5. **Version History** — removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-kanban/references/kanban-spec.md).
+5. **Version History** — removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
 
 ### 3. `align/brds/` — Per-Round BRD Archives
 
@@ -134,7 +141,7 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
 **Task Creation (align only):**
 1. Read `kanban/BOARD.md` → get `next_task_id` (e.g., 0).
 2. Increment `kanban/BOARD.md` `next_task_id` to 1.
-3. Create `docs/bc/<bc-slug>/kanban/tasks/T0.md` with initial structure (see [kanban-spec.md](../arch-kanban/references/kanban-spec.md) §3).
+3. Create `docs/bc/<bc-slug>/kanban/tasks/T0.md` with initial structure (see [kanban-spec.md](../arch-conventions/references/kanban-spec.md) §3).
 4. Update `kanban/BOARD.md`: add T0 to arch-align `new` column.
 5. Move T0 from `new` to `doing`.
 
@@ -163,7 +170,7 @@ For EARS requirement syntax guide and Spec Mining techniques (v1.3.0+), see the 
 
 ## Kanban Protocol
 
-arch-align is the **only skill that creates new tasks**. See [kanban-spec.md](../arch-kanban/references/kanban-spec.md) for:
+arch-align is the **only skill that creates new tasks**. See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for:
 - Task Creation protocol (§4.3)
 - Common Startup/Completion sequences (§4.1, §4.2)
 - T{N}.md structure (§3)

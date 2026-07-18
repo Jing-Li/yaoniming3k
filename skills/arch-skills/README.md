@@ -7,13 +7,12 @@
 ## 流水线概览
 
 ```
-                ┌──────────────────────────────────────────┐
-                │  /arch-kanban  (看板协议 + 数据完整性)   │
-                │  kanban-spec.md — 所有 skill 引用此协议    │
-                └───────────────┬──────────────────────────┘
-                                │ 引用
         ┌───────────────────────────────────────────────────────────┐
-        │                                                           │
+        │  /arch-conventions (共享协议: kanban-spec + question-spec) │
+        │  /arch-kanban      (看板执行者, 引用 conventions)          │
+        └──────────────────────────┬────────────────────────────────┘
+                                   │ 引用
+        ┌───────────────────────────────────────────────────────────┐
 Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4│
 /arch-init → /arch-align → /arch-design → /arch-detail → /arch-review
  (脚手架)    (术语对齐)    (边界设计)      (详细设计)    (架构审计)
@@ -27,7 +26,8 @@ Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4│
 | Skill | Phase | 描述 |
 |-------|-------|------|
 | **arch-init** | Phase 0 | 项目脚手架与文档治理。初始化 arch pipeline 文档结构，注册 Bounded Context，或审计/修复混乱的文档回归规范形式。幂等安全可重跑。 |
-| **arch-kanban** | 基础设施 | 看板协议持有者与生命周期管理。持有 kanban-spec.md 作为唯一信源，初始化 BOARD.md，校验看板一致性（单位置、归档、孤儿检测）。所有 skill 引用其协议。 |
+| **arch-conventions** | 基础设施 | 共享协议总持有者。统一管理 `kanban-spec.md`（任务生命周期协议）和 `ask-user-question-spec.md`（结构化提问协议），所有 arch-skills 从此处引用协议。 |
+| **arch-kanban** | 基础设施 | 看板协议执行者与生命周期管理。引用 conventions 中的 kanban-spec，初始化 BOARD.md，校验看板一致性（单位置、归档、孤儿检测）。 |
 | **arch-align** | Phase 1 | 概念与术语对齐。在任何设计工作之前，通过质询式对话对齐业务概念、统一语言 (DDD Ubiquitous Language) 和企业架构模式。产出 `LANGUAGE.md` + `BRD.md`。 |
 | **arch-design** | Phase 2 | 边界设计与可视化。基于 Phase 1 产出，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`，并管理 Architecture Decision Records (ADR)。 |
 | **arch-detail** | Phase 3 | 详细设计与多语言实现映射。将 `ARCHITECTURE.md` 的边界翻译为模块化 `DESIGN.md` 索引 + 每模块设计文件 + 每方法接口契约，支撑垂直切片 TDD。 |
@@ -57,6 +57,7 @@ npx skills@latest add <your-repo>/skills/arch-skills
 每个 skill 可通过斜杠命令或自然语言触发：
 
 - `/arch-init` | "init arch" | "scaffold docs" | "set up architecture pipeline"
+- `/arch-conventions` | "show kanban spec" | "show question spec" | "shared conventions"
 - `/arch-kanban` | "check board" | "validate kanban" | "show board status"
 - `/arch-align` | "align terms" | "grill the requirements" | "build the dictionary"
 - `/arch-design` | "design architecture" | "draw the boundaries" | "visualize dependencies"
@@ -79,14 +80,17 @@ npx skills@latest add <your-repo>/skills/arch-skills
 ```
 arch-skills/
 ├── README.md              ← 本文件
+├── arch-conventions/      ← 共享协议总持有者 (NEW)
+│   ├── SKILL.md
+│   └── references/
+│       ├── kanban-spec.md ← 看板协议规范 (source of truth)
+│       └── ask-user-question-spec.md ← 结构化提问协议
 ├── arch-init/
 │   ├── SKILL.md           ← 主技能定义
 │   └── reference.md       ← 补充参考
-├── arch-kanban/           ← 看板协议所有者
+├── arch-kanban/           ← 看板执行者 (引用 conventions)
 │   ├── SKILL.md           ← 协议守卫 + 初始化 + 校验
-│   ├── reference.md       ← 快速参考
-│   └── references/
-│       └── kanban-spec.md ← 完整协议规范 (source of truth)
+│   └── reference.md       ← 快速参考
 ├── arch-align/
 │   ├── SKILL.md
 │   ├── reference.md
@@ -94,7 +98,7 @@ arch-skills/
 ├── arch-design/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← NFR 清单、架构模式、数据库选型、ADR 指南
+│   └── references/        ← NFR 清单、架构模式、数据库选型、ADR 指南、PoEAA
 ├── arch-detail/
 │   ├── SKILL.md
 │   ├── reference.md
@@ -106,7 +110,7 @@ arch-skills/
 └── devtdd/
     ├── SKILL.md
     ├── reference.md
-    └── references/        ← 测试反模式、Flaky Test 协议
+    └── references/        ← 测试反模式
 ```
 
 ## 兼容性
