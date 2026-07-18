@@ -118,6 +118,19 @@ Add a dedicated task in DESIGN.md §5 Task Summary for operational entry:
 ---
 
 ## 9. <Language> Diagnosis Checklist (Global)
+
+## 10. Stub Adapter Tracking
+
+Track adapters that are scaffolded but not yet fully implemented. Updated by `/devtdd` as tasks complete.
+
+| Adapter | Port | Status | TODO Items |
+|---------|------|--------|------------|
+| <AdapterName> | <PortName> | Stub / Implemented | <remaining items or "—" when done> |
+
+Rules:
+- Every adapter scaffolded during Composition Root wiring MUST appear here as "Stub".
+- When `/devtdd` completes an adapter implementation, update Status to "Implemented" and clear TODO Items.
+- Remove rows only when the adapter is deleted from the codebase.
 ```
 
 **Header requirements**:

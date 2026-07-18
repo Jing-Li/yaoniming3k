@@ -148,7 +148,7 @@ For EACH micro-cycle from Step 3:
    - Test-after coding (tests mirror implementation) → write test FIRST
    - Shared mutable state (tests fail with `-shuffle=on`) → fresh state per test
    See [references/test-anti-patterns.md](references/test-anti-patterns.md) for the full catalog with examples.
-6. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Part II Banned Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
+6. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Banned / Retired Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
 7. Run ALL tests again. All must still pass.
 
 #### Per-Cycle Self-Check

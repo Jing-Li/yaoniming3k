@@ -24,8 +24,6 @@ Create the full scaffolding:
 ```
 AGENTS.md                          # Project entry: BC registry + pipeline + guide
 docs/
-├── arch/
-│   └── SYSTEM.md                  # Cross-BC topology (only when 2+ BCs, created by /arch-design)
 └── bc/                            # BC directories go here (created by /arch-align or Mode B)
 ```
 
@@ -89,7 +87,7 @@ Execute the following scans to build a complete inventory (see [reference.md](re
 1. **Full .md inventory**: Glob all `.md` files excluding `node_modules/`, `.git/`, `vendor/`, `dist/`, `build/`.
 2. **Cross-reference extraction**: Grep all `[text](path.md)` patterns under `docs/` to map inter-file links.
 3. **Root anomaly detection**: Glob `*.md` at project root — only `AGENTS.md` and `README.md` should exist.
-4. **Per-BC file matrix**: For each `docs/bc/<slug>/`, check existence of expected files in skill subdirectories (`align/LANGUAGE.md`, `align/BRD.md`, `design/ARCHITECTURE.md`, `design/adr/`, `detail/DESIGN.md`, `detail/modules/`, `review/REVIEW.md`).
+4. **Per-BC file matrix**: For each `docs/bc/<slug>/`, check existence of expected files in skill subdirectories (`align/LANGUAGE.md`, `align/BRD.md`, `design/ARCHITECTURE.md`, `design/adr/`, `detail/DESIGN.md`, `detail/modules/`, `kanban/tasks/T{N}.md`).
 5. **Orphan directory detection**: Compare `docs/bc/` subdirectories against AGENTS.md BC registry.
 
 **[Checkpoint C1→C2]**: Verify scan completeness:

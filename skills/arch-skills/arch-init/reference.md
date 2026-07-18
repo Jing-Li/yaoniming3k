@@ -42,10 +42,10 @@ Each BC's outputs live in skill-based subdirectories under `docs/bc/<slug>/`:
 | Phase | Skill | Skill Directory | Output Files |
 |-------|-------|-----------------|-------------|
 | 1 — Concept Alignment | `/arch-align` | `align/` | `LANGUAGE.md`, `BRD.md` |
-| 2 — Boundary Design | `/arch-design` | `design/` | `ARCHITECTURE.md` + `adr/*.md` + `docs/arch/SYSTEM.md` (when 2+ BCs) |
+| 2 — Boundary Design | `/arch-design` | `design/` | `ARCHITECTURE.md` + `adr/*.md` |
 | 3 — Detailed Design | `/arch-detail` | `detail/` | `DESIGN.md`, `modules/` |
 | 4a — Implementation | `/devtdd` | (source code) | source code + test files; updates `detail/DESIGN.md` task status |
-| 4b — Architecture Audit | `/arch-review` | `review/` | `REVIEW.md` (current) + `reviews/` (active archives) + `reviews/done/` (closed archives) |
+| 4b — Architecture Audit | `/arch-review` | `kanban/tasks/` | `T{N}.md` (AD items + scores in Change History) |
 
 ---
 
@@ -70,7 +70,7 @@ Each skill **must** update `kanban/BOARD.md` and `kanban/tasks/T{N}.md` per the 
 | `/arch-design` | Write `design/ARCHITECTURE.md` + `design/adr/*.md`; update `kanban/tasks/T{N}.md`; move T{N} to `done` |
 | `/arch-detail` | Write `detail/DESIGN.md` + `detail/modules/`; update `kanban/tasks/T{N}.md`; move T{N} to `done` |
 | `/devtdd` | Write source code + tests; update `kanban/tasks/T{N}.md`; move T{N} to `done` |
-| `/arch-review` | Write `review/REVIEW.md`; update `kanban/tasks/T{N}.md`; move T{N} to `done` |
+| `/arch-review` | Write `kanban/tasks/T{N}.md` (AD items); move T{N} to `done` in BOARD.md |
 
 ## BC Selection Protocol
 
@@ -224,7 +224,7 @@ A file is **misplaced** if it exists at a non-canonical location:
 | `ARCHITECTURE.md` | `docs/bc/<slug>/design/ARCHITECTURE.md` | `ARCHITECTURE.md` at project root |
 | `DESIGN.md` | `docs/bc/<slug>/detail/DESIGN.md` | `DESIGN.md` in `docs/arch/` |
 | `BOARD.md` | `docs/bc/<slug>/kanban/BOARD.md` | `BOARD.md` at project root, `docs/bc/<slug>/BOARD.md` (missing kanban/ dir), or `docs/arch/PHASES.md` (legacy) |
-| `REVIEW.md` | `docs/bc/<slug>/review/REVIEW.md` | `REVIEW.md` at BC root |
+| `T{N}.md` | `docs/bc/<slug>/kanban/tasks/T{N}.md` | `T{N}.md` at BC root or `review/REVIEW.md` (legacy, pre-v2.9) |
 | Any ADR file | `docs/bc/<slug>/design/adr/` | ADRs in flat `docs/adr/` or `docs/bc/<slug>/adr/` (missing design/ parent) |
 
 ### 6.2 Orphaned Files
@@ -365,8 +365,7 @@ For each `docs/bc/<slug>/` directory, check existence of:
 | `design/adr/` | 2 |
 | `detail/DESIGN.md` | 3 |
 | `detail/modules/` | 3 |
-| `review/REVIEW.md` | 4b |
-| `review/reviews/` | 4b |
+| `kanban/tasks/T{N}.md` | 4b |
 
 → Produces: per-BC existence matrix. Used by C2 to detect stale BOARD.md (§6.7) and missing skill directories.
 

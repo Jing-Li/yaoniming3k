@@ -1,6 +1,6 @@
 # Code Craftsmanship Iron Rules
 
-Concrete patterns and decision trees for devtdd Hard Constraint #11. These rules apply during EVERY GREEN and REFACTOR cycle.
+Concrete patterns and decision trees for devtdd Hard Constraint #9. These rules apply during EVERY GREEN and REFACTOR cycle.
 
 ---
 

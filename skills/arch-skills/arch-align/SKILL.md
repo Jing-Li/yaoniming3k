@@ -130,7 +130,7 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
    - `T{N}.md` References has `(migration)` tag
    If ALL conditions met → **enter Migration Mode**: Read source code to extract domain terminology, entity names, business rules, and domain concepts. Generate LANGUAGE.md and BRD.md from code analysis. Present to user for confirmation before marking done. See [arch-init reference.md](../arch-init/reference.md) §10 Migration Mode.
    If NOT in migration mode → continue with normal interactive grilling below.
-6. If `docs/bc/<bc-slug>/review/REVIEW.md` exists, scan Skill Evolution Suggestions for items targeting `/arch-align` with Status 🆕. Consider incorporating.
+6. Scan `kanban/tasks/T{N}.md` Architecture Discrepancies section for Skill Evolution items targeting `/arch-align` with Status 🆕. Consider incorporating.
 7. If any downstream skill (arch-design+) has T{N} in `done`, warn the user: "T{N} 已有下游产出，当前操作将影响后续阶段。确认继续？" Wait for explicit confirmation.
 8. **BC Selection Protocol** (when user does not specify a BC):
    - Read `AGENTS.md` BC registry and list all registered BCs.
