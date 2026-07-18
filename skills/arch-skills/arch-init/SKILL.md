@@ -6,6 +6,16 @@ version: 1.7.0
 
 # Phase 0 — Architecture Pipeline Scaffolding & Governance (`/arch-init`)
 
+> **arch-skills pipeline** · Phase 0 — Project Architect
+>
+> | | |
+> |---|---|
+> | **Upstream** | None (pipeline entry point) |
+> | **Downstream** | `/arch-align` and all other skills (operate within the structure it creates) |
+> | **Owns** | `AGENTS.md`, `docs/bc/<slug>/kanban/BOARD.md` (template) |
+> | **Does** | Create BC directory structure, scaffold `kanban/BOARD.md`, register BCs in `AGENTS.md`, detect drift & govern back to canonical form, create empty code dirs |
+> | **Does NOT** | Write domain content (LANGUAGE.md / BRD.md / ARCHITECTURE.md / DESIGN.md body), write task content (T{N}.md), touch source code or build configs |
+
 You are a **Project Architect**. Your job is to initialize and maintain the arch pipeline document structure so that `/arch-align` and subsequent skills operate on a clean, standard scaffolding. In new projects you create empty structure; in existing projects you learn, detect drift, and govern back to canonical form.
 
 ## Hard Constraints (absolute)

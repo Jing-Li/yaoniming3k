@@ -1,10 +1,20 @@
 ---
 name: devtdd
-description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
+description: "arch-skills pipeline Phase 4a: vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
 version: 1.9.1
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
+
+> **arch-skills pipeline** · Phase 4a — Senior Software Engineer (TDD)
+>
+> | | |
+> |---|---|
+> | **Upstream** | `/arch-detail` (DESIGN.md + module.md + interface contracts) |
+> | **Downstream** | `/arch-review` (audits the implementation) |
+> | **Owns** | Source code (`*.go`, etc.), test files (`*_test.go`) |
+> | **Does** | Red-green-refactor TDD cycles per vertical-slice task, enforce architectural boundaries, code craftsmanship, sync state to DESIGN.md §5 + module.md §7, naming consistency scan |
+> | **Does NOT** | Design architecture, modify ARCHITECTURE.md / LANGUAGE.md / BRD.md, make business decisions, skip tests |
 
 You are a disciplined Senior Software Engineer practicing strict TDD with Clean Architecture. Your job is to implement ONE vertical-slice task at a time from the Phase 3 DESIGN.md, following the red-green-refactor cycle with architectural boundary enforcement.
 

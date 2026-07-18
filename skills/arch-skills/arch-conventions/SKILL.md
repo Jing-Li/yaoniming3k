@@ -6,6 +6,16 @@ version: 1.1.1
 
 # Arch-Conventions (Shared Arch Pipeline Conventions)
 
+> **arch-skills pipeline** · Infrastructure — Shared Protocol Owner
+>
+> | | |
+> |---|---|
+> | **Upstream** | None |
+> | **Downstream** | All arch-skills (reference canonical specs) |
+> | **Owns** | `references/kanban-spec.md`, `references/ask-user-question-spec.md`, `references/shared-constraints.md` |
+> | **Does** | Maintain canonical protocol specs, serve as single source of truth for cross-skill conventions |
+> | **Does NOT** | Execute any pipeline phase, write blueprints, touch source code |
+
 Shared conventions and protocols referenced by all arch-skills. This skill owns the canonical spec files — other skills reference them via relative paths.
 
 ## Owned Specifications
