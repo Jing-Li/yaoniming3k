@@ -16,7 +16,7 @@ Every arch-skill is the **sole owner** of specific documents. It is the only ski
 | `/arch-detail` | `detail/DESIGN.md`, `detail/modules/*/module.md`, `detail/modules/*/interfaces/*.md` |
 | `/devtdd` | Source code (`.go`, `.java`, `.py`, etc.), test files |
 | `/arch-ops` | `ops/OPS.md`, `scripts/` content, `Makefile` |
-| `/arch-review` | Read-only (Audit Mode); Fix Guidance Mode may modify all files (docs + source code) to resolve ADs |
+| `/arch-review` | Read-only (Audit Mode); Fix Guidance Mode may modify docs + ops artifacts (NOT source code — dispatches to `/devtdd`) |
 | `/arch-kanban` | `kanban/BOARD.md` structure validation, `kanban/tasks/T{N}.md` structure |
 
 All skills may read any document. All skills may write to `kanban/BOARD.md` (status updates) and `kanban/tasks/T{N}.md` (own status + AD entries).
@@ -43,9 +43,9 @@ The following skills MUST NOT modify source code files (`.go`, `.java`, `.py`, `
 - `/arch-design` — ARCHITECTURE.md + ADRs only
 - `/arch-detail` — DESIGN.md + modules/ only
 - `/arch-ops` — OPS.md + scripts/ + Makefile only (NO application source code)
-- `/arch-review` — read-only (Audit Mode); all files in scope (Fix Guidance Mode, v3.3.0+)
+- `/arch-review` — read-only (Audit Mode); docs + ops artifacts only (Fix Guidance Mode, v3.4.0+)
 
-Only `/devtdd` and `/arch-review` (Fix Guidance Mode, v3.3.0+) are permitted to write source code.
+Only `/devtdd` is permitted to write source code. `/arch-review` Fix Guidance Mode dispatches source code ADs to `/devtdd`.
 
 ## §4 Grill, Don't Guess (Structured Questioning)
 
