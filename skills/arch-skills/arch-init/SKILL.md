@@ -50,7 +50,7 @@ docs/bc/<slug>/
 │   └── adr/                       # ADR files
 ├── detail/                        # arch-detail outputs
 │   └── modules/                   # Per-module design + interface contracts
-└── ops/                           # ops skill outputs (future)
+└── ops/                           # arch-ops outputs (OPS.md runbook)
 ```
 
 **Steps:**

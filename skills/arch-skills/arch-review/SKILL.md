@@ -80,6 +80,7 @@ Your response **must** use exactly 9 sections in this order. Full templates with
    - **Phase 3 rules** (from `DESIGN.md`): DDL-to-domain mapping, GoF pattern application, code structure compliance, task list coherence.
    - **DESIGN.md ↔ Code cross-check**: Compare DESIGN.md §5 Task Summary status against actual code implementation. Flag any task marked "complete" whose corresponding source files are missing or stub-only, and any implemented code that has no matching task. This detects documentation drift (design docs out of sync with codebase).
    - **Deployment Boundary Audit**: When AGENTS.md BC registry lists 2+ BCs with independent processes, verify each BC is an **independent module** (own `go.mod`/`build.gradle`/`pyproject.toml`). Check: (a) no cross-module imports between BC modules, (b) no shared `pkg/` or shared `internal/` between BCs, (c) cross-BC ports are split by responsibility (no shared interfaces like `IntentClient`), (d) each BC has its own `cmd/`, `internal/`, `docs/`, `scripts/`.
+   - **OPS.md Consistency Audit** (Phase 4b): When `ops/OPS.md` exists, verify: (a) §4 env var table matches DESIGN.md §8.1 row-for-row, (b) §5 startup commands reference actual `scripts/start.sh` that exists, (c) §3 build commands match Makefile `build` target, (d) all `scripts/*.sh` pass `bash -n` syntax check. Flag mismatches as AD targeting arch-ops.
    Skip rules for phases not yet completed.
 
 5. **Cross-Document Consistency Check**: Before code-level audit, verify inter-document consistency:

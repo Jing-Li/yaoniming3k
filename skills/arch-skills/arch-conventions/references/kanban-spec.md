@@ -77,6 +77,7 @@ next_task_id: 4
 | arch-design | | T2 | |
 | arch-detail | T1 | | |
 | devtdd | | | |
+| arch-ops | | | |
 | arch-review | | | |
 
 ## Archive
@@ -125,6 +126,7 @@ next_task_id: 0
 | arch-design | | | |
 | arch-detail | | | |
 | devtdd | | | |
+| arch-ops | | | |
 | arch-review | | | |
 
 ## Archive
@@ -178,6 +180,7 @@ One-line description of what this task delivers.
 | arch-design | done | 2025-01-16 | 2025-01-16 |
 | arch-detail | doing | 2025-02-01 | — |
 | devtdd | new | — | — |
+| arch-ops | new | — | — |
 | arch-review | new | — | — |
 
 ## Architecture Discrepancies
@@ -192,6 +195,9 @@ One-line description of what this task delivers.
 (empty)
 
 ### devtdd
+(empty)
+
+### arch-ops
 (empty)
 
 ### arch-review
@@ -345,6 +351,7 @@ Different skills can work on different tasks simultaneously:
 | design | | T2 | |              ← design is working on T2
 | detail | T1 | | |              ← detail can start T1
 | devtdd | | | |
+| arch-ops | | | |
 | arch-review | | | |
 ```
 

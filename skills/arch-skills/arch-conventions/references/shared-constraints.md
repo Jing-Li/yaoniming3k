@@ -15,6 +15,7 @@ Every arch-skill is the **sole owner** of specific documents. It is the only ski
 | `/arch-design` | `design/ARCHITECTURE.md`, `design/adr/*.md` |
 | `/arch-detail` | `detail/DESIGN.md`, `detail/modules/*/module.md`, `detail/modules/*/interfaces/*.md` |
 | `/devtdd` | Source code (`.go`, `.java`, `.py`, etc.), test files |
+| `/arch-ops` | `ops/OPS.md`, `scripts/` content, `Makefile` |
 | `/arch-review` | Read-only (produces ADs only); Fix Guidance Mode may modify docs (not source code) |
 | `/arch-kanban` | `kanban/BOARD.md` structure validation, `kanban/tasks/T{N}.md` structure |
 
@@ -41,6 +42,7 @@ The following skills MUST NOT modify source code files (`.go`, `.java`, `.py`, `
 - `/arch-align` — LANGUAGE.md + BRD.md only
 - `/arch-design` — ARCHITECTURE.md + ADRs only
 - `/arch-detail` — DESIGN.md + modules/ only
+- `/arch-ops` — OPS.md + scripts/ + Makefile only (NO application source code)
 - `/arch-review` — read-only (Audit Mode); docs-only (Fix Guidance Mode)
 
 Only `/devtdd` is permitted to write source code.
@@ -58,7 +60,7 @@ When facing ambiguity — unclear BC ownership, orphaned documents, missing upst
 
 Simple confirmations ("Continue?", "Confirm delete?") are exempt from structured format.
 
-This rule applies to: `/arch-init` (Mode C governance), `/arch-align` (grilling), `/arch-design` (NFR collection), `/arch-detail` (delta task confirmation), `/devtdd` (BC selection), and any skill encountering upstream ambiguity.
+This rule applies to: `/arch-init` (Mode C governance), `/arch-align` (grilling), `/arch-design` (NFR collection), `/arch-detail` (delta task confirmation), `/devtdd` (BC selection), `/arch-ops` (OPS.md scope decisions), and any skill encountering upstream ambiguity.
 
 ## §5 OVERRIDE Protocol
 
@@ -83,6 +85,7 @@ Before executing its core logic, each skill MUST verify that its upstream depend
 | `/arch-design` | arch-align T{N} = done |
 | `/arch-detail` | arch-design T{N} = done |
 | `/devtdd` | arch-detail T{N} = done |
+| `/arch-ops` | devtdd T{N} = done |
 | `/arch-review` | devtdd T{N} = done |
 
 If the upstream skill has not completed T{N}, the current skill MUST **halt** with a clear instruction:

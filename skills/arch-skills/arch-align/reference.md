@@ -226,4 +226,4 @@ Never silently bend a hard constraint. Never proceed on assumption.
 
 **Root Cause**: BRD.md grilling may surface ops procedures, and there was no explicit rule about where ops content goes.
 
-**Lesson**: If BRD.md discussion produces ops content, note that it belongs in `ops/OPS.md` (managed by future ops skill). Never embed ops procedures in LANGUAGE.md or BRD.md.
+**Lesson**: If BRD.md discussion produces ops content, note that it belongs in `ops/OPS.md` (managed by `/arch-ops`). Never embed ops procedures in LANGUAGE.md or BRD.md.
