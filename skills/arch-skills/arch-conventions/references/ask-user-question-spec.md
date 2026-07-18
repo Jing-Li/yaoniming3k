@@ -34,14 +34,14 @@ Format: Plain text paragraph(s) before the AskUserQuestion tool call.
 ### 2.2 Question (问题)
 
 A clear, specific question ending with `?`. Example:
-- "How should AD-D1 (SYSTEM.md Status column) be handled?"
+- "How should AD-D3 (Domain gRPC import leak) be handled?"
 - "Which approach for DESIGN.md §7 implementation tracking?"
 
 ### 2.3 Header (标题)
 
 - **Max 12 characters**
 - Use the relevant context: route name, skill name, or topic
-- Examples: `"arch-design"`, `"arch-align"`, `"REVIEW.md"`, `"ops 目录"`
+- Examples: `"arch-design"`, `"arch-align"`, `"devtdd"`, `"ops 目录"`
 
 ### 2.4 Options (选项)
 
@@ -49,8 +49,8 @@ A clear, specific question ending with `?`. Example:
 
 | Field | Requirement | Example |
 |-------|------------|---------|
-| **Label** | 1-5 words, concrete action name | "Remove Status column" |
-| **Description** | 1-2 sentences: WHY this approach + evidence + trade-offs | "SYSTEM.md should only describe cross-BC topology. Status is already tracked in kanban. Eliminates duplication." |
+| **Label** | 1-5 words, concrete action name | "Extract to port interface" |
+| **Description** | 1-2 sentences: WHY this approach + evidence + trade-offs | "Domain must have zero external imports per Clean Architecture. Moving to port interface eliminates the violation." |
 
 **Option ordering rules:**
 - **Recommended option FIRST**, with `"(Recommended)"` suffix in the label
@@ -60,19 +60,19 @@ A clear, specific question ending with `?`. Example:
 ### 2.5 Example
 
 ```
-Analysis: SYSTEM.md §4 tracks implementation status ("待实现"/"已实现") but this
-duplicates DESIGN.md §5 + kanban. The Status column is not a system topology concern.
-Evidence: SYSTEM.md L42-58 Status column vs DESIGN.md §5 Task Summary.
+Analysis: Domain layer imports `google.golang.org/grpc` in `domain/engine.go:12`,
+violating Clean Architecture's zero-external-import rule for the domain layer.
+Evidence: `grep -rn "google.golang.org/grpc" domain/` returns 1 match.
 
-Question: "How should AD-D1 (SYSTEM.md Status column) be handled?"
+Question: "How should AD-D3 (Domain gRPC import leak) be handled?"
 Header: "arch-design"
 Options:
-  1. "Remove Status column (Recommended)" — SYSTEM.md should only describe
-     cross-BC topology, not track implementation. Status is already in kanban.
-  2. "Keep but simplify to existing/planned" — Retains a planning signal
-     without implementation tracking, but still duplicates AGENTS.md.
-  3. "Delete entire SYSTEM.md" — Each BC's ARCHITECTURE.md §6 already
-     covers cross-BC contracts independently. Removes duplication entirely.
+  1. "Extract to port interface (Recommended)" — Define a port interface in the
+     use case layer; adapter implements gRPC call. Domain stays pure.
+  2. "Move entire adapter to infra" — Keeps gRPC in infrastructure but requires
+     broader refactoring of the engine module.
+  3. "Suppress with nolint" — Quick fix but leaves the architectural violation
+     in place. Accumulates debt.
 ```
 
 ---

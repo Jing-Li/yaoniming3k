@@ -503,7 +503,7 @@ Before delivering, silently verify:
 - [ ] Every DDL table has an Index Design sub-table (§3.5) with indexes traced to specific Use Cases.
 - [ ] STRIDE threat analysis (§0) completed for each module with Component/Threat/Severity/Mitigation table.
 - [ ] Security design patterns (Circuit Breaker, Rate Limiter, etc.) documented where applicable.
-- [ ] When 2+ BCs registered, DESIGN.md §3 Cross-BC Package Mapping table is present and consistent with sibling BC ARCHITECTURE.md §4 and SYSTEM.md §4.
+- [ ] When 2+ BCs registered, DESIGN.md §3 Cross-BC Package Mapping table is present and consistent with sibling BC ARCHITECTURE.md §4 and §6.
 - [ ] DESIGN.md §1.2 explicitly states which entities use full Data Mapper vs identity mapping, with justification.
 - [ ] DESIGN.md Task Summary table lists all tasks with links to their module.md.
 - [ ] DESIGN.md includes an Operational Entry Design section (env var schema, config module, startup/shutdown scripts) when a sibling BC has equivalent facilities.

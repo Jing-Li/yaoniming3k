@@ -28,9 +28,7 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clea
 
 7. **INTROSPECTION**: Every Architecture Debt item MUST include a Root Cause Analysis explaining WHY the originating phase missed this finding. Skill Evolution issues are expressed as ADs routed to the skill itself (e.g., `arch-review-self` for arch-review skill improvements). See [reference.md](reference.md) §8 Root Cause Analysis Template.
 
-8. **README SYNC CHECK**: During cross-document consistency check (Step 5), verify each BC's `README.md` against actual code. Check: (a) directory tree matches current package layout (no ghost packages like deleted `sensorium/`), (b) architecture/component diagrams match current domain model and responsibilities, (c) config/env var defaults match actual code defaults. Flag as X8 in reference.md §1.6.
-
-9. **CHANGE HISTORY INTEGRITY**: When writing to T{N}.md Change History, validate: (a) new entry date ≥ all existing entry dates (monotonic non-decreasing), (b) Architecture Discrepancies resolved items use `[x]` checkbox — never remove resolved items, only mark them. On date violation, warn and use the correct date.
+8. **CHANGE HISTORY INTEGRITY**: When writing to T{N}.md Change History, validate: (a) new entry date ≥ all existing entry dates (monotonic non-decreasing), (b) Architecture Discrepancies resolved items use `[x]` checkbox — never remove resolved items, only mark them. On date violation, warn and use the correct date.
 
 ---
 
@@ -69,21 +67,19 @@ Your response **must** use exactly 9 sections in this order. Full templates with
    - **Phase 2 rules** (from `ARCHITECTURE.md`): dependency flow, DIP enforcement, package layout, port placement.
    - **Phase 3 rules** (from `DESIGN.md`): DDL-to-domain mapping, GoF pattern application, code structure compliance, task list coherence.
    - **DESIGN.md ↔ Code cross-check**: Compare DESIGN.md §5 Task Summary status against actual code implementation. Flag any task marked "complete" whose corresponding source files are missing or stub-only, and any implemented code that has no matching task. This detects documentation drift (design docs out of sync with codebase).
-   - **Deployment Boundary Audit**: When SYSTEM.md records 2+ independent processes, verify each BC is an **independent module** (own `go.mod`/`build.gradle`/`pyproject.toml`). Check: (a) no cross-module imports between BC modules, (b) no shared `pkg/` or shared `internal/` between BCs, (c) cross-BC ports are split by responsibility (no shared interfaces like `IntentClient`), (d) each BC has its own `cmd/`, `internal/`, `docs/`, `scripts/`.
+   - **Deployment Boundary Audit**: When AGENTS.md BC registry lists 2+ BCs with independent processes, verify each BC is an **independent module** (own `go.mod`/`build.gradle`/`pyproject.toml`). Check: (a) no cross-module imports between BC modules, (b) no shared `pkg/` or shared `internal/` between BCs, (c) cross-BC ports are split by responsibility (no shared interfaces like `IntentClient`), (d) each BC has its own `cmd/`, `internal/`, `docs/`, `scripts/`.
    Skip rules for phases not yet completed.
 
 5. **Cross-Document Consistency Check**: Before code-level audit, verify inter-document consistency:
-   - **ARCHITECTURE.md ↔ SYSTEM.md**: Every cross-BC communication arrow in sequence diagrams and Event Contract table MUST match a row in SYSTEM.md §3 Communication Matrix. Flag mismatches (e.g., diagram shows gRPC but matrix declares MQ).
    - **ARCHITECTURE.md ↔ Code**: Mermaid diagrams must reflect current import graph and adapter names. Grep for adapter/constructor names in code and compare against diagram labels.
    - **DESIGN.md ↔ ARCHITECTURE.md**: Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1.
    - **LANGUAGE.md ↔ All docs**: Adapter/port names in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and code.
-   - **Cross-cutting docs ↔ BC docs (X6/X7)**: When `docs/arch/SYSTEM.md` exists, verify:
-     - `SYSTEM.md` "Last updated" comment describes the most recent change, not a stale historical one.
-   - **ARCHITECTURE.md §5 ADR Index ↔ `design/adr/` directory (X9/X10)**: When `docs/bc/<slug>/design/adr/` exists, verify:
+   - **ARCHITECTURE.md §5 ADR Index ↔ `design/adr/` directory (X5/X6)**: When `docs/bc/<slug>/design/adr/` exists, verify:
      - Every ADR file has a row in ARCHITECTURE.md §5, and every row has a matching file.
      - No ADR has Status "Proposed" after Phase 2 is marked ✅.
      - Superseded ADRs reference valid replacing ADR numbers.
-   This step catches staleness that individual doc audits miss — documents evolve independently and drift apart. Outer cross-cutting docs are especially vulnerable since no single BC owns them.
+   This step catches staleness that individual doc audits miss — documents evolve independently and drift apart.
+   - **[Optional] README.md ↔ Code** (when user requests or obvious staleness suspected): Check (a) directory tree matches current package layout, (b) architecture diagrams match current domain model, (c) config defaults match actual code. Flag as X4 in reference.md §1.6.
 
 6. **Static Audit**: Apply the audit checklist from [reference.md](reference.md) §1. For each finding, classify as Red/Yellow.
 
@@ -116,18 +112,19 @@ Your response **must** use exactly 9 sections in this order. Full templates with
 
    **Example:**
    ```
-   Analysis: SYSTEM.md §4 tracks implementation status ("pending"/"completed") but this
-   duplicates DESIGN.md §5 + kanban. The Status column is not a system topology concern.
+   Analysis: Domain layer imports `google.golang.org/grpc` in `domain/engine.go:12`,
+   violating Clean Architecture's zero-external-import rule.
+   Evidence: `grep -rn "google.golang.org/grpc" domain/` returns 1 match.
    
-   Question: "How should AD-D1 (SYSTEM.md Status column) be handled?"
+   Question: "How should AD-D3 (Domain gRPC import leak) be handled?"
    Header: "arch-design"
    Options:
-     1. "Remove Status column (Recommended)" — SYSTEM.md should only describe
-        cross-BC topology, not track implementation. Status is already in kanban.
-     2. "Keep but simplify to existing/planned" — Retains a planning signal
-        without implementation tracking, but still duplicates AGENTS.md.
-     3. "Delete entire SYSTEM.md" — Each BC's ARCHITECTURE.md §6 already
-        covers cross-BC contracts independently. Removes duplication entirely.
+     1. "Extract to port interface (Recommended)" — Define a port interface in the
+        use case layer; adapter implements gRPC call. Domain stays pure.
+     2. "Move entire adapter to infra" — Keeps gRPC in infrastructure but requires
+        broader refactoring of the engine module.
+     3. "Suppress with nolint" — Quick fix but leaves the architectural violation
+        in place. Accumulates debt.
    ```
 
    After user confirms each AD:
@@ -228,47 +225,7 @@ After audit produces ADs, this mode guides the user through executing each AD fi
 
 ## Hand-off Trigger
 
-After writing T{N}.md and rendering the stdout report, output:
-
-> **"Architecture audit complete. Health score NN/100 — 🟢/🟡/🔴. All findings written to `kanban/tasks/T{N}.md`."**
->
-> **AD Confirmation Results:**
-> - Confirmed N ADs, written to T{N}.md Architecture Discrepancies
-> - User custom decisions M items (listed)
->
-> **Architecture Debt Routing:**
-> - `/arch-align`: N items (AD-xxx, ...)
-> - `/arch-design`: N items (AD-xxx, ...)
-> - `/arch-detail`: N items (AD-xxx, ...)
-> - `/devtdd`: N items (AD-xxx, ...)
-> - `/arch-review-self`: N items (AD-Rxx, ...)
->
-> **AD Execution Plan (Cycle C<N>):**
->
-> Batch 1 (parallel-capable):
->   - /arch-xxx: handle AD-xxx, AD-yyy (brief description)
->   - /arch-xxx: handle AD-zzz (brief description)
->
-> Batch 2 (after Batch 1):
->   - /arch-xxx: handle AD-www (brief description)
->
-> After all Batches complete: run `/arch-review` to verify zero debt
->
-> **Resolution Verification:**
-> - ✅ All N resolved ADs verified — fixes confirmed
-> - ⚠️ N regressions detected: AD-xxx (regression of AD-yyy), ...
->
-> **Pipeline Health (cross-phase task tracking):**
-> - `[ayuan]` AD: N open
-> - `[taiyi-platform]` AD: N open
->
-> **Decision Challenge Summary (Critical Reasoning):**
-> - Decisions challenged: N
-> - Survived scrutiny (strengthened): N
-> - Needs revision: N (AD-xxx, ...)
-> - Needs more data: N (specific data to collect)
->
-> Execute in Batch order. Skills within the same Batch can run in parallel.
+After writing T{N}.md and rendering the stdout report, output the hand-off trigger per [reference.md](reference.md) §13 Hand-off Trigger Template.
 
 ---
 
@@ -287,6 +244,7 @@ For detailed audit checklists, scoring rubric, and language-specific red flags, 
 - **§10 Architecture Debt for Skill Evolution** — how to express skill improvements as ADs routed to the skill itself.
 - **§11 Version Comparison Protocol** — how to diff against previous scores in T{N}.md Change History.
 - **§12 AD Dependency Analysis & Execution Plan** — dependency inference rules, Batch ordering, kanban/BOARD.md task update.
+- **§13 Hand-off Trigger Template** — stdout report output format with AD routing, execution plan, and pipeline health.
 
 For report templates, fix guidance, security, and critical reasoning:
 - [references/review-report-template.md](references/review-report-template.md) — Standard Review Report §1–§9 full templates with code blocks

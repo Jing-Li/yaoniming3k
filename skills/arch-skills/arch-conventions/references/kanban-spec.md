@@ -355,13 +355,13 @@ Each T appears in exactly one cell. When design picks up T1 next, it moves from 
 ## 6. File Path Conventions (路径约定)
 
 ```
-AGENTS.md                                  ← Global task counter
+AGENTS.md                                  ← BC registry + repo structure
 docs/
   bc/<slug>/
     kanban/
       BOARD.md                              ← Kanban board + local counter
       tasks/
-        T1.md                                ← Task index file
+        T1.md                                ← Task index file (includes review findings)
         T2.md
     align/
       LANGUAGE.md                          ← BC-level aggregation
@@ -373,8 +373,7 @@ docs/
       DESIGN.md                            ← BC-level aggregation
       modules/                             ← Task-specific modules
     review/
-      REVIEW.md                            ← Review reports
-      reviews/                             ← Archived reviews
+      reviews/                             ← Archived reviews (legacy)
 ```
 
 ---

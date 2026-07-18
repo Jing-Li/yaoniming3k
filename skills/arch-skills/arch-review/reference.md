@@ -31,7 +31,7 @@ As a code reviewer, your verdict criteria and improvement proposals MUST be 100%
 | 1.3 GoF Pattern Rules | — | ✅ | Pattern application, anti-pattern detection |
 | 1.4 Naming & Language Drift | ✅ | ✅ | Cross-reference LANGUAGE.md |
 | 1.5 Documentation Drift Detection | — | ✅ | Cross-check DESIGN.md Task Summary ↔ actual code |
-| 1.6 Cross-Document Consistency | ✅ | ✅ | Inter-document staleness detection (ARCH↔SYSTEM, ARCH↔Code, LANG↔All, ADR↔Index, Cross-cutting docs↔BC docs) |
+| 1.6 Cross-Document Consistency | ✅ | ✅ | Inter-document staleness detection (ARCH↔Code, LANG↔All, ADR↔Index, BC README↔Code) |
 
 When `kanban/BOARD.md` indicates only Phase 2 is complete, focus on 1.1, 1.4, and 1.6. When Phase 3 is also complete, apply all rule groups.
 
@@ -91,16 +91,12 @@ These rules catch staleness caused by documents evolving independently. Apply du
 
 | # | Rule | Detection | Card |
 |---|------|-----------|------|
-| X1 | ARCHITECTURE.md ↔ SYSTEM.md Communication Matrix | Every cross-BC arrow in sequence diagrams and Event Contract table rows must use a protocol declared in SYSTEM.md §3 | 🔴 |
-| X2 | ARCHITECTURE.md ↔ Code adapter names | Adapter class names, constructor names, and port interface names in Mermaid diagrams must match current code | 🟡 |
-| X3 | DESIGN.md ↔ ARCHITECTURE.md package structure | Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1 | 🟡 |
-| X4 | LANGUAGE.md ↔ All docs adapter/port names | Adapter/port names registered in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and module.md files | 🟡 |
-| X5 | ARCHITECTURE.md Consumers / Open Questions vs SYSTEM.md | Every “Consumers” column entry and Open Questions item in ARCHITECTURE.md that references cross-BC communication MUST use a protocol declared in SYSTEM.md §3. Stale references to deprecated protocols (e.g., gRPC when matrix says MQ-only) are flagged | 🟡 |
-| X6 | `docs/arch/SYSTEM.md` topology ↔ actual BC architecture docs | The topology in `docs/arch/SYSTEM.md` must reflect each BC's actual architecture (phases completed, communication protocols). Compare declared protocols against actual ARCHITECTURE.md diagrams | 🟡 |
-| X7 | `docs/arch/SYSTEM.md` Last-updated staleness | SYSTEM.md “Last updated” comment must describe the most recent change, not a stale historical one. If the comment references a change that was later superseded, flag it | 🟡 |
-| X8 | **BC `README.md` ↔ Code consistency** | Each BC's README.md must match actual code: (a) directory tree matches current `ls internal/` output (no ghost directories), (b) architecture/component diagrams match current domain struct names and responsibilities, (c) config/env var defaults match `config.go` actual defaults. Run `ls -d internal/*/` and compare against README tree | 🟡 |
-| X9 | **ARCHITECTURE.md §5 ADR Index ↔ `design/adr/` directory** | Every ADR file in `docs/bc/<slug>/design/adr/` must have a corresponding row in ARCHITECTURE.md §5 ADR Index table; every row in §5 must have a matching file in `design/adr/`. Run `ls docs/bc/<slug>/design/adr/` and compare against §5 table rows | 🟡 |
-| X10 | **ADR Status lifecycle compliance** | After Phase 2 is marked ✅: (a) no ADR may have Status "Proposed" — must be Accepted or Superseded, (b) Superseded ADRs must reference a valid replacing ADR number, (c) Status field in ADR file must match the Status in ARCHITECTURE.md §5 Index | 🔴 |
+| X1 | ARCHITECTURE.md ↔ Code adapter names | Adapter class names, constructor names, and port interface names in Mermaid diagrams must match current code | 🟡 |
+| X2 | DESIGN.md ↔ ARCHITECTURE.md package structure | Package layout in DESIGN.md §3 must match the dependency structure shown in ARCHITECTURE.md §1 | 🟡 |
+| X3 | LANGUAGE.md ↔ All docs adapter/port names | Adapter/port names registered in LANGUAGE.md must match names used in ARCHITECTURE.md, DESIGN.md, and module.md files | 🟡 |
+| X4 | **BC `README.md` ↔ Code consistency** | Each BC's README.md must match actual code: (a) directory tree matches current `ls internal/` output (no ghost directories), (b) architecture/component diagrams match current domain struct names and responsibilities, (c) config/env var defaults match `config.go` actual defaults. Run `ls -d internal/*/` and compare against README tree | 🟡 |
+| X5 | **ARCHITECTURE.md §5 ADR Index ↔ `design/adr/` directory** | Every ADR file in `docs/bc/<slug>/design/adr/` must have a corresponding row in ARCHITECTURE.md §5 ADR Index table; every row in §5 must have a matching file in `design/adr/`. Run `ls docs/bc/<slug>/design/adr/` and compare against §5 table rows | 🟡 |
+| X6 | **ADR Status lifecycle compliance** | After Phase 2 is marked ✅: (a) no ADR may have Status "Proposed" — must be Accepted or Superseded, (b) Superseded ADRs must reference a valid replacing ADR number, (c) Status field in ADR file must match the Status in ARCHITECTURE.md §5 Index | 🔴 |
 
 ---
 
@@ -339,7 +335,7 @@ Every Architecture Debt item MUST be assigned exactly one Route. Use this table 
 | Finding Type | Route | Document Owner | Example |
 |-------------|-------|---------------|--------|
 | Terminology drift / BC boundary shift / glossary gap | `/arch-align` | LANGUAGE.md, BRD.md | Code uses "Registry" but LANGUAGE.md says "Census" |
-| ARCHITECTURE.md inconsistency / sequence diagram drift / port table mismatch | `/arch-design` | ARCHITECTURE.md, SYSTEM.md, adr/*.md | ARCHITECTURE.md says "Engine constructs outbox" but code says "ABody RunLoop" |
+| ARCHITECTURE.md inconsistency / sequence diagram drift / port table mismatch | `/arch-design` | ARCHITECTURE.md, adr/*.md | ARCHITECTURE.md says "Engine constructs outbox" but code says "ABody RunLoop" |
 | Structural violation: DIP / package layout / port placement | `/arch-design` | ARCHITECTURE.md | Domain imports infrastructure package |
 | Design gap: missing interface / missing DDL / module omission | `/arch-detail` | DESIGN.md, module.md, interfaces/ | No Data Mapper for a persisted entity |
 | Code implementation issue: missing file / missing test / TODO stub | `/devtdd` | source code, test files | Port interface has no adapter implementation |
@@ -578,3 +574,49 @@ When arch-review generates an Execution Plan:
 2. Note affected upstream skills in Change History for redo detection
 3. If only `/devtdd` ADs exist: do NOT increment Cycle (Phase 4 internal iteration)
 4. Write the new Cycle number and Phase 🔄/⏭ marks atomically with T{N}.md update
+
+---
+
+## §13 Hand-off Trigger Template
+
+After writing T{N}.md and rendering the stdout report, output:
+
+> **"Architecture audit complete. Health score NN/100 — 🟢/🟡/🔴. All findings written to `kanban/tasks/T{N}.md`."**
+>
+> **AD Confirmation Results:**
+> - Confirmed N ADs, written to T{N}.md Architecture Discrepancies
+> - User custom decisions M items (listed)
+>
+> **Architecture Debt Routing:**
+> - `/arch-align`: N items (AD-xxx, ...)
+> - `/arch-design`: N items (AD-xxx, ...)
+> - `/arch-detail`: N items (AD-xxx, ...)
+> - `/devtdd`: N items (AD-xxx, ...)
+> - `/arch-review-self`: N items (AD-Rxx, ...)
+>
+> **AD Execution Plan (Cycle C<N>):**
+>
+> Batch 1 (parallel-capable):
+>   - /arch-xxx: handle AD-xxx, AD-yyy (brief description)
+>   - /arch-xxx: handle AD-zzz (brief description)
+>
+> Batch 2 (after Batch 1):
+>   - /arch-xxx: handle AD-www (brief description)
+>
+> After all Batches complete: run `/arch-review` to verify zero debt
+>
+> **Resolution Verification:**
+> - ✅ All N resolved ADs verified — fixes confirmed
+> - ⚠️ N regressions detected: AD-xxx (regression of AD-yyy), ...
+>
+> **Pipeline Health (cross-phase task tracking):**
+> - `[ayuan]` AD: N open
+> - `[taiyi-platform]` AD: N open
+>
+> **Decision Challenge Summary (Critical Reasoning):**
+> - Decisions challenged: N
+> - Survived scrutiny (strengthened): N
+> - Needs revision: N (AD-xxx, ...)
+> - Needs more data: N (specific data to collect)
+>
+> Execute in Batch order. Skills within the same Batch can run in parallel.

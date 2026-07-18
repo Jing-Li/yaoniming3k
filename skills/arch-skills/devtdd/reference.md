@@ -246,7 +246,7 @@ When a refactoring cycle involves renaming a port interface, adapter type, or fi
 | **Constructor names match adapter** | `New<Adapter>()` functions should use the current adapter name | `NewIntentAdapter()` when type is `EventAdapter` |
 | **Variable names in composition root** | `cmd/` variable names should use current adapter terminology | `intentAdapter := rocketmq.NewEventAdapter(...)` — var name stale |
 | **Full-text scan (not just identifiers)** | Run `(?i)\b{old_name}\b` across the entire module — catches stale references in comments, string literals, test messages, and doc prose that identifier-only grep misses | Comment says `// dispatches an event` after `Event` → `Intent` rename |
-| **Design doc references** | DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, SYSTEM.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md — all adapter name references should match code | Doc says `RocketMQIntentAdapter` but code says `RocketMQEventAdapter` |
+| **Design doc references** | DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md — all adapter name references should match code | Doc says `RocketMQIntentAdapter` but code says `RocketMQEventAdapter` |
 | **Cross-BC doc mirrors** | When a term is renamed in one BC, check sibling BCs' LANGUAGE.md Banned Terms / glossary for stale mirrors | Platform BC renamed `Event` → `Intent`, but AYuan LANGUAGE.md Banned Terms still lists `Event` as replacement |
 | **Test fake types match current ports** | `*_test.go` fake type names and variable names must use current port terminology, not banned/old names. Scan against LANGUAGE.md Part II Banned Terms. | `fakeManifestStore` when port is `ManifestLoader/ManifestSaver` — "Store" is banned |
 | **Test fake types vs LANGUAGE.md banned terms** | grep `*_test.go` for every term in LANGUAGE.md Part II Banned Terms list (e.g., `Store`, `Kernel`, `ScopePrivate`). Any match in type names, variable names, or function names is a violation | `fakeAOSStore` when banned terms list includes `AOSStore` |
@@ -351,9 +351,8 @@ When **all** tasks in DESIGN.md §5 are marked ✅, before outputting the comple
 2. **Verify each item** against the current codebase (grep, build, test).
 3. **Tick satisfied items** `[ ]` → `[x]`. For items intentionally deferred (e.g., MVP simplifications), update the text to reflect current state and mark `[x]`.
 4. **Full-scan naming consistency**: grep all `*.md` files under `docs/` and all `*_test.go` files for stale type/port names that were renamed during implementation (e.g., `IntentPublisher` → `Publisher`, `port/intent/` → `domain/`). Update module.md files, interface contract .md files, and test comments.
-5. **Update SYSTEM.md**: if the BC has been fully implemented (all tasks ✅), update `docs/arch/SYSTEM.md` §2 Process Inventory and §4 BC Code Ownership to reflect the current state (remove "planned" markers, add actual package paths).
-6. **Report**: list any items that could not be verified (potential Architecture Debt).
-7. Only then output the completion message and suggest `/arch-review`.
+5. **Report**: list any items that could not be verified (potential Architecture Debt).
+6. Only then output the completion message and suggest `/arch-review`.
 
 This step prevents the common gap where per-task DoD checklists are verified but cross-cutting architecture guardrails are left unticked.
 

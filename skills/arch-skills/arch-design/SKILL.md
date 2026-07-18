@@ -107,7 +107,7 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
    - **Tracer Bullet** — actor → action → observable outcome
    Must be a **full rewrite** every round (not incremental). After generation, ask user: "Is this the current BC's architecture overview accurate?" Resolve any conflicts before proceeding.
 
-5. **Post-Rename Global Doc Sync** (when design involves renaming a port, adapter, or domain term): After updating ARCHITECTURE.md, grep the **entire project** for the old name — including `LANGUAGE.md`, `BRD.md`, `DESIGN.md`, `design/modules/*/module.md`, `design/modules/*/interfaces/*.md`, and `REVIEW.md`. Fix every stale reference in the same session. This prevents the common drift where ARCHITECTURE.md is updated but companion documents retain the old terminology.
+5. **Post-Rename Global Doc Sync** (when design involves renaming a port, adapter, or domain term): After updating ARCHITECTURE.md, grep the **entire project** for the old name — including `LANGUAGE.md`, `BRD.md`, `DESIGN.md`, `design/modules/*/module.md`, `design/modules/*/interfaces/*.md`, and `kanban/tasks/T{N}.md`. Fix every stale reference in the same session. This prevents the common drift where ARCHITECTURE.md is updated but companion documents retain the old terminology.
 
 5.5. **Impact Assessment**: Compare this round's changes against downstream artifacts. For each change, classify impact:
    - **⚠️ Breaking** — downstream artifact references a modified/retired port, adapter, or pattern → downstream **must update**.
@@ -150,9 +150,9 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
      - User may accept current BRD.md and continue, or run `/arch-align` to resolve conflicts first.
 10. **Idempotent check** (if status was already doing/done): Read own existing ARCHITECTURE.md + ADRs. Read AD entries. Identify delta — skip completed work, only execute what's missing or needs fixing.
 11. Move T{N} from `new` to `doing` in BOARD.md (if not already).
-12. If `docs/bc/<bc-slug>/review/REVIEW.md` exists, scan for:
-    - **Architecture Discrepancy items routed to `/arch-design`** with Status 🆕 or 🔄. Resolve them as part of the current session.
-    - **Skill Evolution Suggestions** targeting `/arch-design` with Status 🆕. Consider incorporating.
+12. Scan `kanban/tasks/T{N}.md` for:
+    - **Architecture Discrepancy items routed to `/arch-design`** with Status `[ ]`. Resolve them as part of the current session.
+    - **Skill Evolution Suggestions** targeting `/arch-design`. Consider incorporating.
     - **Full-Text Grep Scan Protocol** (when resolving doc inconsistency ADs): After making a fix, grep the **entire ARCHITECTURE.md and LANGUAGE.md** for the corrected keywords.
 13. **Prior Design Review (redo scenario)**: If T{N}.md Change History has prior design entries, present to the user:
     - Current §0 Architecture Overview

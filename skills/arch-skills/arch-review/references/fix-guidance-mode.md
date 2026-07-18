@@ -68,7 +68,7 @@ When all ADs are processed:
 |----------|---------------------|--------|
 | `/arch-init` | ✅ Yes | Modify AGENTS.md template, BOARD.md structure |
 | `/arch-align` | ✅ Yes | Modify LANGUAGE.md, BRD.md |
-| `/arch-design` | ✅ Yes | Modify ARCHITECTURE.md, ADR files, delete SYSTEM.md |
+| `/arch-design` | ✅ Yes | Modify ARCHITECTURE.md, ADR files |
 | `/arch-detail` | ✅ Yes | Modify DESIGN.md, module.md files |
 | `/devtdd` | ❌ No | Instruct user to run `/devtdd` — source code out of scope |
 | `/arch-review-self` | ✅ Yes | Modify skill configuration, reference files |

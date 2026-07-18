@@ -42,13 +42,9 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 7. **ARCHITECTURE.md SEQUENCE DIAGRAM SYNC (via AD)**: If a task modifies code behavior (adds/removes/renames methods, changes lifecycle steps, alters interaction sequences), check `ARCHITECTURE.md` for affected sequence diagrams (§2.x Runtime Interaction). If diagrams are stale, generate an **Architecture Discrepancy (AD)** routed to `/arch-design` — devtdd does NOT directly modify ARCHITECTURE.md (owned by `/arch-design`). Include: stale diagram location, current code behavior, suggested diagram update.
 
-8. **SYSTEM.md §4 CODE OWNERSHIP SYNC**: If a task implements or upgrades an adapter, or modifies the composition root, check `docs/arch/SYSTEM.md` §4 BC Code Ownership table. Update the package status label to reflect the actual implementation state (e.g., remove "(stub)" if the adapter is no longer a stub).
+8. **DESIGN.md §6 COMPOSITION ROOT EXAMPLE SYNC**: If a task changes constructor signatures, adds/removes composition root steps, or alters the DI wiring order, update `DESIGN.md` §6 Composition Root code example to match the actual `main.go` code. Never let the example drift from reality.
 
-9. **DESIGN.md §6 COMPOSITION ROOT EXAMPLE SYNC**: If a task changes constructor signatures, adds/removes composition root steps, or alters the DI wiring order, update `DESIGN.md` §6 Composition Root code example to match the actual `main.go` code. Never let the example drift from reality.
-
-10. **README SYNC**: If a task adds/removes/renames packages, changes env var defaults, alters component responsibilities, or modifies lifecycle behavior, check the BC's `README.md` and root `README.md` for affected sections (directory tree, architecture diagram, config table, startup sequence). Update to match actual code. Never let README drift from implementation.
-
-11. **CODE CRAFTSMANSHIP IRON RULES (代码工艺铁律)**: Every line of production code written during GREEN/REFACTOR MUST comply with these non-negotiable rules. Violations are blockers — fix before proceeding to the next micro-cycle:
+9. **CODE CRAFTSMANSHIP IRON RULES (代码工艺铁律)**: Every line of production code written during GREEN/REFACTOR MUST comply with these non-negotiable rules. Violations are blockers — fix before proceeding to the next micro-cycle:
     - **No Magic Strings/Numbers**: Every repeated literal (string or number appearing ≥2 times) MUST be extracted to a named `const` or reference an existing constant. Single-use literals should also be named if they represent domain concepts (e.g., payload strings, subject patterns, file paths, permission bits, timer intervals). "Magic" means: if someone reading the code asks "why this value?", it needs a name.
     - **DRY via Extraction**: If 2+ code blocks share identical structure (differing only in 1-2 parameters), extract a private helper method. Do NOT copy-paste code across functions. Apply the Rule of Three aggressively for structural duplication (same sequence of operations with different data).
     - **Dead Code Zero Tolerance**: No unused fields, unused functions, unused imports, unreachable branches, or commented-out code in any GREEN cycle output. Delete immediately. Dead code is technical debt from the moment it's written.
@@ -58,7 +54,7 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
     See [reference.md](reference.md) §9 for language-specific examples and decision trees.
 
-12. **DOCUMENT OWNERSHIP BOUNDARIES**: devtdd is the **sole owner** of source code and test files. It may update `DESIGN.md` §5 task status and `module.md` §7 DoD checkboxes (owned by `/arch-detail`), but must NOT modify design content (entity definitions, port signatures, task descriptions). For `ARCHITECTURE.md`, `SYSTEM.md`, and `LANGUAGE.md` — devtdd may only **read** them; if inconsistencies are found during implementation, generate an AD routed to the appropriate owner skill (`/arch-design` for ARCHITECTURE.md/SYSTEM.md, `/arch-align` for LANGUAGE.md).
+10. **DOCUMENT OWNERSHIP BOUNDARIES**: devtdd is the **sole owner** of source code and test files. It may update `DESIGN.md` §5 task status and `module.md` §7 DoD checkboxes (owned by `/arch-detail`), but must NOT modify design content (entity definitions, port signatures, task descriptions). For `ARCHITECTURE.md` and `LANGUAGE.md` — devtdd may only **read** them; if inconsistencies are found during implementation, generate an AD routed to the appropriate owner skill (`/arch-design` for ARCHITECTURE.md, `/arch-align` for LANGUAGE.md).
 
 ---
 
@@ -74,7 +70,7 @@ Read the following files in order:
 4. `docs/bc/<bc-slug>/design/ARCHITECTURE.md` — load layer boundaries + DIP rules
 5. Target `detail/modules/<module>/module.md` — read the specific Task's §7 section
 6. All `detail/modules/<module>/interfaces/<method>.md` linked by that Task
-7. `docs/bc/<bc-slug>/review/REVIEW.md` (if exists) — scan Architecture Discrepancy table for items with Route = `/devtdd`
+7. `kanban/tasks/T{N}.md` — scan Architecture Discrepancies section for items routed to `/devtdd`
 
 **Precondition**: If upstream arch-detail is NOT `done` for T{N}, HALT and instruct user to run `/arch-detail`.
 If all tasks are ✅, output completion message and suggest `/arch-review`.
@@ -139,7 +135,7 @@ For EACH micro-cycle from Step 3:
 1. Remove duplication between this cycle and previous cycles (Rule of Three: 3 occurrences → extract)
 2. Extract helpers ONLY when 2+ tests share identical setup
 3. Verify architecture boundary compliance (Hard Constraint #3)
-4. **Craftsmanship Sweep** (Hard Constraint #11 全面扫描):
+4. **Craftsmanship Sweep** (Hard Constraint #9 全面扫描):
    - grep the entire module for the literal values just used — any literal appearing ≥2 times without a `const` is a violation
    - Scan for structurally identical code blocks across the module — extract shared helpers
    - Delete any dead code revealed by the new implementation (unused fields, unreachable branches, stale imports)
@@ -152,7 +148,7 @@ For EACH micro-cycle from Step 3:
    - Test-after coding (tests mirror implementation) → write test FIRST
    - Shared mutable state (tests fail with `-shuffle=on`) → fresh state per test
    See [references/test-anti-patterns.md](references/test-anti-patterns.md) for the full catalog with examples.
-6. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, SYSTEM.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Part II Banned Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
+6. **Naming Consistency Scan** (when refactoring involves renaming): grep the entire module **and all documentation files** for the old name — field names, adapter class/file names, constructor names, variable names in composition root, **test file fake types and variable names** (`*_test.go`), and **all doc references** (DESIGN.md, ARCHITECTURE.md, LANGUAGE.md, BRD.md, detail/modules/*/module.md, detail/modules/*/interfaces/*.md) must all match the new port/adapter terminology. Also scan `*_test.go` against LANGUAGE.md Part II Banned Terms list. Fix any stale reference in the same cycle. See [reference.md](reference.md) §4 Naming Consistency Scan for the full checklist.
 7. Run ALL tests again. All must still pass.
 
 #### Per-Cycle Self-Check
@@ -165,10 +161,10 @@ For EACH micro-cycle from Step 3:
 [ ] No speculative features added
 [ ] Mocks only at system boundaries
 [ ] Architecture boundaries respected (Hard Constraint #3)
-[ ] No magic strings/numbers — all domain literals named as constants (Hard Constraint #11)
-[ ] No duplicated code blocks — helpers extracted for shared patterns (Hard Constraint #11)
-[ ] No dead code — unused fields/functions/imports deleted (Hard Constraint #11)
-[ ] Standard library preferred over custom utilities (Hard Constraint #11)
+[ ] No magic strings/numbers — all domain literals named as constants (Hard Constraint #9)
+[ ] No duplicated code blocks — helpers extracted for shared patterns (Hard Constraint #9)
+[ ] No dead code — unused fields/functions/imports deleted (Hard Constraint #9)
+[ ] Standard library preferred over custom utilities (Hard Constraint #9)
 ```
 
 ### Step 5: DoD Verification (完成度验证)
@@ -235,9 +231,7 @@ Full protocol: [references/test-anti-patterns.md](references/test-anti-patterns.
 3. Update `kanban/BOARD.md Last updated date
 4. **Stub Adapter Tracking Sync**: If the completed task involved implementing or upgrading an adapter (e.g., RocketMQIntentAdapter, LocalFsManifestAdapter), check `DESIGN.md` §10 Stub Adapter Tracking table. If the adapter is still listed as "Stub", update its Status to "Implemented" and clear its TODO Items. This prevents the stub tracking table from drifting behind actual code progress.
 5. **ARCHITECTURE.md Sequence Diagram AD**: If the completed task changed code behavior (new/removed/renamed methods, new lifecycle steps), scan `ARCHITECTURE.md` §2.x Runtime Interaction diagrams. If stale, generate an AD routed to `/arch-design`. (Per Hard Constraint #7)
-6. **SYSTEM.md §4 Code Ownership Sync**: If the completed task implemented or upgraded an adapter, update `docs/arch/SYSTEM.md` §4 BC Code Ownership table status label. (Per Hard Constraint #8)
-7. **DESIGN.md §6 Composition Root Example Sync**: If the completed task changed constructor signatures, DI wiring order, or composition root steps, update `DESIGN.md` §6 code example. (Per Hard Constraint #9)
-8. **README Sync**: If the completed task added/removed/renamed packages, changed env var defaults, altered component responsibilities, or modified lifecycle behavior, update BC `README.md` and root `README.md` directory trees, architecture diagrams, and config tables. (Per Hard Constraint #10)
+6. **DESIGN.md §6 Composition Root Example Sync**: If the completed task changed constructor signatures, DI wiring order, or composition root steps, update `DESIGN.md` §6 code example. (Per Hard Constraint #8)
 
 ### Step 7: Hand-off Trigger
 
@@ -265,9 +259,9 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 - When the user reports "this feels wrong"
 - After ALL tasks are ✅ (final audit before shipping)
 
-**Consuming REVIEW.md Architecture Discrepancy**:
-- When devtdd resolves a code issue that matches an open AD item (by Location + description), update REVIEW.md: change AD Status from 🆕/🔄 to ✅ Resolved and add a row to Resolved Debt table.
-- This update is done atomically with the task completion (Hard Constraint #5 extended to include REVIEW.md).
+**Consuming T{N}.md Architecture Discrepancy**:
+- When devtdd resolves a code issue that matches an open AD item (by Location + description), update T{N}.md: mark the AD as `[x] Resolved` and append a Change History entry.
+- This update is done atomically with the task completion (Hard Constraint #5).
 
 ---
 
@@ -298,7 +292,7 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
     - If no task specified → select the first ☐ task in order.
 12. Read `docs/bc/<bc-slug>/design/ARCHITECTURE.md` (layer boundaries + DIP rules).
 13. Read target `module.md` §7 and all linked interface contracts.
-14. If `docs/bc/<bc-slug>/review/REVIEW.md` exists, scan for Architecture Discrepancy items routed to `/devtdd`.
+14. Scan `kanban/tasks/T{N}.md` Architecture Discrepancies for items routed to `/devtdd`.
 
 ### On Completion (per task)
 
