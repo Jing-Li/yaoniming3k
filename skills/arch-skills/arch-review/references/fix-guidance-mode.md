@@ -1,6 +1,8 @@
-# AD Fix Guidance Mode (v3.2.0+)
+# AD Fix Guidance Mode (v3.3.0+)
 
-After audit produces ADs, this mode **guides the user through executing each AD fix one by one**, ensuring all are completed before re-running review.
+After audit produces ADs, this mode **takes end-to-end ownership of the AD lifecycle**: it guides the user through executing each AD fix one by one (including source code changes), verifies each fix, marks resolved, and archives the task when all ADs are closed.
+
+arch-review is the **coordinator** — it does not dump ADs and walk away. It stays engaged until every AD is resolved and the task is archived.
 
 ---
 
@@ -42,7 +44,7 @@ For EACH unresolved AD, in dependency order:
 **Step 3 — Execute Fix:**
 
 Based on user's choice:
-- **"Execute fix now"**: Apply the change directly to the target document(s). Permitted modifications: `LANGUAGE.md`, `BRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `AGENTS.md`, `BOARD.md`, `T{N}.md`. Source code (`.go`, `.java`, `.py`, etc.) is **NEVER** modified by arch-review — for `/devtdd` ADs, instruct user to run `/devtdd` instead.
+- **"Execute fix now"**: Apply the change directly to the target file(s). **All file types are in scope** — documents, source code, tests, build configs. Permitted modifications depend on the AD route (see Fix Scope Matrix above).
 - **"Show me the diff first"**: Render a before/after diff block, then ask again: "Apply this change?"
 - **"Defer to later"**: Mark as deferred in Change History, move to next AD
 
@@ -73,7 +75,7 @@ When all ADs are processed, execute the following steps **in order** — none ar
 
 > **Why mandatory?** Tasks left in Board table after all ADs resolved create visual noise and confuse future skill runs. Archive is the terminal state — every resolved task MUST reach it.
 
-## Fix Scope Matrix
+## Fix Scope Matrix (v3.3.0+)
 
 | AD Route | arch-review can fix? | Action |
 |----------|---------------------|--------|
@@ -81,14 +83,17 @@ When all ADs are processed, execute the following steps **in order** — none ar
 | `/arch-align` | ✅ Yes | Modify LANGUAGE.md, BRD.md |
 | `/arch-design` | ✅ Yes | Modify ARCHITECTURE.md, ADR files |
 | `/arch-detail` | ✅ Yes | Modify DESIGN.md, module.md files |
-| `/devtdd` | ❌ No | Instruct user to run `/devtdd` — source code out of scope |
+| `/devtdd` | ✅ Yes | Modify source code (`.go`, `.java`, `.py`, etc.), tests, build configs |
 | `/arch-review-self` | ✅ Yes | Modify skill configuration, reference files |
+
+> **v3.3.0 change**: `/devtdd` ADs are no longer out of scope. arch-review owns the full fix lifecycle — if an AD requires source code changes, arch-review makes those changes directly after user confirmation.
 
 ## Key Rules
 
 - **ONE AD at a time** — never batch multiple fixes into one question
 - **Show analysis BEFORE asking** — user must understand what changes
 - **Verify AFTER fixing** — re-grep to confirm the fix worked
-- **No source code** — arch-review NEVER touches `.go`/`.java`/`.py` files
+- **No file type restriction** — arch-review in Fix Guidance Mode can modify any file needed to resolve ADs (source code included)
 - **Idempotent** — if an AD is already resolved (e.g., from a previous session), skip it and report
 - **User always decides** — even if the fix seems obvious, ask first
+- **End-to-end ownership** — arch-review stays engaged from audit through fix, verify, and archive. Never leave unresolved ADs orphaned.
