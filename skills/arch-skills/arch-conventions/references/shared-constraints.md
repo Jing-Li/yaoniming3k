@@ -45,16 +45,20 @@ The following skills MUST NOT modify source code files (`.go`, `.java`, `.py`, `
 
 Only `/devtdd` is permitted to write source code.
 
-## §4 Grill, Don't Guess (Single-Question Rule)
+## §4 Grill, Don't Guess (Structured Questioning)
 
-When facing ambiguity — unclear BC ownership, orphaned documents, missing upstream artifacts, or conflicting information — the skill MUST:
+When facing ambiguity — unclear BC ownership, orphaned documents, missing upstream artifacts, or conflicting information — the skill MUST use `AskUserQuestion` following [ask-user-question-spec.md](ask-user-question-spec.md):
 
-1. **Ask exactly one sharp question at a time.** Never batch multiple questions.
-2. **Prefer structured options.** When candidate answers form a finite set, use `AskUserQuestion` with 2–4 choices and brief descriptions.
-3. **Never proceed on assumption** when a critical input is unclear.
-4. **Never silently discard content** — always surface ambiguous items to the user.
+1. **ONE question at a time** — never batch multiple questions.
+2. **Analysis Context BEFORE the question** — provide What (finding/issue), Evidence (code paths, doc sections), and Why it matters.
+3. **2–4 structured options**, each with Label (1–5 words) + Description (WHY + trade-offs).
+4. **Recommended option FIRST** with `(Recommended)` suffix in the label.
+5. **Never proceed on assumption** when a critical input is unclear.
+6. **Never silently discard content** — always surface ambiguous items to the user.
 
-This rule applies to: `/arch-init` (Mode C governance), `/arch-align` (grilling), `/arch-design` (NFR collection), and any skill encountering upstream ambiguity.
+Simple confirmations ("Continue?", "Confirm delete?") are exempt from structured format.
+
+This rule applies to: `/arch-init` (Mode C governance), `/arch-align` (grilling), `/arch-design` (NFR collection), `/arch-detail` (delta task confirmation), `/devtdd` (BC selection), and any skill encountering upstream ambiguity.
 
 ## §5 OVERRIDE Protocol
 
