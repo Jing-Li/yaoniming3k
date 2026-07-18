@@ -289,12 +289,10 @@ Run these checks after implementing adapter and delivery layer code. Complement 
 
 ### Code Craftsmanship (Hard Constraint #9)
 
-- [ ] No magic strings/numbers — every domain concept literal is a named `const` (see [code-craftsmanship-rules.md](references/code-craftsmanship-rules.md) §9.1)
-- [ ] No DRY violations — structurally identical code blocks extracted to helpers (see §9.3)
-- [ ] No dead code — unused fields, functions, imports, unreachable branches deleted (see §9.5)
-- [ ] Standard library preferred — no custom utility duplicating stdlib functionality (see §9.6)
-- [ ] Test code uses same constants as production code — no hardcoded assertion strings
-- [ ] Every extracted helper has single responsibility — no "god helpers"
+Core items (magic strings, DRY, dead code, stdlib, test constants, helper responsibility) — see SKILL.md Step 4 + Per-Cycle Self-Check.
+Full rules: [code-craftsmanship-rules.md](references/code-craftsmanship-rules.md) §9.1–§9.7.
+
+Scenario-specific additions:
 - [ ] File permission bits (`0755`, `0644`) defined as named constants, not inline octals
 - [ ] Timer intervals and timeout values defined as named constants, not inline expressions
 - [ ] Configuration defaults and env var names defined as named constants in config package

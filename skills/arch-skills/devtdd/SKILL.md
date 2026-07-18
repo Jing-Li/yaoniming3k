@@ -165,6 +165,8 @@ For EACH micro-cycle from Step 3:
 [ ] No duplicated code blocks — helpers extracted for shared patterns (Hard Constraint #9)
 [ ] No dead code — unused fields/functions/imports deleted (Hard Constraint #9)
 [ ] Standard library preferred over custom utilities (Hard Constraint #9)
+[ ] Test code uses same constants as production code — no hardcoded assertion strings (Hard Constraint #9)
+[ ] Every extracted helper has single responsibility — no "god helpers" (Hard Constraint #9)
 ```
 
 ### Step 5: DoD Verification (完成度验证)
