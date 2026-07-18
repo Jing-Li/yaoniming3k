@@ -174,3 +174,5 @@ arch-align is the **only skill that creates new tasks**. See [kanban-spec.md](..
 - Task Creation protocol (§4.3)
 - Common Startup/Completion sequences (§4.1, §4.2)
 - T{N}.md structure (§3)
+
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), No Source Code Modification (§3), Grill Don't Guess (§4), OVERRIDE Protocol (§5), Upstream Halt (§6).

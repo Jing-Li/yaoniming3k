@@ -4,6 +4,22 @@ Detailed audit checklists, scoring rubric, per-language red flags, and refactori
 
 ---
 
+## 0A. Core Theoretical Foundations
+
+As a code reviewer, your verdict criteria and improvement proposals MUST be 100% grounded in principles from these three canonical references:
+
+1. **"Clean Architecture" (Robert C. Martin) Principles**
+   - Check for violations of the **onion-layer rule** and **Dependency Inversion Principle (DIP)**. Any reverse dependency or reverse import from the core Domain or Use Case layer toward external Infrastructure / Web frameworks is a severe violation (red card).
+   - Check whether the domain layer is polluted by external technical details (e.g., Spring annotations, Django ORM, Gin framework, etc.) — red card.
+
+2. **"Patterns of Enterprise Application Architecture" (Martin Fowler) Principles**
+   - Check whether the code conflates persistence models with domain models. If database row entities (e.g., JPA `@Entity`, SQLAlchemy base classes) are used directly in core business logic (Leaky Abstraction), this is a violation — must recommend refactoring to the **Data Mapper** pattern.
+
+3. **"Design Patterns" (GoF) Principles**
+   - Check whether design patterns are applied judiciously — no over-engineering (mechanical pattern application) or under-engineering (complex `if-else` branches lacking polymorphism). Review whether polymorphism and appropriate patterns (Strategy / Factory / Observer) have been used to refactor complex branching logic.
+
+---
+
 ## 1. Audit Checklist
 
 ### Phase Scope Guide

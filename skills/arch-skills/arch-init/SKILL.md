@@ -256,3 +256,5 @@ For file templates, verification checklists, Mode C detection rules, Mode C scan
 ## Kanban Protocol
 
 arch-init is responsible for **creating** the kanban directory structure, not for **using** it. arch-kanban generates the initial BOARD.md. See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for the full protocol that downstream skills follow (Startup/Completion/Redo sequences).
+
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), No Source Code Modification (§3), Grill Don't Guess (§4), OVERRIDE Protocol (§5), Upstream Halt (§6).

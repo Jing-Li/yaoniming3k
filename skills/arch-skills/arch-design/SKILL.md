@@ -1,7 +1,7 @@
 ---
 name: arch-design
 description: Phase 2 boundary design and visualization skill. Use after /arch-align to define Clean Architecture layers, draw Mermaid dependency diagrams, produce ARCHITECTURE.md, and manage Architecture Decision Records (ADRs). Inspired by Matt Pocock's /to-prd to document architecture specifications. Trigger when user says "/arch-design", "design architecture", "draw the boundaries", "visualize dependencies", or asks to formalize layered architecture after terminology alignment is complete.
-version: 1.18.0
+version: 1.18.1
 ---
 
 # Arch-Design Skill (Phase 2: Boundary Design & Visualization)
@@ -10,20 +10,11 @@ You are a Senior System Architect. Your task is to design a robust, clean, and h
 
 ---
 
-## 📚 理论宪法与核心价值 (Core Theoretical Foundations)
+See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clean Architecture — Uncle Bob).
 
-在进行架构设计和边界划分时，你必须严格遵循以下殿堂级著作：
+## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS
 
-1. **《Clean Architecture: A Craftsman's Guide to Software Structure and Design》（《架构整洁之道》）— Robert C. Martin ("Uncle Bob") 著**
-   - *地位*：现代软件工程中最著名的架构设计指导书之一。
-   - *核心价值*：提出了著名的"洋葱圈架构"（分层原则），阐述了如何通过划定清晰的组件边界，保持业务逻辑（核心模型）不受数据库、Web 框架等外部技术细节的污染。
-   - *执行要点*：你必须使用依赖反转原则（DIP）和端口与适配器（Hexagonal）架构。核心业务领域（Domain Layer）必须被包裹在中心，外部依赖只能由外向内单向依赖。
-
----
-
-## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS (硬性约束)
-
-1. **MANDATORY ARCHITECTURE DIAGRAM (每次设计必须画图)**: For every architecture design you produce, **you must draw a clear, syntax-correct Mermaid diagram** representing the Clean Architecture boundaries, layers, and dependency flows.
+1. **MANDATORY ARCHITECTURE DIAGRAM**: For every architecture design you produce, **you must draw a clear, syntax-correct Mermaid diagram** representing the Clean Architecture boundaries, layers, and dependency flows.
 
 2. **NO IMPLEMENTATION CODE**: You are strictly forbidden from writing or modifying any actual source code files (`.go`, `.java`, `.py`) or SQL/DDL tables.
 
@@ -40,53 +31,13 @@ You are a Senior System Architect. Your task is to design a robust, clean, and h
 
 ---
 
-## 📐 Architecture Specification Blueprint (架构设计标准)
+See [reference.md](reference.md) §0B for the full **Architecture Specification Blueprint** (§0–§8).
 
-When generating the **`ARCHITECTURE.md`** document, you must structure it with the following sections:
-
-0. **Architecture Overview (v1.13.0+)**: Holistic summary of the BC's complete architecture picture (see Step 4.5). Contains: architecture pattern, layer structure, PoEAA pattern, key technologies, port/adapter inventory, Tracer Bullet goal. **Overwritten every round** — always reflects the latest architecture.
-
-1. **Layers & Components Definition (分层与组件定义)**: Classify the components into:
-   - **Domain Layer** — pure business entities and value objects (zero external deps)
-   - **Application Ports/Interfaces Layer** — interfaces defined by the consumer (use cases)
-   - **Application Use Cases Layer** — orchestrators that depend only on Domain + Ports
-   - **Infrastructure / Adapter Layer** — concrete implementations of ports (DB, MQ, gRPC, FS)
-
-2. **Dependency Flow (依赖流向图)**: **You must generate a Mermaid diagram** (Class diagram or Component/flowchart) showing these layers, the position of Ports and Adapters, and arrows representing the **inward** dependency flow. Outer layers depend on inner; inner layers know nothing of outer.
-
-3. **DIP Enforcement (依赖反转的应用说明)**: Explain exactly how the core business logic (Domain Model) is protected from:
-   - Database / ORM / SQL drivers
-   - HTTP / gRPC / Web frameworks
-   - Message brokers (Kafka, RocketMQ, etc.)
-   - External SaaS / third-party SDKs
-   - Filesystem & OS specifics
-
-   List each external technology and the **port interface** that decouples it.
-
-   **Driving adapter (client-side) translation rule**: Driving adapters (e.g., CLI, HTTP client, gRPC client) that consume external services must also enforce DIP. When a driving adapter receives wire-format types (e.g., proto messages, JSON DTOs), it must translate them into **domain types** before passing to the use case / application layer. The wire-format boundary ends at the adapter — use cases and domain code must never see proto/DTO types. However, for simple query-only clients (e.g., a CLI that just displays formatted output), a lightweight **display struct** at the presentation layer is acceptable instead of full domain translation.
-
-   **Package Layout rules for adapters**:
-   - **Driven adapters** (implement ports): placed under `infra/<tech>/` (e.g., `infra/postgres/`, `infra/rocketmq/`).
-   - **Driving adapters** (entry points): also placed under `infra/<tech>/` (e.g., `infra/grpc/`, `infra/cli/`). All adapters — driven and driving — live in the same `infra/` layer for consistency.
-   - **`cmd/`**: only contains entry points (`main.go`) and composition roots. No business logic.
-
-4. **Package Layout Guidance (Go)**: Specify package structure and dependency direction.
-
-5. **Architecture Decision Records**: Index table linking to each ADR file.
-
-6. **Open Questions / Deferred Decisions**: Unresolved items.
-
-7. **Version History**: removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
-
-8. **Cross-Cutting Strategies (v1.14.0+)**: Architecture-level decisions for concerns that span all layers. Each item records only the **strategy choice** (A vs B) and **which layer** owns it — not implementation details (those belong to detail). Items: Error Handling, Data Consistency, DI Strategy, Concurrency Model, Configuration Management, Observability.
-
----
-
-## 🚶 Steps to Execute (执行步骤)
+## 🚶 Steps to Execute
 
 1. **Read Blueprints**: Read and analyze `LANGUAGE.md` and `BRD.md` from the current workspace. If either is missing, **halt** and instruct the user to run `/arch-align` first.
 
-2. **NFR Collection & Technology Discovery (非功能需求收集与技术发现)** *(v1.17.0+)*: Before designing boundaries, walk through the NFR Checklist with the user to capture quality attributes:
+2. **NFR Collection & Technology Discovery** *(v1.17.0+)*: Before designing boundaries, walk through the NFR Checklist with the user to capture quality attributes:
    - Scalability (concurrent users, data growth, horizontal scaling)
    - Performance (p50/p95/p99 latency, batch throughput)
    - Availability (uptime SLA, RTO/RPO, failover)
@@ -95,9 +46,9 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
    During this conversation, ask the user which external technologies are in use or planned (DB, MQ, FS, third-party APIs, frameworks). Record NFR decisions in ARCHITECTURE.md. If the user says "I don't know", mark as Open Question.
    See [references/nfr-checklist.md](references/nfr-checklist.md) for the full checklist.
 
-2.5. **Inventory External Technologies (外部技术盘点)**: Consolidate the external technologies discovered in Step 2 plus Infrastructure terms from `LANGUAGE.md`. Produce a formal inventory list. Each technology must end up behind a port.
+2.5. **Inventory External Technologies**: Consolidate the external technologies discovered in Step 2 plus Infrastructure terms from `LANGUAGE.md`. Produce a formal inventory list. Each technology must end up behind a port.
 
-2.6. **Architecture Pattern Selection (架构模式选择)** *(v1.8.0+)*: Based on team size, NFR requirements from Step 2, and domain complexity from BRD.md, recommend an architecture pattern using the decision matrix:
+2.6. **Architecture Pattern Selection** *(v1.8.0+)*: Based on team size, NFR requirements from Step 2, and domain complexity from BRD.md, recommend an architecture pattern using the decision matrix:
    - **Monolith** — team ≤5, simple domain
    - **Modular Monolith** — team 5-15, multiple BCs, shared deploy
    - **Microservices** — team 15+, independent deploy
@@ -106,7 +57,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
    - **CQRS** — read/write asymmetry (100:1+)
    Record the pattern decision with rationale in ARCHITECTURE.md. See [references/architecture-patterns.md](references/architecture-patterns.md) for the full comparison and decision matrix.
 
-2.7. **ADR Generation (架构决策记录)** *(v1.9.0+)*: For each significant architecture decision made during this phase, create an ADR file in `docs/bc/<bc-slug>/design/adr/`. An ADR is **REQUIRED** when:
+2.7. **ADR Generation** *(v1.9.0+)*: For each significant architecture decision made during this phase, create an ADR file in `docs/bc/<bc-slug>/design/adr/`. An ADR is **REQUIRED** when:
    - Choosing a persistence technology (database, cache, file system)
    - Choosing a communication pattern or protocol (sync vs async, gRPC vs MQ)
    - Choosing an architecture pattern (monolith vs microservices, CQRS, event sourcing)
@@ -154,7 +105,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
    - **Ports** — count + names
    - **Adapters** — count + names
    - **Tracer Bullet** — actor → action → observable outcome
-   Must be a **full rewrite** every round (not incremental). After generation, ask user: "这是当前 BC 的架构全景，准确吗？" Resolve any conflicts before proceeding.
+   Must be a **full rewrite** every round (not incremental). After generation, ask user: "Is this the current BC's architecture overview accurate?" Resolve any conflicts before proceeding.
 
 5. **Post-Rename Global Doc Sync** (when design involves renaming a port, adapter, or domain term): After updating ARCHITECTURE.md, grep the **entire project** for the old name — including `LANGUAGE.md`, `BRD.md`, `DESIGN.md`, `design/modules/*/module.md`, `design/modules/*/interfaces/*.md`, and `REVIEW.md`. Fix every stale reference in the same session. This prevents the common drift where ARCHITECTURE.md is updated but companion documents retain the old terminology.
 
@@ -165,13 +116,13 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 
 6. **Hand-off Trigger**: Once the user agrees with the boundaries, update `kanban/BOARD.md` and `kanban/tasks/T{N}.md` (see Manifest Protocol below), then output:
 
-   > **"架构规格说明已确立并写入 `docs/bc/<bc-slug>/design/ARCHITECTURE.md`。T{N} design → done。架构图与边界对齐完成。"**
+   > **"Architecture specification established and written to `docs/bc/<bc-slug>/design/ARCHITECTURE.md`. T{N} design → done. Architecture diagram and boundary alignment complete."**
    >
-   > **本轮变更摘要：** <N 个新端口，N 个适配器修改，N 个 ADR 变更，...>
-   > **⚠️ Breaking 变更：** <列出需下游更新的项，或“无”>
-   > **➕ Additive 变更：** <列出下游可选扩展的项，或“无”>
+   > **This round's change summary:** <N new ports, N adapter changes, N ADR changes, ...>
+   > **⚠️ Breaking changes:** <list items requiring downstream updates, or "none">
+   > **➕ Additive changes:** <list items available for downstream extension, or "none">
    >
-   > **请确认并输入 `/arch-detail` 开始进行多语言工程落地与详细设计。**
+   > **Confirm and enter `/arch-detail` to begin multi-language detailed design.**
 
 ---
 
@@ -195,7 +146,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 9. Read upstream files via T{N}.md References:
    - Read `LANGUAGE.md` + `BRD.md` (current overview) + `align/brds/brd-t{N}.md` (this task's BRD snapshot).
    - **BRD Conflict Check**: Compare `brd-t{N}.md` vs current `BRD.md`. If business scope, rules, or terms differ, present conflicts to user:
-     - "T{N} 的 BRD 快照与当前 BRD.md 存在以下差异：..."
+     - "T{N}'s BRD snapshot differs from current BRD.md in the following ways:..."
      - User may accept current BRD.md and continue, or run `/arch-align` to resolve conflicts first.
 10. **Idempotent check** (if status was already doing/done): Read own existing ARCHITECTURE.md + ADRs. Read AD entries. Identify delta — skip completed work, only execute what's missing or needs fixing.
 11. Move T{N} from `new` to `doing` in BOARD.md (if not already).
@@ -207,12 +158,12 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
     - Current §0 Architecture Overview
     - Current §8 Cross-Cutting Strategies
     - Existing ADR list (from §5 ADR Index)
-    Ask: "以上为上轮设计产出，哪些需要更新？" Let the user confirm scope before re-executing.
+    Ask: "Above is the prior design output. Which items need updating?" Let the user confirm scope before re-executing.
 14. **BC Selection Protocol** (when user does not specify a BC):
     - Read `AGENTS.md` BC registry and list all registered BCs.
     - If only one BC exists, use it automatically.
     - If multiple BCs exist, ask the user which BC to target.
-15. If T{N} already has arch-design in `done`, inform: "T{N} design 已完成。重新运行将覆盖 ARCHITECTURE.md。确认继续？" Wait for explicit confirmation.
+15. If T{N} already has arch-design in `done`, inform: "T{N} design is already complete. Re-running will overwrite ARCHITECTURE.md. Continue?" Wait for explicit confirmation.
 
 ### On Completion
 
@@ -226,7 +177,7 @@ When generating the **`ARCHITECTURE.md`** document, you must structure it with t
 4. **Migration task chaining (v1.18.0+)**: If T{N}.md has `(migration)` tag → also add T{N} to `arch-detail` row, `new` column on BOARD.md.
 5. Output the standard hand-off trigger:
 
-   > **"架构规格说明已确立并写入 `docs/bc/<bc-slug>/design/ARCHITECTURE.md`。T{N} design → done。架构图与边界对齐完成。请确认并输入 `/arch-detail` 开始进行多语言工程落地与详细设计。"**
+   > **"Architecture specification established and written to `docs/bc/<bc-slug>/design/ARCHITECTURE.md`. T{N} design → done. Architecture diagram and boundary alignment complete. Confirm and enter `/arch-detail` to begin multi-language detailed design."**
 
 ---
 
@@ -240,11 +191,12 @@ For detailed conventions, templates, self-audit checklists, and the clarificatio
 - **Clarification Protocol** — single-question-rule when alignment artifacts are ambiguous.
 
 For ADR management and supplementary references, see the `references/` subdirectory:
-- [references/adr-guide.md](references/adr-guide.md) — ADR 模板 + 决策矩阵 + 命名规范 + 状态生命周期 + 完整示例 *(v1.9.0+)*
-- [references/poeaa-guide.md](references/poeaa-guide.md) — PoEAA 模式选型决策矩阵 + Devil's Advocate 挑战指南 + Tracer Bullet 定义 *(v1.10.0+)*
-- [references/nfr-checklist.md](references/nfr-checklist.md) — NFR 清单
-- [references/architecture-patterns.md](references/architecture-patterns.md) — 架构模式选型
-- [references/database-selection.md](references/database-selection.md) — 数据库选型
+- [references/adr-guide.md](references/adr-guide.md) — ADR template + decision matrix + naming conventions + status lifecycle + full examples *(v1.9.0+)*
+- [references/poeaa-guide.md](references/poeaa-guide.md) — PoEAA pattern selection matrix + Devil's Advocate challenge guide + Tracer Bullet definition *(v1.10.0+)*
+- [references/nfr-checklist.md](references/nfr-checklist.md) — NFR checklist
+- [references/architecture-patterns.md](references/architecture-patterns.md) — Architecture pattern selection
+- [references/database-selection.md](references/database-selection.md) — Database selection guide
+- [references/examples.md](references/examples.md) — Golden examples: Architecture Overview, Mermaid diagram, ADR, cross-cutting strategies
 
 ## Kanban Protocol
 
@@ -252,3 +204,5 @@ See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for:
 - Common Startup/Completion sequences (§4.1, §4.2)
 - Redo protocol (§4.4)
 - T{N}.md structure (§3)
+
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), No Source Code Modification (§3), OVERRIDE Protocol (§5), Upstream Halt (§6).

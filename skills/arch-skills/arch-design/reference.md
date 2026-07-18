@@ -4,6 +4,59 @@ Detailed conventions, templates, and protocols for the `arch-design` skill. Load
 
 ---
 
+## 0A. Core Theoretical Foundations
+
+When performing architecture design and boundary partitioning, you MUST strictly follow this canonical reference:
+
+1. **"Clean Architecture: A Craftsman's Guide to Software Structure and Design" — Robert C. Martin ("Uncle Bob")**
+   - *Status*: One of the most influential architecture design guides in modern software engineering.
+   - *Core Value*: Introduced the famous "onion architecture" (layered principles), describing how to maintain clean component boundaries and keep business logic (core model) unpolluted by database, web framework, and other external technical details.
+   - *Execution*: You MUST use the Dependency Inversion Principle (DIP) and Port-Adapter (Hexagonal) architecture. The core business Domain Layer must be wrapped at the center, with external dependencies flowing inward unidirectionally only.
+
+---
+
+## 0B. Architecture Specification Blueprint
+
+When generating the **`ARCHITECTURE.md`** document, structure it with these sections:
+
+0. **Architecture Overview (v1.13.0+)**: Holistic summary of the BC's complete architecture picture (see Step 4.5). Contains: architecture pattern, layer structure, PoEAA pattern, key technologies, port/adapter inventory, Tracer Bullet goal. **Overwritten every round** — always reflects the latest architecture.
+
+1. **Layers & Components Definition**: Classify the components into:
+   - **Domain Layer** — pure business entities and value objects (zero external deps)
+   - **Application Ports/Interfaces Layer** — interfaces defined by the consumer (use cases)
+   - **Application Use Cases Layer** — orchestrators that depend only on Domain + Ports
+   - **Infrastructure / Adapter Layer** — concrete implementations of ports (DB, MQ, gRPC, FS)
+
+2. **Dependency Flow**: **You must generate a Mermaid diagram** (Class diagram or Component/flowchart) showing these layers, the position of Ports and Adapters, and arrows representing the **inward** dependency flow. Outer layers depend on inner; inner layers know nothing of outer.
+
+3. **DIP Enforcement**: Explain exactly how the core business logic (Domain Model) is protected from:
+   - Database / ORM / SQL drivers
+   - HTTP / gRPC / Web frameworks
+   - Message brokers (Kafka, RocketMQ, etc.)
+   - External SaaS / third-party SDKs
+   - Filesystem & OS specifics
+
+   List each external technology and the **port interface** that decouples it.
+
+   **Driving adapter (client-side) translation rule**: Driving adapters (e.g., CLI, HTTP client, gRPC client) that consume external services must also enforce DIP. When a driving adapter receives wire-format types (e.g., proto messages, JSON DTOs), it must translate them into **domain types** before passing to the use case / application layer. The wire-format boundary ends at the adapter — use cases and domain code must never see proto/DTO types. However, for simple query-only clients (e.g., a CLI that just displays formatted output), a lightweight **display struct** at the presentation layer is acceptable instead of full domain translation.
+
+   **Package Layout rules for adapters**:
+   - **Driven adapters** (implement ports): placed under `infra/<tech>/` (e.g., `infra/postgres/`, `infra/rocketmq/`).
+   - **Driving adapters** (entry points): also placed under `infra/<tech>/` (e.g., `infra/grpc/`, `infra/cli/`). All adapters — driven and driving — live in the same `infra/` layer for consistency.
+   - **`cmd/`**: only contains entry points (`main.go`) and composition roots. No business logic.
+
+4. **Package Layout Guidance (Go)**: Specify package structure and dependency direction.
+
+5. **Architecture Decision Records**: Index table linking to each ADR file.
+
+6. **Open Questions / Deferred Decisions**: Unresolved items.
+
+7. **Version History**: removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
+
+8. **Cross-Cutting Strategies (v1.14.0+)**: Architecture-level decisions for concerns that span all layers. Each item records only the **strategy choice** (A vs B) and **which layer** owns it — not implementation details (those belong to detail). Items: Error Handling, Data Consistency, DI Strategy, Concurrency Model, Configuration Management, Observability.
+
+---
+
 ## 1. Mermaid Diagram Conventions
 
 Use one of these two canonical layouts. Pick the simpler one that fits the system.

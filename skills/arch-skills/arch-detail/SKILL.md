@@ -1,7 +1,7 @@
 ---
 name: arch-detail
 description: Phase 3 detailed design and multi-language implementation skill. Use after /arch-design to translate ARCHITECTURE.md boundaries into a modular DESIGN.md index + per-module design files + per-method interface contracts. Inspired by Matt Pocock's /to-issues and /tdd. Trigger when user says "/arch-detail", "detail design", "generate DDL", "translate to code", "vertical slice tasks", or asks to map an architecture spec into implementable issues.
-version: 3.3.0
+version: 3.3.1
 ---
 
 # Arch-Detail Skill (Phase 3: Detailed Design & Multi-Language Implementation)
@@ -10,22 +10,9 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 ---
 
-## 📚 理论宪法与核心价值 (Core Theoretical Foundations)
+See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (GoF Design Patterns + PoEAA Data Mapper).
 
-在进行详细类设计、设计模式应用和持久化设计时，你必须严格遵循以下殿堂级著作：
-
-1. **《Design Patterns: Elements of Reusable Object-Oriented Software》（《设计模式：可复用面向对象软件的基础》）— Erich Gamma 等 ("GoF 四人帮") 著**
-   - *地位*：软件开发史上最伟大的经典之一。
-   - *核心价值*：提出了 23 种设计模式（如工厂、单例、策略、观察者等），是系统详细设计和模型梳理时最通用的"普通话"。
-   - *执行要点*：你必须评估核心领域和应用场景中的多变性，合理地运用设计模式（例如：用工厂模式隔离领域实体构建，用策略模式解耦重试或支付算法，用观察者模式解耦业务域事件流）。
-
-2. **《Patterns of Enterprise Application Architecture》（《企业应用架构模式》）— Martin Fowler 著**
-   - *核心价值*：阐述了如何通过 Data Mapper（数据映射器）模式将对象模型与关系数据库完全解耦。
-   - *执行要点*：禁止让核心业务模型直接充当数据库实体。你必须使用 Data Mapper 模式，在基础设施层（Infrastructure）中将数据库持久化实体映射为纯净的领域实体，实现业务逻辑与数据建模的完美解耦。
-
----
-
-## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS (硬性约束)
+## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS
 
 1. **NO ARCHITECTURAL DEVIATION**: Every class, table, field, and method you generate must strictly match the naming conventions in `LANGUAGE.md` and the boundaries in `ARCHITECTURE.md`. No invented names, no shortcuts, no merging of layers.
 
@@ -58,7 +45,7 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 ---
 
-## 🚶 Steps to Execute (执行步骤)
+## 🚶 Steps to Execute
 
 1. **Read the Blueprints**: Read `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, and `docs/bc/<bc-slug>/design/ARCHITECTURE.md` to establish strict scope, naming, and boundaries. Read `docs/bc/<bc-slug>/kanban/BOARD.md` to find the current task. If `ARCHITECTURE.md` or `BOARD.md` is missing, **halt** and instruct the user to run `/arch-design` first.
 
@@ -118,20 +105,20 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
    - Diagnosis Checklist (global)
    Do **not** append to `ARCHITECTURE.md`. Task details live in each `module.md`, not in the index.
 
-6. **Redo Protocol (重做时 Code↔Design Delta 评估)**: If the target BC already has source code (check for `cmd/`, `internal/`, `src/` directories or equivalent), this is a **redo** — not a greenfield design. In this case, after completing Steps 1–5, perform the following before marking Phase 3 complete:
+6. **Redo Protocol (Code↔Design Delta Assessment)**: If the target BC already has source code (check for `cmd/`, `internal/`, `src/` directories or equivalent), this is a **redo** — not a greenfield design. In this case, after completing Steps 1–5, perform the following before marking Phase 3 complete:
    1. **Scan existing code** against the new design: compare struct names, interface signatures, package layout, port interfaces, and composition root wiring in the code against DESIGN.md §3 Package Layout and §6 DI Wiring.
    2. **Produce a Code↔Design Delta Table** listing each discrepancy:
       - `Location` (file:line), `Code State` (what exists), `Design State` (what should exist), `Severity` (Critical/Warning), `Suggested Fix`
    3. **Generate refactoring tasks** or append to existing Task Summary rows: if the delta is significant (3+ Critical items), create dedicated "Code Alignment" tasks in DESIGN.md §5 with Status ☐. If minor (≤2 Warning items), append DoD items to existing tasks.
    4. **Scan ARCHITECTURE.md Mermaid participant aliases**: grep `ARCHITECTURE.md` for `participant .* as .*` declarations. Compare each alias against the current port names in LANGUAGE.md and the ARCHITECTURE.md port table (§1.2). Flag and fix any alias that uses a banned/old name (e.g., `AOSStore` when the current port is `AOSLoader/AOSSaver/AOSChecker`).
-   5. **Upstream Consistency Gate — PRE** (写入前校验): Before writing any `module.md §3` that describes runtime behavior (responsibilities, method flows, data paths), grep `ARCHITECTURE.md` for the same component and read all §2.x sections that describe its runtime behavior. Diff the intended module.md §3 behavior against ARCHITECTURE.md §2.x. If any semantic conflict exists, record it for AD generation in the POST step.
-   6. **Upstream Consistency Gate — POST** (写入后生成 AD): After writing all module.md files, for each module whose §3 refined, transferred, or removed a runtime responsibility compared to ARCHITECTURE.md §2.x, generate an **Architecture Discrepancy (AD)** in `T{N}.md → Architecture Discrepancies → arch-design section`. The AD MUST include: (a) component name, (b) ARCHITECTURE.md current description, (c) module.md refined description, (d) impact assessment. Also check `LANGUAGE.md` responsibility tables — if they describe the same behavior and conflict, include in the same AD. Output all generated ADs to the user and recommend running `/arch-design` to resolve before `/devtdd`.
+   5. **Upstream Consistency Gate — PRE** (Pre-Write Verification): Before writing any `module.md §3` that describes runtime behavior (responsibilities, method flows, data paths), grep `ARCHITECTURE.md` for the same component and read all §2.x sections that describe its runtime behavior. Diff the intended module.md §3 behavior against ARCHITECTURE.md §2.x. If any semantic conflict exists, record it for AD generation in the POST step.
+   6. **Upstream Consistency Gate — POST** (Post-Write AD Generation): After writing all module.md files, for each module whose §3 refined, transferred, or removed a runtime responsibility compared to ARCHITECTURE.md §2.x, generate an **Architecture Discrepancy (AD)** in `T{N}.md → Architecture Discrepancies → arch-design section`. The AD MUST include: (a) component name, (b) ARCHITECTURE.md current description, (c) module.md refined description, (d) impact assessment. Also check `LANGUAGE.md` responsibility tables — if they describe the same behavior and conflict, include in the same AD. Output all generated ADs to the user and recommend running `/arch-design` to resolve before `/devtdd`.
    7. **Output the delta summary** to the user and recommend `/devtdd` to execute the alignment tasks before proceeding.
    8. **Do NOT mark Phase 3 complete** until the user confirms whether to proceed with the delta tasks or defer them.
 
    If no source code exists (greenfield), skip this step entirely.
 
-7. **Post-Write Verification (写入后校验)**: After writing DESIGN.md and all module/contract files, perform these integrity checks before proceeding to the hand-off:
+7. **Post-Write Verification**: After writing DESIGN.md and all module/contract files, perform these integrity checks before proceeding to the hand-off:
    1. **Line count check**: `wc -l DESIGN.md` — confirm the line count is within the expected range (not truncated, not appended with stale content). If the file was rewritten, verify the old content is fully gone (no residual duplicate sections).
    2. **Old terminology grep**: `grep -rn "<banned-term>" design/ DESIGN.md` for every term listed in LANGUAGE.md's banned/deprecated synonyms section. Any match is a blocker — fix before proceeding.
    3. **File end sanity**: Read the last 5 lines of DESIGN.md to confirm the file ends cleanly (no truncation mid-sentence, no orphaned markdown table rows).
@@ -141,14 +128,14 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 9. **Hand-off Trigger**: Once the user confirms the design, output:
 
-   > **"详细设计已写入 `DESIGN.md`（索引）+ `detail/modules/`（模块级设计 + 接口契约 + 垂直切片任务）。T{N} detail → done。架构设计管线全部完成。"**
+   > **"Detailed design written to `DESIGN.md` (index) + `detail/modules/` (module-level design + interface contracts + vertical-slice tasks). T{N} detail → done. Architecture pipeline complete."**
    >
-   > **如果 Redo Protocol 产出了 Upstream Consistency AD:**
-   > - `/arch-design`: N 项 (AD-xxx, ...)
-   > 建议先运行 `/arch-design` 解决 AD 后再执行 `/devtdd`。
+   > **If Redo Protocol produced Upstream Consistency ADs:**
+   > - `/arch-design`: N items (AD-xxx, ...)
+   > Recommend running `/arch-design` to resolve ADs before `/devtdd`.
    >
-   > **否则:**
-   > 可输入 `/devtdd` 针对某个 task 开始红绿重构（task 定义在 `detail/modules/<module>/module.md` 底部），或 `/arch-review` 执行架构审计。
+   > **Otherwise:**
+   > Enter `/devtdd` to start red-green-refactor on a specific task (tasks defined in `detail/modules/<module>/module.md`), or `/arch-review` to run architecture audit.
 
 ---
 
@@ -198,6 +185,8 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), No Source Code Modification (§3), OVERRIDE Protocol (§5), Upstream Halt (§6).
+
 ---
 
 ## 📎 Additional Resources
@@ -213,3 +202,4 @@ For detailed templates and language-specific golden rules, see [reference.md](re
 For API contract standards and security checkpoint (v3.1.0+), see the `references/` subdirectory:
 - [references/api-contract-standards.md](references/api-contract-standards.md) — OpenAPI 3.1 templates + RFC 7807 + pagination + versioning
 - [references/security-checkpoint.md](references/security-checkpoint.md) — pre-implementation security review checklist
+- [references/examples.md](references/examples.md) — Golden examples: DESIGN.md index, module.md, port interface, task DoD

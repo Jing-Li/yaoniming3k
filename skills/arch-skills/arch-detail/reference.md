@@ -4,6 +4,21 @@ Detailed templates, language-specific golden rules, and protocols for the `arch-
 
 ---
 
+## 0A. Core Theoretical Foundations
+
+When performing detailed class design, design pattern application, and persistence design, you MUST strictly follow these canonical references:
+
+1. **"Design Patterns: Elements of Reusable Object-Oriented Software" — Erich Gamma et al. ("GoF Gang of Four")**
+   - *Status*: One of the greatest classics in software development history.
+   - *Core Value*: Introduced 23 design patterns (Factory, Singleton, Strategy, Observer, etc.) — the universal lingua franca for detailed system design and model structuring.
+   - *Execution*: You MUST evaluate variability in core domain and application scenarios, applying patterns judiciously (e.g., Factory to isolate entity construction, Strategy to decouple retry/pricing algorithms, Observer to decouple domain event streams).
+
+2. **"Patterns of Enterprise Application Architecture" — Martin Fowler**
+   - *Core Value*: Describes how to fully decouple the object model from relational databases via the Data Mapper pattern.
+   - *Execution*: Domain models MUST NOT serve as database entities directly. You MUST use the Data Mapper pattern in the Infrastructure layer to map persistence entities to pure domain entities, achieving complete decoupling of business logic from data modeling.
+
+---
+
 ## 0. DESIGN.md Index Template
 
 `docs/bc/<bc-slug>/DESIGN.md` is the **Phase 3 index file**. It contains global decisions (DDL, GoF, package layout) and links to modular design files under `detail/modules/`. It must not be appended to `ARCHITECTURE.md`. Use this exact structure:
@@ -298,262 +313,7 @@ Each interface contract (`interfaces/<method>.md`) maps to tests as follows:
 
 ## 1. Per-Language Best Practices
 
-### 1.1 Go — Golden Rules
-
-| Rule | Do | Don't |
-|------|-----|-------|
-| Interface ownership | Define interface in **consumer** package (usecase) | Define in adapter package |
-| Return types | Accept interfaces, **return structs** | Return `interface{}` from constructors |
-| Context propagation | First param `ctx context.Context` on every port method | Store ctx in struct fields |
-| Error types | Sentinel `var ErrXxx = errors.New(...)` in `domain/errors.go` | Return raw `pgx.ErrNoRows` to upper layers |
-| Package layout | `domain/`, `internal/usecase/<ctx>/`, `internal/infrastructure/<tech>/` or `domain/`, `internal/port/<ctx>/`, `internal/app/`, `internal/infra/<tech>/` | `internal/<feature>/` mixing layers |
-| Error translation | Adapter wraps with `errors.Is`-friendly conversions | Pass driver errors upward verbatim |
-
-#### Go skeleton
-
-```go
-// domain/agent.go
-package domain
-
-type AgentID string
-type AgentStatus string
-
-const (
-    StatusOnline  AgentStatus = "online"
-    StatusOffline AgentStatus = "offline"
-)
-
-type AgentEntry struct {
-    ID       AgentID
-    Status   AgentStatus
-    LastBeat time.Time
-}
-
-// domain/errors.go
-var (
-    ErrAgentNotFound = errors.New("agent not found")
-    ErrManifestExists = errors.New("manifest already exists")
-)
-
-// internal/usecase/census/list.go
-package census
-
-type Reader interface {
-    List(ctx context.Context, filter Filter) ([]domain.AgentEntry, error)
-}
-
-type ListUseCase struct {
-    reader Reader
-}
-
-func (uc *ListUseCase) Execute(ctx context.Context, f Filter) ([]domain.AgentEntry, error) { ... }
-
-// internal/infrastructure/postgres/census_store.go
-package postgres
-
-type CensusStore struct{ db *sql.DB }
-
-func (s *CensusStore) List(ctx context.Context, f census.Filter) ([]domain.AgentEntry, error) {
-    rows, err := s.db.QueryContext(ctx, `SELECT ... FROM agents WHERE ...`)
-    if errors.Is(err, sql.ErrNoRows) { return nil, domain.ErrAgentNotFound }
-    // map rows → []domain.AgentEntry (Data Mapper)
-}
-```
-
-#### Go skeleton — Transaction Script variant (port/ umbrella + app/ scripts)
-
-When use cases are thin transaction-script functions (not structs), ports live in a separate `port/` umbrella rather than embedded in the usecase package. All adapters (driven + driving) go under `infra/`.
-
-```go
-// <bc-slug>/internal/port/census/store.go
-package census
-
-import "github.com/<org>/<project>/<bc-slug>/internal/domain"
-
-type CensusStore interface {
-    Upsert(ctx context.Context, entry domain.Entry) error
-    Get(ctx context.Context, id string) (domain.Entry, error)
-    List(ctx context.Context) ([]domain.Entry, error)
-}
-
-// <bc-slug>/internal/app/upsert_census.go
-package app
-
-import (
-    "github.com/<org>/<project>/<bc-slug>/internal/domain"
-    "github.com/<org>/<project>/<bc-slug>/internal/port/census"
-)
-
-func UpsertCensus(ctx context.Context, store census.CensusStore, entry domain.Entry) error {
-    if !entry.CanTransition(entry.Status) { return domain.ErrInvalidTransition }
-    return store.Upsert(ctx, entry)
-}
-
-// <bc-slug>/internal/infra/postgres/census_adapter.go — implements census.CensusStore
-// <bc-slug>/internal/infra/grpc/server.go         — driving adapter (gRPC)
-// <bc-slug>/internal/infra/cli/list.go            — driving adapter (CLI)
-```
-
-> **Multi-BC independent modules (MANDATORY when ≥2 BCs with independent processes)**: Each BC is a **completely independent module** with its own `go.mod`, `cmd/`, `internal/`, `docs/`, and `scripts/`. **Zero shared code** — no `pkg/`, no shared `internal/`, no cross-module imports. Ports previously shared between BCs (e.g., IntentClient with Publish + Subscribe) are split by responsibility: each BC defines only the port methods it consumes. DESIGN.md §3 Cross-BC Package Mapping table shows only this BC's module paths.
-
-#### Go diagnosis checklist
-
-- [ ] No `domain/*.go` imports any third-party package (only stdlib).
-- [ ] No `domain/*.go` imports generated `proto/*`.
-- [ ] Every port method's first parameter is `ctx context.Context`.
-- [ ] All errors crossing the adapter→usecase boundary are domain sentinels.
-- [ ] No `interface{}` return types in public APIs.
-- [ ] Every Upsert / mutating use case **orchestrates** the relevant domain predicate (e.g., `entry.CanTransition(newStatus)`) **before** persisting — the predicate is a domain-layer concern, not an adapter concern.
-
----
-
-### 1.2 Java — Golden Rules
-
-| Rule | Do | Don't |
-|------|-----|-------|
-| Domain purity | Plain POJOs / records, only `java.*` imports | `@Entity`, `@Table`, `@Component` in domain |
-| Persistence mapping | Separate `XxxJpaEntity` in infra + MapStruct mapper | Reuse domain class as JPA `@Entity` |
-| Validation | Pure Java in domain (e.g., constructor guards) | `@NotNull` / `@Valid` in domain |
-| Spring | Inject ports (interfaces) into use cases | Inject `JpaRepository` directly into business logic |
-| Architecture guard | ArchUnit test enforcing dep direction | Trust developer discipline alone |
-| Module layout | Multi-module: `domain`, `application`, `infrastructure`, `bootstrap` | Single Spring Boot module with packages |
-
-#### Java skeleton
-
-```java
-// domain/AgentEntry.java   (zero framework imports)
-package com.taiyi.domain;
-
-public record AgentEntry(AgentId id, AgentStatus status, Instant lastBeat) {
-    public AgentEntry {
-        if (id == null) throw new IllegalArgumentException("id required");
-    }
-}
-
-// application/CensusReader.java   (port owned by use case)
-package com.taiyi.application.census;
-
-public interface CensusReader {
-    List<AgentEntry> list(ListAgentsQuery query);
-}
-
-// application/ListAgentsUseCase.java
-@Service
-public class ListAgentsUseCase {
-    private final CensusReader reader;
-    public ListAgentsUseCase(CensusReader reader) { this.reader = reader; }
-    public List<AgentEntry> execute(ListAgentsQuery q) { return reader.list(q); }
-}
-
-// infrastructure/persistence/AgentJpaEntity.java
-@Entity @Table(name = "agents")
-public class AgentJpaEntity { ... }
-
-// infrastructure/persistence/AgentMapper.java   (MapStruct)
-@Mapper
-public interface AgentMapper {
-    AgentEntry toDomain(AgentJpaEntity e);
-    AgentJpaEntity toJpa(AgentEntry d);
-}
-
-// infrastructure/persistence/PostgresCensusReader.java
-@Component
-public class PostgresCensusReader implements CensusReader {
-    private final AgentJpaRepository repo;
-    private final AgentMapper mapper;
-    @Override public List<AgentEntry> list(ListAgentsQuery q) {
-        return repo.findAllByStatus(q.status()).stream().map(mapper::toDomain).toList();
-    }
-}
-```
-
-#### Java ArchUnit guard (snippet)
-
-```java
-@AnalyzeClasses(packages = "com.taiyi")
-class CleanArchitectureTest {
-    @ArchTest
-    static final ArchRule domain_should_not_depend_on_anything =
-        noClasses().that().resideInAPackage("..domain..")
-            .should().dependOnClassesThat().resideInAnyPackage(
-                "..application..", "..infrastructure..", "org.springframework..", "javax.persistence..");
-}
-```
-
-#### Java diagnosis checklist
-
-- [ ] `domain` module has zero Spring/JPA/Jackson imports.
-- [ ] Every persistent entity has a separate `XxxJpaEntity` + Mapper.
-- [ ] Use cases depend only on domain ports, never `JpaRepository`.
-- [ ] ArchUnit rule enforced in CI.
-
----
-
-### 1.3 Python — Golden Rules
-
-| Rule | Do | Don't |
-|------|-----|-------|
-| Domain types | `@dataclass(frozen=True)` or `pydantic.BaseModel` (with `model_config={"frozen": True}`) | Inherit from `Base = declarative_base()` |
-| Ports | `typing.Protocol` (structural typing) | `abc.ABC` with imports from infra |
-| ORM | SQLAlchemy lives in `infrastructure/`; Mapper translates Row → Domain | Use `Mapped[...]` columns directly as domain |
-| Async | Decide once: all-async ports or all-sync, no mixing within a context | Half-async / half-sync use cases |
-| Validation | Pydantic at boundaries (HTTP / message edges) only | Pydantic in domain entities (couples to v1/v2 quirks) |
-| Errors | Custom domain exceptions in `domain/errors.py` | Raise `sqlalchemy.exc.NoResultFound` to use cases |
-
-#### Python skeleton
-
-```python
-# domain/agent.py
-from dataclasses import dataclass
-from datetime import datetime
-from enum import Enum
-
-class AgentStatus(str, Enum):
-    ONLINE = "online"
-    OFFLINE = "offline"
-
-@dataclass(frozen=True)
-class AgentEntry:
-    id: str
-    status: AgentStatus
-    last_beat: datetime
-
-# domain/errors.py
-class AgentNotFound(Exception): ...
-
-# domain/census.py   (port via Protocol)
-from typing import Protocol, Iterable
-
-class CensusReader(Protocol):
-    def list(self, status: AgentStatus | None) -> Iterable[AgentEntry]: ...
-
-# application/list_agents.py
-from domain.census import CensusReader
-from domain.agent import AgentEntry, AgentStatus
-
-class ListAgentsUseCase:
-    def __init__(self, reader: CensusReader) -> None:
-        self._reader = reader
-    def execute(self, status: AgentStatus | None) -> list[AgentEntry]:
-        return list(self._reader.list(status))
-
-# infrastructure/postgres/census_store.py
-from sqlalchemy.orm import Session
-from .schema import AgentRow   # SQLAlchemy model, infra-only
-
-class PostgresCensusReader:
-    def __init__(self, session: Session) -> None: self._s = session
-    def list(self, status):
-        rows = self._s.query(AgentRow).filter_by(status=status.value).all()
-        return [AgentEntry(id=r.id, status=AgentStatus(r.status), last_beat=r.last_beat) for r in rows]
-```
-
-#### Python diagnosis checklist
-
-- [ ] `domain/` imports only stdlib + `typing` (no `sqlalchemy`, no `pydantic` if avoidable).
-- [ ] All ports are `Protocol` subclasses.
-- [ ] No domain class inherits from an ORM base.
-- [ ] Async/sync choice is consistent within a bounded context.
+Language-specific golden rules, skeleton code (Go/Java/Python), and diagnosis checklists. See [references/per-language-rules.md](references/per-language-rules.md) for full content.
 
 ---
 
@@ -581,7 +341,7 @@ When proposing a pattern, always state:
 
 ## 3. DDL Conventions
 
-### 3.0 Data Mapper Applicability (何时需要 / 不需要 Data Mapper)
+### 3.0 Data Mapper Applicability
 
 | Condition | Data Mapper Required? | Rationale |
 |-----------|----------------------|-----------|
@@ -668,7 +428,7 @@ For each table in DDL, add an index design sub-table:
 #### Index Design — <table_name>
 
 | Index Name | Columns | Type | Use Case | Rationale |
-|------------|---------|------|----------|----------|
+|------------|---------|------|----------|-----------|
 | `ix_orders_customer_date` | `(customer_id, created_at)` | B-tree | ListOrdersByCustomer | Equality + range, leftmost prefix |
 | `ux_orders_external_id` | `(external_id)` | Unique B-tree | GetOrderByExternalId | Business uniqueness |
 | `ix_orders_created_brin` | `(created_at)` | BRIN | AuditReports | Large table, time-range scans |
@@ -717,12 +477,12 @@ Keep tasks **small and shippable** — each one ends with a green test. Avoid ho
 
 ---
 
-## 5. Pre-Output Self-Audit (在交付前自检)
+## 5. Pre-Output Self-Audit
 
 Before delivering, silently verify:
 
 - [ ] Every class / table / field name appears in `LANGUAGE.md` or is a documented mapping (Section 3.3).
-- [ ] DDL uses Data Mapper convention — no domain class is a JPA/ORM entity.
+- [ ] DDL uses Data Mapper conventions — no domain class is a JPA/ORM entity.
 - [ ] At least one GoF pattern justified per Use Case with explicit rationale.
 - [ ] Tasks are **vertical** slices, each touching all relevant layers, and placed in the correct `module.md` §7.
 - [ ] Each task has a runnable acceptance test (TDD-friendly) and references its module's interface contracts.
@@ -754,7 +514,7 @@ Before delivering, silently verify:
 - [ ] **Post-Write: Old terminology grep** — `grep -rn "<banned-term>" design/ DESIGN.md` for every LANGUAGE.md banned synonym returns zero matches.
 - [ ] **Post-Write: File end sanity** — DESIGN.md last 5 lines end cleanly (no truncation mid-sentence, no orphaned table rows).
 - [ ] **Redo: ARCHITECTURE.md Mermaid participant aliases** — every `participant X as <Name>` in ARCHITECTURE.md sequence diagrams uses the current port name (not a banned/old name). Compare against LANGUAGE.md banned list and ARCHITECTURE.md §1.2 port table.
-- [ ] **Redo: Upstream Consistency AD Generation (行为一致性)** — for each module whose `module.md §3` describes runtime behavior (responsibilities, data flows, method sequences), grep both `ARCHITECTURE.md` and `module.md` for the same component name and verify behavioral descriptions are semantically aligned. Also check `LANGUAGE.md` responsibility tables (§E, §F, etc.) for the same components. Any behavioral mismatch (e.g., ARCHITECTURE.md says "Engine constructs outbox" but module.md says "ABody RunLoop constructs reply Intent") is a **blocker** — generate an Architecture Debt (AD) routed to `/arch-design` with full details (component name, current vs refined description, impact). Do NOT directly modify ARCHITECTURE.md or LANGUAGE.md.
+- [ ] **Redo: Upstream Consistency AD Generation** — for each module whose `module.md §3` describes runtime behavior (responsibilities, data flows, method sequences), grep both `ARCHITECTURE.md` and `module.md` for the same component name and verify behavioral descriptions are semantically aligned. Also check `LANGUAGE.md` responsibility tables (§E, §F, etc.) for the same components. Any behavioral mismatch is a **blocker** — generate an AD routed to `/arch-design`.
 - [ ] **Scope boundary**: arch-detail produces design documents only (DESIGN.md, module.md, interface contracts). It does NOT write source code. Code development is `/devtdd`'s responsibility.
 
 If any check fails, fix the design **before** writing files or proposing tasks.

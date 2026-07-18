@@ -31,7 +31,7 @@ Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4│
 | **arch-align** | Phase 1 | 概念与术语对齐。在任何设计工作之前，通过质询式对话对齐业务概念、统一语言 (DDD Ubiquitous Language) 和企业架构模式。产出 `LANGUAGE.md` + `BRD.md`。 |
 | **arch-design** | Phase 2 | 边界设计与可视化。基于 Phase 1 产出，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`，并管理 Architecture Decision Records (ADR)。 |
 | **arch-detail** | Phase 3 | 详细设计与多语言实现映射。将 `ARCHITECTURE.md` 的边界翻译为模块化 `DESIGN.md` 索引 + 每模块设计文件 + 每方法接口契约，支撑垂直切片 TDD。 |
-| **arch-review** | Phase 4 | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `REVIEW.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。内置 5 种批判推理模式（原 arch-critic）。 |
+| **arch-review** | Phase 4 | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `T{N}.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。内置 5 种批判推理模式（原 arch-critic）。 |
 | **devtdd** | 实现 | 垂直切片 TDD 实现引擎。消费 Phase 3 产出（任务列表、模块设计、接口契约验收场景），驱动逐任务 red-green-refactor，同时强制架构边界。 |
 
 ## 使用方式
@@ -80,17 +80,19 @@ npx skills@latest add <your-repo>/skills/arch-skills
 ```
 arch-skills/
 ├── README.md              ← 本文件
-├── arch-conventions/      ← 共享协议总持有者 (NEW)
+├── CHANGELOG.md           ← 版本变更日志
+├── arch-conventions/      ← 共享协议总持有者
 │   ├── SKILL.md
 │   └── references/
 │       ├── kanban-spec.md ← 看板协议规范 (source of truth)
-│       └── ask-user-question-spec.md ← 结构化提问协议
+│       ├── ask-user-question-spec.md ← 结构化提问协议
+│       └── shared-constraints.md ← 跨 skill 硬约束
 ├── arch-init/
-│   ├── SKILL.md           ← 主技能定义
-│   └── reference.md       ← 补充参考
-├── arch-kanban/           ← 看板执行者 (引用 conventions)
-│   ├── SKILL.md           ← 协议守卫 + 初始化 + 校验
-│   └── reference.md       ← 快速参考
+│   ├── SKILL.md
+│   └── reference.md
+├── arch-kanban/
+│   ├── SKILL.md
+│   └── reference.md
 ├── arch-align/
 │   ├── SKILL.md
 │   ├── reference.md
@@ -98,19 +100,19 @@ arch-skills/
 ├── arch-design/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← NFR 清单、架构模式、数据库选型、ADR 指南、PoEAA
+│   └── references/        ← ADR 指南、PoEAA、NFR、架构模式、数据库选型、examples
 ├── arch-detail/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← API 契约标准、安全检查点
+│   └── references/        ← 语言规则、API 契约标准、安全检查点、examples
 ├── arch-review/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← OWASP 审计、批判推理、反馈分级
+│   └── references/        ← 报告模板、修复引导、OWASP、批判推理、examples
 └── devtdd/
     ├── SKILL.md
     ├── reference.md
-    └── references/        ← 测试反模式
+    └── references/        ← 代码工艺铁律、测试反模式、examples
 ```
 
 ## 兼容性

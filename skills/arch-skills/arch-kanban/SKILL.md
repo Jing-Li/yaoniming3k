@@ -55,7 +55,7 @@ next_task_id: 0
 ## Archive
 ```
 
-### 3. Board Validation (数据完整性校验与修复)
+### 3. Board Validation (Data Integrity Check & Repair)
 
 When invoked with `/arch-kanban validate` or `/arch-kanban check`:
 
@@ -75,7 +75,7 @@ When invoked with `/arch-kanban validate` or `/arch-kanban check`:
 **Output format:**
 
 ```
-## 看板校验报告 — <bc-slug>
+## Board Validation Report — <bc-slug>
 
 ### Errors (N)
 - [single-position] T3 appears in arch-design/done AND arch-detail/new
@@ -104,30 +104,30 @@ Example:
 > Q: "What happens when all skills are done?"
 > A: "Per kanban-spec §4.2 step 4: Archive check — if ALL skills in T{N}.md Status are done → remove T{N} from ALL rows in Board table, append `- T{N} — YYYY-MM-DD` to Archive list."
 
-## Core Value (核心价值)
+## Core Value
 
 1. **Protocol ownership** — Single authority for spec changes; avoids multi-source conflicts
 2. **Data integrity** — Detect and repair BOARD.md state corruption
 3. **Spec evolution** — Protocol upgrades happen in one place
 4. **Installation completeness** — Ensure spec file is not lost when deploying skill sets
 
-## Integration Protocol (其他 skill 如何嵌入 arch-kanban)
+## Integration Protocol (How Other Skills Embed arch-kanban)
 
-### 嵌入方式
+### Embedding Method
 
-其他 skill 在以下时机引用 arch-kanban 协议：
+Other skills reference the arch-kanban protocol at the following points:
 
-| 时机 | 行为 | 引用路径 |
-|------|------|---------|
-| **Startup** | 读 BOARD.md → 选任务 → 交接移除 | `kanban-spec.md §4.1` |
-| **Completion** | 更新 T{N}.md → 移位 → 归档检查 | `kanban-spec.md §4.2` |
-| **Task Creation** | 递增 counter → 创建 T{N}.md → 加入 Board | `kanban-spec.md §4.3` |
-| **AD Redo** | 写入 AD → 目标 skill 修复 → 标记 resolved | `kanban-spec.md §4.4` |
-| **Migration** | 迁移标签 → 任务链传递 → halt override | `kanban-spec.md §10` |
+| Timing | Behavior | Reference |
+|--------|----------|-----------|
+| **Startup** | Read BOARD.md → pick task → remove handover | `kanban-spec.md §4.1` |
+| **Completion** | Update T{N}.md → shift status → archive check | `kanban-spec.md §4.2` |
+| **Task Creation** | Increment counter → create T{N}.md → add to Board | `kanban-spec.md §4.3` |
+| **AD Redo** | Write AD → target skill fixes → mark resolved | `kanban-spec.md §4.4` |
+| **Migration** | Migration tag → task chain → halt override | `kanban-spec.md §10` |
 
-### 引用声明格式
+### Reference Declaration Format
 
-每个 skill 的 SKILL.md 中声明：
+Each skill's SKILL.md declares:
 
 ```markdown
 ## Kanban Protocol
@@ -136,7 +136,7 @@ This skill follows the kanban protocol defined in [kanban-spec.md](../arch-conve
 See the spec for Startup/Completion/Redo sequences and T{N}.md structure.
 ```
 
-### 任务衔接流
+### Task Handoff Flow
 
 ```
 arch-init → creates BC → arch-kanban generates BOARD.md
@@ -151,13 +151,13 @@ last skill → all done → follows spec §4.2 step 4 (archive)
 ## Hand-off Trigger
 
 **After initialization:**
-> 看板已初始化: `docs/bc/<slug>/kanban/BOARD.md`。请运行 `/arch-align` 创建第一个任务。
+> Board initialized: `docs/bc/<slug>/kanban/BOARD.md`. Run `/arch-align` to create the first task.
 
 **After validation:**
-> 看板校验完成。Errors: N, Warnings: M。[如有 Error: 请修复后继续。/ 如全 Clean: 看板状态一致。]
+> Board validation complete. Errors: N, Warnings: M. [If errors: fix before continuing. / If all clean: board is consistent.]
 
 **After query:**
-> [直接回答协议问题，不输出 hand-off]
+> [Answer protocol question directly, no hand-off]
 
 ## Manifest Protocol
 
@@ -179,3 +179,5 @@ last skill → all done → follows spec §4.2 step 4 (archive)
 ## Additional Resources
 
 For BOARD.md templates, T{N}.md structure, and full protocol rules, read [reference.md](reference.md) or the complete [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
+
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), Upstream Halt (§6).

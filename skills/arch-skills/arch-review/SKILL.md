@@ -1,7 +1,7 @@
 ---
 name: arch-review
 description: Phase 4 architecture audit and code-guard skill. Two modes (1) Audit Mode audits codebase against architectural blueprints, writes all findings to T{N}.md with AD routing and critical reasoning. (2) Fix Guidance Mode guides user through executing each AD fix one-by-one with AskUserQuestion confirmation, post-fix verification, and completion tracking. Includes AD Confirmation Protocol (v3.2.0) — interactive AskUserQuestion per AD during audit with structured options and analysis. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "fix ADs", "guide fixes", "执行修复", "引导修复", or pastes a diff for compliance check.
-version: 3.2.0
+version: 3.2.1
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -10,180 +10,47 @@ You are a relentless, highly critical Senior Code Reviewer. Your mission is to a
 
 ---
 
-## 📚 理论宪法与审计标准 (Core Theoretical Foundations)
+See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clean Arch + PoEAA + GoF verdict principles).
 
-作为代码审查官，你的判罪标准和改进方案必须百分之百基于以下三部经典著作的原则：
+## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS
 
-1. **《Clean Architecture》（《架构整洁之道》）原则**
-   - 检查代码是否违反了**洋葱圈分层规则**和**依赖反转原则（DIP）**。任何从核心 Domain 或 Use Case 指向外部 Infrastructure / Web 框架的逆向依赖、逆向导入，都属于严重违规（红牌）。
-   - 检查领域层是否被外部技术细节（如 Spring 注解、Django ORM、Gin 框架等）污染（红牌）。
-
-2. **《Patterns of Enterprise Application Architecture》（《企业应用架构模式》）原则**
-   - 检查代码是否混淆了持久化模型与领域模型。如果数据库表实体（如 JPA `@Entity`、SQLAlchemy 基础类）直接用于核心业务逻辑计算（Leaky Abstraction），则属于违规，必须建议采用 **Data Mapper** 模式重构。
-
-3. **《Design Patterns》（《设计模式》）原则**
-   - 检查设计模式的应用是否合理，是否有生搬硬套（Over-engineering）或缺乏模式导致的复杂 `if-else` 分支（Under-engineering）。审查是否使用多态和合适的设计模式（如 Strategy / Factory / Observer）重构了复杂的分支逻辑。
-
----
-
-## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS (硬性约束)
-
-1. **AUDIT ONLY — NO DIRECT FILE MODIFICATION (审计只读)**: In **Audit Mode**, you must **NOT** directly modify any code or document files. Your ONLY permitted file writes are: (a) `kanban/BOARD.md`, (b) `kanban/tasks/T{N}.md`. You produce ADs in task files — the target skill fixes them on its next run via AD Redo protocol. You do NOT fix issues yourself, even if they seem trivial. **Exception: In Fix Guidance Mode (v3.2.0+)**, you MAY modify document files (not source code) to execute confirmed AD fixes, as described in §🔧 AD Fix Guidance Mode.
+1. **AUDIT ONLY — NO DIRECT FILE MODIFICATION**: In **Audit Mode**, you must **NOT** directly modify any code or document files. Your ONLY permitted file writes are: (a) `kanban/BOARD.md`, (b) `kanban/tasks/T{N}.md`. You produce ADs in task files — the target skill fixes them on its next run via AD Redo protocol. You do NOT fix issues yourself, even if they seem trivial. **Exception: In Fix Guidance Mode (v3.2.0+)**, you MAY modify document files (not source code) to execute confirmed AD fixes, as described in §🔧 AD Fix Guidance Mode.
 
 2. **STRICT COMPLIANCE**: Evaluate the codebase **strictly** based on `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, `docs/bc/<bc-slug>/design/ARCHITECTURE.md` (Phase 2 boundaries), and `docs/bc/<bc-slug>/detail/DESIGN.md` (Phase 3 detailed design). If any required blueprint is missing, halt and instruct the user to run the corresponding earlier phase first.
 
 3. **OBJECTIVE ARCHITECTURAL HEALTH SCORE**: You must output a clear score out of **100%** measuring overall architecture compliance, derived from the rubric in [reference.md](reference.md).
 
-4. **T{N}.md AS SINGLE SOURCE OF TRUTH (任务文件即仪表盘)**: All audit findings (Architecture Debt + Skill Evolution) are written into `kanban/tasks/T{N}.md` → Architecture Discrepancies sections. There is NO separate REVIEW.md. Stdout-only output is FORBIDDEN. T{N}.md is the authoritative record of all open/resolved ADs. Score summary is recorded in T{N}.md Change History.
+4. **T{N}.md AS SINGLE SOURCE OF TRUTH**: All audit findings (Architecture Debt + Skill Evolution) are written into `kanban/tasks/T{N}.md` → Architecture Discrepancies sections. There is NO separate REVIEW.md. Stdout-only output is FORBIDDEN. T{N}.md is the authoritative record of all open/resolved ADs. Score summary is recorded in T{N}.md Change History.
 
-5. **VERSION COMPARISON (版本对比)**: Before auditing, check T{N}.md Change History for previous review scores. The audit itself reads source docs and code independently — do NOT re-parse old AD items. After scoring, produce a Score Delta showing: new findings, resolved items, regressions, and score delta per axis. First review skips comparison.
+5. **VERSION COMPARISON**: Before auditing, check T{N}.md Change History for previous review scores. The audit itself reads source docs and code independently — do NOT re-parse old AD items. After scoring, produce a Score Delta showing: new findings, resolved items, regressions, and score delta per axis. First review skips comparison.
 
-6. **ROUTE-BASED DISPATCH (分流派发 — 按文档所有权路由)**: Every Architecture Debt item MUST carry exactly one Route tag (`/arch-align`, `/arch-design`, `/arch-detail`, `/devtdd`, `/arch-review-self`). Route by **document ownership** — the AD goes to the skill that owns the document that needs fixing. No untagged findings allowed. See [reference.md](reference.md) §7 Route Decision Matrix.
+6. **ROUTE-BASED DISPATCH (by Document Ownership)**: Every Architecture Debt item MUST carry exactly one Route tag (`/arch-align`, `/arch-design`, `/arch-detail`, `/devtdd`, `/arch-review-self`). Route by **document ownership** — the AD goes to the skill that owns the document that needs fixing. No untagged findings allowed. See [reference.md](reference.md) §7 Route Decision Matrix.
 
-7. **INTROSPECTION (自省机制)**: Every Architecture Debt item MUST include a Root Cause Analysis explaining WHY the originating phase missed this finding. Skill Evolution issues are expressed as ADs routed to the skill itself (e.g., `arch-review-self` for arch-review skill improvements). See [reference.md](reference.md) §8 Root Cause Analysis Template.
+7. **INTROSPECTION**: Every Architecture Debt item MUST include a Root Cause Analysis explaining WHY the originating phase missed this finding. Skill Evolution issues are expressed as ADs routed to the skill itself (e.g., `arch-review-self` for arch-review skill improvements). See [reference.md](reference.md) §8 Root Cause Analysis Template.
 
-8. **README SYNC CHECK (README 同步检查)**: During cross-document consistency check (Step 5), verify each BC's `README.md` against actual code. Check: (a) directory tree matches current package layout (no ghost packages like deleted `sensorium/`), (b) architecture/component diagrams match current domain model and responsibilities, (c) config/env var defaults match actual code defaults. Flag as X8 in reference.md §1.6.
+8. **README SYNC CHECK**: During cross-document consistency check (Step 5), verify each BC's `README.md` against actual code. Check: (a) directory tree matches current package layout (no ghost packages like deleted `sensorium/`), (b) architecture/component diagrams match current domain model and responsibilities, (c) config/env var defaults match actual code defaults. Flag as X8 in reference.md §1.6.
 
-9. **CHANGE HISTORY INTEGRITY (变更历史完整性)**: When writing to T{N}.md Change History, validate: (a) new entry date ≥ all existing entry dates (monotonic non-decreasing), (b) Architecture Discrepancies resolved items use `[x]` checkbox — never remove resolved items, only mark them. On date violation, warn and use the correct date.
-
----
-
-## 📊 Standard Review Report (标准审查报告模板)
-
-Your response **must** be structured using exactly the following sections, in this order:
-
-### 1. Architecture Health Score (架构健康度评估)
-
-```
-Score: NN / 100
-  - Dependency Rule        : nn / 25
-  - Domain Purity          : nn / 20
-  - Persistence Decoupling : nn / 20
-  - Pattern Application    : nn / 15
-  - Naming Alignment       : nn / 10
-  - Security Posture       : nn / 10   (v2.9.0+)
-Verdict: 🟢 Healthy (≥85) | 🟡 At Risk (60–84) | 🔴 Critical (<60)
-```
-
-### 2. Critical Violations (红牌错误 — 必须阻断合并)
-
-For each violation:
-
-```
-[R-1] <Short title>
-  Location  : path/to/file.go:Lxx-Lyy
-  Violation : <one-sentence rule broken>
-  Evidence  : <quoted code snippet, ≤6 lines>
-  Impact    : <long-term cost: testability, change amplification, framework lock-in, etc.>
-  Reference : <Clean Arch / PoEAA / GoF chapter>
-```
-
-Red-card categories (any of these = automatic Critical):
-- Domain → Infrastructure / Framework / Driver import
-- Domain class annotated with framework metadata (`@Entity`, `@Component`, `Mapped[...]`, etc.)
-- Port interface defined inside an adapter package
-- Use case directly instantiating a concrete adapter (no DI)
-- Persistence row class used as domain entity in business logic
-
-### 3. Warnings & Suggestions (黄牌警告 — 建议优化)
-
-For each warning:
-
-```
-[Y-1] <Short title>
-  Location   : path/to/file.go:Lxx
-  Concern    : <ISP violation / naming drift / missing pattern / fat use case>
-  Suggestion : <concrete next step>
-```
-
-Yellow-card categories:
-- Naming drift from `LANGUAGE.md`
-- Fat port (mixed read/write/admin) — ISP candidate
-- Missing pattern (long `if-else` chain — Strategy / State candidate)
-- Missing context propagation (Go) / missing async boundary (Python)
-- Adapter leaking driver-specific errors past the port
-
-### 4. Refactoring Diff (重构指导方案)
-
-Provide a clear, language-specific **before / after** diff per Critical violation. See [reference.md](reference.md) §4 for templates.
-
-### 5. Architecture Debt Routing & Introspection (分流与自省)
-
-For each finding (R-x, Y-x), produce one Architecture Debt entry:
-
-```
-| ID | Title | Severity | Route | Violation IDs | Root Cause | Status |
-|----|-------|----------|-------|---------------|------------|--------|
-| AD-001 | <title> | 🔴 Critical | `/devtdd` | R-1 | <why missed> | 🆕 New |
-
-**Severity Grading (v2.9.0+)**: Every AD MUST carry a severity grade:
-- 🔴 **Critical** — blocks merge/deploy, −50% axis weight
-- 🟠 **Major** — should fix before next release, −20% axis weight
-- 🟡 **Minor** — can defer, −10% axis weight (capped −50% per axis)
-- 🟢 **Positive** — notable good practice, no deduction
-For every 3+ Critical/Major findings, include 1+ Positive finding.
-See [references/review-feedback-rules.md](references/review-feedback-rules.md) for full grading criteria.
-```
-
-Then output Skill Evolution as ADs (routed to the skill itself):
-
-> **Note**: Skill Evolution is expressed as AD entries routed to the target skill (e.g., `AD-R1 → arch-review-self`). There is no separate SE table. See Constraint #7 (Introspection).
-
-### 6. Version Diff (版本对比)
-
-If T{N}.md Change History contains previous review scores, output:
-
-```
-Δ Score: NN → NN (+/-N)
-New findings: N | Resolved: N | Regressions: N
-```
-
-List each regression explicitly (a previously resolved item that reappeared).
-
-### 7. Resolution Verification (AD 修复验证)
-
-If T{N}.md has any ADs previously marked ✅ Resolved, output:
-
-```
-Verified N previously resolved ADs:
-  ✅ AD-xxx: <brief description> — fix confirmed
-  ✅ AD-yyy: <brief description> — fix confirmed
-  ⚠️ AD-zzz: REGRESSION — <what reappeared>
-```
-
-If no previously resolved ADs exist, output: "No previously resolved ADs to verify."
-
-### 8. Pipeline Health (跨阶段任务追踪)
-
-Output the open AD/SE counts for ALL BCs:
-
-```
-[ayuan]          AD: N open
-[taiyi-platform] AD: N open
-```
-
-Flag stale debt (open for 2+ review versions) and list specific SE items awaiting adoption.
-
-### 9. Decision Challenge Summary (决策质疑摘要, v3.0.0+)
-
-After applying critical reasoning patterns (Step 8e), output:
-
-```
-Decisions challenged: N
-| # | Decision | Pattern Applied | Risk | Outcome |
-|---|----------|----------------|------|--------|
-| C1 | <decision> | <pattern> | 🔴/🟡/🟢 | survived / needs revision / needs data |
-
-Recommendations:
-- <recommendation for each needs-revision decision>
-- <specific data to collect for each needs-data decision>
-```
-
-This section consolidates the critical reasoning output that was previously handled by the separate `/arch-critic` skill (now merged into arch-review).
+9. **CHANGE HISTORY INTEGRITY**: When writing to T{N}.md Change History, validate: (a) new entry date ≥ all existing entry dates (monotonic non-decreasing), (b) Architecture Discrepancies resolved items use `[x]` checkbox — never remove resolved items, only mark them. On date violation, warn and use the correct date.
 
 ---
 
-## 🚶 Steps to Execute (执行步骤)
+## 📊 Standard Review Report
+
+Your response **must** use exactly 9 sections in this order. Full templates with code blocks: see [references/review-report-template.md](references/review-report-template.md).
+
+1. **Architecture Health Score** — Score out of 100 across 6 axes; Verdict: 🟢/🟡/🔴
+2. **Critical Violations** (must block merge) — Red-card findings with location, evidence, impact
+3. **Warnings & Suggestions** — Yellow-card findings with concrete next steps
+4. **Refactoring Diff** — Before/after code per Critical violation
+5. **Architecture Debt Routing** — AD table with severity grading (🔴/🟠/🟡/🟢) and root cause
+6. **Version Diff** — Score delta vs previous review
+7. **Resolution Verification** — Confirm/regression of previously resolved ADs
+8. **Pipeline Health** — Cross-BC open AD counts
+9. **Decision Challenge Summary** — Critical reasoning output (merged from arch-critic)
+
+---
+
+## 🚶 Steps to Execute
 
 1. **Read Blueprints**: Load `docs/bc/<bc-slug>/kanban/BOARD.md` to find the current task and determine which upstream skills are `done`. Then load available outputs:
    - arch-align done → `align/LANGUAGE.md`, `align/BRD.md`
@@ -235,7 +102,7 @@ This section consolidates the critical reasoning output that was previously hand
       See [references/critical-reasoning.md](references/critical-reasoning.md) for all 5 patterns with worked examples, when-to-apply matrix, and severity guide.
    f. **Severity Grading (v2.9.0+)**: Apply Critical/Major/Minor/Positive grading to all ADs. Include code comparison examples for refactoring guidance. See [references/review-feedback-rules.md](references/review-feedback-rules.md).
 
-8.5. **AD Confirmation Protocol (AD 逐项确认, v3.2.0+)**: After routing all ADs, present each AD to the user ONE AT A TIME using AskUserQuestion for confirmation. This follows the **Progressive Disclosure** pattern — ask one question, wait for response, then ask next.
+8.5. **AD Confirmation Protocol (per-AD confirmation, v3.2.0+)**: After routing all ADs, present each AD to the user ONE AT A TIME using AskUserQuestion for confirmation. This follows the **Progressive Disclosure** pattern — ask one question, wait for response, then ask next.
 
    **Question Structure per AD:**
    - **Analysis context** (before the question): Brief summary of the finding — what's wrong, evidence from code/docs, and WHY it matters
@@ -249,7 +116,7 @@ This section consolidates the critical reasoning output that was previously hand
 
    **Example:**
    ```
-   Analysis: SYSTEM.md §4 tracks implementation status ("待实现"/"已实现") but this
+   Analysis: SYSTEM.md §4 tracks implementation status ("pending"/"completed") but this
    duplicates DESIGN.md §5 + kanban. The Status column is not a system topology concern.
    
    Question: "How should AD-D1 (SYSTEM.md Status column) be handled?"
@@ -290,7 +157,7 @@ This section consolidates the critical reasoning output that was previously hand
    c. Identify regressions (previously resolved, now reappeared).
    d. Compute score delta per axis.
 
-9.5. **Resolution Verification (AD 修复自动验证)**: For each AD in T{N}.md previously marked as `[x] Resolved`, independently verify the fix is actually in place:
+9.5. **Resolution Verification (automated AD fix verification)**: For each AD in T{N}.md previously marked as `[x] Resolved`, independently verify the fix is actually in place:
    a. **Doc inconsistency ADs** (Route: `/arch-design`, `/arch-detail`, `/arch-align`): Re-grep the source files (ARCHITECTURE.md, LANGUAGE.md, DESIGN.md, etc.) for the keywords mentioned in the AD's Description. If the problematic pattern still exists → mark as ⚠️ Regression (new AD referencing the original).
    b. **Dead code ADs** (Route: `/devtdd`): Check if the function/code at the specified Location still exists. If yes → ⚠️ Regression.
    c. **Build/test ADs** (Route: `/devtdd`): Run `go build ./... && go vet ./... && go test ./...`. If any fail → ⚠️ Regression.
@@ -311,7 +178,7 @@ This section consolidates the critical reasoning output that was previously hand
 ### On Startup
 
 1. **Mode Detection**: Determine which mode to run:
-   - User said "fix ADs" / "guide fixes" / "执行修复" / "引导修复" / "一个一个修" → **Fix Guidance Mode** (§🔧)
+   - User said "fix ADs" / "guide fixes" / "执行修复" / "引导修复" → **Fix Guidance Mode** (§🔧)
    - User said "audit" / "review" / "check" → **Audit Mode** (default)
    - If ambiguous → check T{N}.md for unresolved ADs; if found, ask user: "Audit or fix existing ADs?"
 2. Read `docs/bc/<bc-slug>/kanban/BOARD.md` (if it exists) to find current task and determine completed upstream skills.
@@ -347,90 +214,15 @@ This section consolidates the critical reasoning output that was previously hand
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 See [ask-user-question-spec.md](../arch-conventions/references/ask-user-question-spec.md) for structured questioning protocol (used in §8.5 AD Confirmation and Fix Guidance Mode).
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), No Source Code Modification (§3), OVERRIDE Protocol (§5), Upstream Halt (§6).
 
 ---
 
-## 🔧 AD Fix Guidance Mode (AD 修复引导模式, v3.2.0+)
+## 🔧 AD Fix Guidance Mode (v3.2.0+)
 
-After audit produces ADs, this mode **guides the user through executing each AD fix one by one**, ensuring all are completed before re-running review.
+After audit produces ADs, this mode guides the user through executing each AD fix one by one. Full workflow, scope matrix, and key rules: see [references/fix-guidance-mode.md](references/fix-guidance-mode.md).
 
-### Trigger
-
-User says: "fix ADs", "guide fixes", "执行修复", "引导修复", "一个一个修", or after audit completion when user says "let's fix them".
-
-### Workflow
-
-**Step 1 — Load AD Inventory:**
-1. Read `kanban/tasks/T{N}.md` → scan all `Architecture Discrepancies` sections
-2. Collect all unresolved ADs (items with `[ ]`)
-3. Group by target skill (arch-init / arch-align / arch-design / arch-detail / devtdd / arch-review)
-4. Order by Batch dependency (upstream first: init → align → design → detail → devtdd → review)
-5. Report: "Found N unresolved ADs across M skills. Starting fix guidance."
-
-**Step 2 — Per-AD Fix Cycle (Progressive Disclosure):**
-
-For EACH unresolved AD, in dependency order:
-
-```
-┌─────────────────────────────────────────────────────┐
-│  AD {ID} / {Total}  │  Route: /{target-skill}       │
-├─────────────────────────────────────────────────────┤
-│  Description: {AD description from T{N}.md}        │
-│  User decision: {confirmed decision from audit}      │
-├─────────────────────────────────────────────────────┤
-│  Analysis: What needs to change, which files,       │
-│            what the target state should look like    │
-├─────────────────────────────────────────────────────┤
-│  Question: "How to proceed with {AD-ID}?"           │
-│  Options:                                           │
-│    1. "Execute fix now (Recommended)" — description │
-│    2. "Show me the diff first" — preview changes    │
-│    3. "Defer to later" — skip, come back            │
-└─────────────────────────────────────────────────────┘
-```
-
-**Step 3 — Execute Fix:**
-
-Based on user's choice:
-- **"Execute fix now"**: Apply the change directly to the target document(s). Permitted modifications: `LANGUAGE.md`, `BRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `AGENTS.md`, `BOARD.md`, `T{N}.md`. Source code (`.go`, `.java`, `.py`, etc.) is **NEVER** modified by arch-review — for `/devtdd` ADs, instruct user to run `/devtdd` instead.
-- **"Show me the diff first"**: Render a before/after diff block, then ask again: "Apply this change?"
-- **"Defer to later"**: Mark as deferred in Change History, move to next AD
-
-**Step 4 — Post-Fix Verification:**
-
-After applying each fix:
-1. Re-grep the modified file(s) to confirm the problematic pattern is gone
-2. Mark the AD as `[x]` with `(Resolved by arch-review-fix, {date})` in T{N}.md
-3. Append to T{N}.md Change History: `{date} | arch-review-fix | Resolved {AD-ID}: {what changed}`
-4. Report: "✅ {AD-ID} resolved. {Remaining} ADs remaining."
-
-**Step 5 — Completion:**
-
-When all ADs are processed:
-1. Output summary: Resolved N / Deferred M / Skipped K
-2. If any deferred: list them for user review
-3. If all resolved: suggest re-running `/arch-review` for verification
-4. Update BOARD.md if needed (e.g., move task status)
-
-### Fix Scope Matrix
-
-| AD Route | arch-review can fix? | Action |
-|----------|---------------------|--------|
-| `/arch-init` | ✅ Yes | Modify AGENTS.md template, BOARD.md structure |
-| `/arch-align` | ✅ Yes | Modify LANGUAGE.md, BRD.md |
-| `/arch-design` | ✅ Yes | Modify ARCHITECTURE.md, ADR files, delete SYSTEM.md |
-| `/arch-detail` | ✅ Yes | Modify DESIGN.md, module.md files |
-| `/devtdd` | ❌ No | Instruct user to run `/devtdd` — source code out of scope |
-| `/arch-review-self` | ✅ Yes | Modify skill configuration, reference files |
-
-### Key Rules
-
-- **ONE AD at a time** — never batch multiple fixes into one question
-- **Show analysis BEFORE asking** — user must understand what changes
-- **Verify AFTER fixing** — re-grep to confirm the fix worked
-- **No source code** — arch-review NEVER touches `.go`/`.java`/`.py` files
-- **Idempotent** — if an AD is already resolved (e.g., from a previous session), skip it and report
-- **User always decides** — even if the fix seems obvious, ask first
+**Trigger**: "fix ADs", "guide fixes", "执行修复", "引导修复", "一个一个修", or "let's fix them".
 
 ---
 
@@ -438,35 +230,35 @@ When all ADs are processed:
 
 After writing T{N}.md and rendering the stdout report, output:
 
-> **“架构审查完成。健康分数 NN/100 — 🟢/🟡/🔴。所有发现已写入 `kanban/tasks/T{N}.md`。”**
+> **"Architecture audit complete. Health score NN/100 — 🟢/🟡/🔴. All findings written to `kanban/tasks/T{N}.md`."**
 >
-> **AD 确认结果:**
-> - 已确认 N 项 AD，已写入 T{N}.md Architecture Discrepancies
-> - 用户自定义决策 M 项（列出）
+> **AD Confirmation Results:**
+> - Confirmed N ADs, written to T{N}.md Architecture Discrepancies
+> - User custom decisions M items (listed)
 >
-> **Architecture Debt 分流:**
-> - `/arch-align`: N 项 (AD-xxx, ...)
-> - `/arch-design`: N 项 (AD-xxx, ...)
-> - `/arch-detail`: N 项 (AD-xxx, ...)
-> - `/devtdd`: N 项 (AD-xxx, ...)
-> - `/arch-review-self`: N 项 (AD-Rxx, ...)
+> **Architecture Debt Routing:**
+> - `/arch-align`: N items (AD-xxx, ...)
+> - `/arch-design`: N items (AD-xxx, ...)
+> - `/arch-detail`: N items (AD-xxx, ...)
+> - `/devtdd`: N items (AD-xxx, ...)
+> - `/arch-review-self`: N items (AD-Rxx, ...)
 >
-> **AD 执行计划 (Cycle C<N>):**
+> **AD Execution Plan (Cycle C<N>):**
 >
-> Batch 1 (可并行):
->   - /arch-xxx: 处理 AD-xxx, AD-yyy (简要描述)
->   - /arch-xxx: 处理 AD-zzz (简要描述)
+> Batch 1 (parallel-capable):
+>   - /arch-xxx: handle AD-xxx, AD-yyy (brief description)
+>   - /arch-xxx: handle AD-zzz (brief description)
 >
-> Batch 2 (Batch 1 完成后):
->   - /arch-xxx: 处理 AD-www (简要描述)
+> Batch 2 (after Batch 1):
+>   - /arch-xxx: handle AD-www (brief description)
 >
-> 全部 Batch 完成后: 运行 `/arch-review` 验证清零
+> After all Batches complete: run `/arch-review` to verify zero debt
 >
 > **Resolution Verification:**
-> - ✅ All N resolved ADs verified — 修复确认有效
-> - ⚠️ N regressions detected: AD-xxx (原 AD-yyy 回归), ...
+> - ✅ All N resolved ADs verified — fixes confirmed
+> - ⚠️ N regressions detected: AD-xxx (regression of AD-yyy), ...
 >
-> **Pipeline Health (跨阶段任务追踪):**
+> **Pipeline Health (cross-phase task tracking):**
 > - `[ayuan]` AD: N open
 > - `[taiyi-platform]` AD: N open
 >
@@ -476,7 +268,7 @@ After writing T{N}.md and rendering the stdout report, output:
 > - Needs revision: N (AD-xxx, ...)
 > - Needs more data: N (specific data to collect)
 >
-> 按 Batch 顺序执行，同一 Batch 内的 skill 可分别运行。
+> Execute in Batch order. Skills within the same Batch can run in parallel.
 
 ---
 
@@ -484,6 +276,7 @@ After writing T{N}.md and rendering the stdout report, output:
 
 For detailed audit checklists, scoring rubric, and language-specific red flags, see [reference.md](reference.md):
 
+- **§0A Core Theoretical Foundations** — Clean Arch + PoEAA + GoF verdict principles
 - **§1 Audit Checklist** — Clean Arch / PoEAA / GoF / Naming detection rules.
 - **§2 Scoring Rubric** — how to compute each axis (Dependency / Purity / Persistence / Pattern / Naming).
 - **§3 Per-Language Red Flags** — Go / Java / Python concrete anti-patterns to grep for.
@@ -495,9 +288,12 @@ For detailed audit checklists, scoring rubric, and language-specific red flags, 
 - **§11 Version Comparison Protocol** — how to diff against previous scores in T{N}.md Change History.
 - **§12 AD Dependency Analysis & Execution Plan** — dependency inference rules, Batch ordering, kanban/BOARD.md task update.
 
-For security auditing, critical reasoning, and feedback grading, see the `references/` subdirectory:
+For report templates, fix guidance, security, and critical reasoning:
+- [references/review-report-template.md](references/review-report-template.md) — Standard Review Report §1–§9 full templates with code blocks
+- [references/fix-guidance-mode.md](references/fix-guidance-mode.md) — AD Fix Guidance Mode workflow, scope matrix, key rules
+- [references/examples.md](references/examples.md) — Golden examples: AD entry, route decision, health score, severity table
 - [references/security-audit-checklist.md](references/security-audit-checklist.md) — OWASP Top 10 + CVSS v3.1 scoring + SAST tools
-- [references/critical-reasoning.md](references/critical-reasoning.md) — 5 critical reasoning patterns with worked examples, decision inventory, when-to-apply matrix, severity guide (merged from arch-critic v1.0.0)
+- [references/critical-reasoning.md](references/critical-reasoning.md) — 5 critical reasoning patterns with worked examples
 - [references/review-feedback-rules.md](references/review-feedback-rules.md) — 4-level severity grading + disagreement protocol
 
 For shared pipeline conventions:

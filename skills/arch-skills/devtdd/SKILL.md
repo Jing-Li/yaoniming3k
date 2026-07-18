@@ -1,7 +1,7 @@
 ---
 name: devtdd
 description: "Vertical-slice TDD implementation engine for Clean Architecture projects. Consumes Phase 3 outputs (DESIGN.md task list, module.md vertical slices, interface contract acceptance scenarios) to drive red-green-refactor of each task while enforcing architectural boundaries. Trigger when user says \"/devtdd\", \"implement task\", \"tdd this task\", \"implement next task\", or references a specific Task number from DESIGN.md."
-version: 1.9.0
+version: 1.9.1
 ---
 
 # DevTDD Skill (Vertical-Slice TDD Implementation Engine)
@@ -320,6 +320,8 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.
 
+See [shared-constraints.md](../arch-conventions/references/shared-constraints.md) for pipeline-wide rules: Document Ownership (§1), Restricted Tool Surface (§2), OVERRIDE Protocol (§5), Upstream Halt (§6).
+
 ---
 
 ## 📎 Additional Resources
@@ -343,3 +345,4 @@ For detailed protocols and checklists, see [reference.md](reference.md):
 
 For test anti-patterns catalog and Flaky Test stabilization protocol (v1.7.0+), see the `references/` subdirectory:
 - [references/test-anti-patterns.md](references/test-anti-patterns.md) — 7 anti-patterns with detection + fix + Flaky Test stabilization protocol
+- [references/examples.md](references/examples.md) — Golden examples: micro-cycle plan, Red→Green→Refactor, craftsmanship check, state sync
