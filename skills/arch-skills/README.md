@@ -13,12 +13,12 @@
         └──────────────────────────┬────────────────────────────────┘
                                    │ 引用
         ┌───────────────────────────────────────────────────────────┐
-Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4│
-/arch-init → /arch-align → /arch-design → /arch-detail → /arch-review
- (脚手架)    (术语对齐)    (边界设计)      (详细设计)    (架构审计)
-                                                ↓
-                                            /devtdd
-                                         (TDD实现)
+Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4a         Phase 4b │
+/arch-init → /arch-align → /arch-design → /arch-detail → /devtdd      → /arch-ops
+ (脚手架)    (术语对齐)    (边界设计)      (详细设计)    (TDD实现)      (运维文档)
+                                                              ↓
+                                                         /arch-review
+                                                        (架构审计)
 ```
 
 ## Skills 清单
@@ -31,8 +31,9 @@ Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4│
 | **arch-align** | Phase 1 | 概念与术语对齐。在任何设计工作之前，通过质询式对话对齐业务概念、统一语言 (DDD Ubiquitous Language) 和企业架构模式。产出 `LANGUAGE.md` + `BRD.md`。 |
 | **arch-design** | Phase 2 | 边界设计与可视化。基于 Phase 1 产出，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`，并管理 Architecture Decision Records (ADR)。 |
 | **arch-detail** | Phase 3 | 详细设计与多语言实现映射。将 `ARCHITECTURE.md` 的边界翻译为模块化 `DESIGN.md` 索引 + 每模块设计文件 + 每方法接口契约，支撑垂直切片 TDD。 |
-| **arch-review** | Phase 4 | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `T{N}.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。内置 5 种批判推理模式（原 arch-critic）。 |
-| **devtdd** | 实现 | 垂直切片 TDD 实现引擎。消费 Phase 3 产出（任务列表、模块设计、接口契约验收场景），驱动逐任务 red-green-refactor，同时强制架构边界。 |
+| **devtdd** | Phase 4a | 垂直切片 TDD 实现引擎。消费 Phase 3 产出（任务列表、模块设计、接口契约验收场景），驱动逐任务 red-green-refactor，同时强制架构边界。 |
+| **arch-ops** | Phase 4b | 运维文档与工具。基于 DESIGN.md §8 和实现代码，生成 OPS.md runbook（前置依赖、构建、配置、启停、排障）、shell 脚本和 Makefile。 |
+| **arch-review** | Phase 4c | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `T{N}.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。内置 5 种批判推理模式（原 arch-critic）。 |
 
 ## 使用方式
 
@@ -62,9 +63,9 @@ npx skills@latest add <your-repo>/skills/arch-skills
 - `/arch-align` | "align terms" | "grill the requirements" | "build the dictionary"
 - `/arch-design` | "design architecture" | "draw the boundaries" | "visualize dependencies"
 - `/arch-detail` | "detail design" | "vertical slice tasks" | "translate to code"
-- `/arch-review` | "audit this code" | "check architecture compliance" | "is this leaky" | "challenge this design" | "pre-mortem" | "red team"
-
 - `/devtdd` | "implement task" | "tdd this task" | "implement next task"
+- `/arch-ops` | "write ops doc" | "generate runbook" | "create scripts" | "write Makefile"
+- `/arch-review` | "audit this code" | "check architecture compliance" | "is this leaky" | "challenge this design" | "pre-mortem" | "red team"
 
 ## 理论基础
 
@@ -105,14 +106,18 @@ arch-skills/
 │   ├── SKILL.md
 │   ├── reference.md
 │   └── references/        ← 语言规则、API 契约标准、安全检查点、examples
-├── arch-review/
+├── devtdd/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← 报告模板、修复引导、OWASP、批判推理、examples
-└── devtdd/
+│   └── references/        ← 代码工艺铁律、测试反模式、examples
+├── arch-ops/
+│   ├── SKILL.md
+│   ├── reference.md
+│   └── references/        ← OPS.md 模板、脚本模板
+└── arch-review/
     ├── SKILL.md
     ├── reference.md
-    └── references/        ← 代码工艺铁律、测试反模式、examples
+    └── references/        ← 报告模板、修复引导、OWASP、批判推理、examples
 ```
 
 ## 兼容性

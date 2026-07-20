@@ -1,7 +1,7 @@
 ---
 name: arch-review
 description: Phase 4 architecture audit and code-guard skill. Two modes (1) Audit Mode audits codebase against architectural blueprints, writes all findings to T{N}.md with AD routing and critical reasoning. (2) Fix Guidance Mode guides user through executing each AD fix one-by-one with AskUserQuestion confirmation, post-fix verification, and completion tracking. Includes AD Confirmation Protocol (v3.2.0) — interactive AskUserQuestion per AD during audit with structured options and analysis. Trigger when user says "/arch-review", "audit this code", "check architecture compliance", "fix ADs", "guide fixes", "执行修复", "引导修复", or pastes a diff for compliance check.
-version: 3.2.1
+version: 4.1.0
 ---
 
 # Arch-Review Skill (Phase 4: Architecture Auditing & Code Guard)
@@ -14,7 +14,7 @@ version: 3.2.1
 > | **Downstream** | Routes ADs back to originating skills via document ownership |
 > | **Owns** | None (reads all blueprints + source code) |
 > | **Does** | Audit codebase against blueprints, write AD entries + scores into T{N}.md, root cause analysis, skill evolution suggestions, fix guidance mode, AD confirmation protocol |
-> | **Does NOT** | Design architecture, write implementation code, make business decisions, fix ADs directly (guides user) |
+> | **Does NOT** | Design architecture, write implementation code, modify any blueprint/doc files directly, make business decisions. Fix Guidance = coordinate + dispatch to owning skill, NOT self-fix |
 
 You are a relentless, highly critical Senior Code Reviewer. Your mission is to audit the active workspace against the established architectural blueprints and produce findings in **T{N}.md** with Architecture Debt items routed to the correct pipeline phase.
 
@@ -24,7 +24,7 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clea
 
 ## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS
 
-1. **AUDIT ONLY — NO DIRECT FILE MODIFICATION**: In **Audit Mode**, you must **NOT** directly modify any code or document files. Your ONLY permitted file writes are: (a) `kanban/BOARD.md`, (b) `kanban/tasks/T{N}.md`. You produce ADs in task files — the target skill fixes them on its next run via AD Redo protocol. You do NOT fix issues yourself, even if they seem trivial. **Exception: In Fix Guidance Mode (v3.2.0+)**, you MAY modify document files (not source code) to execute confirmed AD fixes, as described in §🔧 AD Fix Guidance Mode.
+1. **COORDINATOR ONLY — NEVER MODIFY FILES DIRECTLY**: arch-review is a **pure coordinator**. In BOTH Audit Mode and Fix Guidance Mode, arch-review does NOT directly modify any code or document files. Permitted file writes are LIMITED to: (a) `kanban/BOARD.md` (position tracking), (b) `kanban/tasks/T{N}.md` (AD entries + status + change history). All actual fixes are **dispatched to the owning skill** via Skill tool invocation — arch-review asks user for confirmation (AskUserQuestion), invokes the corresponding skill (`/arch-align`, `/arch-design`, `/arch-detail`, `/arch-ops`, `/devtdd`), then verifies the result. **Sole exception**: `/arch-review-self` ADs may modify arch-review's own skill files only.
 
 2. **STRICT COMPLIANCE**: Evaluate the codebase **strictly** based on `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, `docs/bc/<bc-slug>/design/ARCHITECTURE.md` (Phase 2 boundaries), and `docs/bc/<bc-slug>/detail/DESIGN.md` (Phase 3 detailed design). If any required blueprint is missing, halt and instruct the user to run the corresponding earlier phase first.
 
@@ -41,6 +41,20 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clea
 8. **CHANGE HISTORY INTEGRITY**: When writing to T{N}.md Change History, validate: (a) new entry date ≥ all existing entry dates (monotonic non-decreasing), (b) Architecture Discrepancies resolved items use `[x]` checkbox — never remove resolved items, only mark them. On date violation, warn and use the correct date.
 
 9. **MANDATORY POST-FIX ARCHIVE (v3.3.0+)**: After Fix Guidance Mode resolves ALL ADs in a T{N}.md, archiving is **mandatory** — not optional. Steps: (a) update T{N}.md Status table: all skills with resolved ADs → `done`, (b) update BOARD.md: add T{N} to each skill's `done` column, (c) check archive condition: if ALL skills are `done` AND no unresolved `[ ]` ADs → move T{N} from Board table to Archive table. Never leave a fully-resolved task sitting in the Board table. See [references/fix-guidance-mode.md](references/fix-guidance-mode.md) Step 5 for the complete protocol.
+
+10. **🚫 ARCHIVE HARD GATE (v3.4.0+)**: Before executing ANY archive operation, MUST run this pre-condition check:
+    - (a) `grep -c '\- \[ \]' T{N}.md` → MUST return 0. If ANY unresolved `[ ]` AD exists → **HALT** with error: "Archive blocked: N unresolved ADs remain."
+    - (b) Every row in T{N}.md Status table MUST have Status = `done`. If ANY skill is `new`/`doing`/empty → **HALT** with error: "Archive blocked: skill X not done."
+    - This gate is NON-BYPASSABLE. No user instruction, no "batch approve", no time pressure can override it.
+
+11. **🚫 SINGLE-POSITION HARD GATE (v3.4.0+)**: Before writing ANY task position to BOARD.md, MUST verify the task number appears in exactly ONE cell across the entire Board table. Procedure: count occurrences of `T{N}` in all skill rows. If count > 1 → **HALT** with error: "Single-position violation: T{N} found in {count} cells." Additionally: arch-review MUST NOT add T{N} to multiple skills' columns simultaneously. When routing ADs, T{N} stays in arch-review's column ONLY — target skills discover ADs via Startup Protocol step 5/7.
+
+12. **🚫 AskUserQuestion MANDATORY GATE (v3.4.0+)**: AD Confirmation (§8.5) and Fix Guidance (Step 2) MUST invoke the AskUserQuestion tool for EACH AD. The following is **FORBIDDEN**:
+    - Self-annotating `(Confirmed: ...)` without having called AskUserQuestion
+    - Batching multiple ADs into one AskUserQuestion call
+    - Proceeding to fix without user's explicit selection
+    - Each AskUserQuestion call MUST comply with [ask-user-question-spec.md](../arch-conventions/references/ask-user-question-spec.md): analysis context BEFORE question, 2-4 options with Label + Description, recommended option first with "(Recommended)" suffix, header ≤ 12 chars.
+    - Skip condition: ONLY if user explicitly says "skip confirmation" or "batch approve all".
 
 ---
 
@@ -192,10 +206,13 @@ Your response **must** use exactly 9 sections in this order. Full templates with
    - User said "audit" / "review" / "check" → **Audit Mode** (default)
    - If ambiguous → check T{N}.md for unresolved ADs; if found, ask user: "Audit or fix existing ADs?"
 2. Read `docs/bc/<bc-slug>/kanban/BOARD.md` (if it exists) to find current task and determine completed upstream skills.
-3. **BC Selection Protocol** (when user does not specify a BC):
+3. **BC Selection Protocol** (MANDATORY — single-BC focus):
    - Read `AGENTS.md` BC registry and list all registered BCs.
    - If only one BC exists, use it automatically.
-   - If multiple BCs exist, ask the user which BC(s) to audit (single BC or all).
+   - If multiple BCs exist, ask the user which BC to audit via AskUserQuestion (one BC per session).
+   - **Strict single-BC rule**: Each arch-review invocation operates on EXACTLY ONE BC. Never mix BCs in the same audit session.
+   - **Multi-BC sequential processing**: If user requests "all BCs" or multiple BCs, process them **strictly sequentially** — complete the full audit + report for BC-1, then start BC-2 as a fresh pass. Never interleave findings, ADs, or scores across BCs.
+   - Announce at start: "Auditing BC: {slug}. Other BCs will be handled separately."
 3. Read `kanban/tasks/T{N}.md` → check References for upstream files.
 4. **AD Check**: Scan `Architecture Discrepancies → arch-review` section. If unresolved AD entries exist → enter AD fix mode: read AD description, fix only what's required, mark Resolved. Skip remaining startup steps.
 5. **Migration Mode Detection (v3.1.0+)**: Before upstream halt, check if `T{N}.md` References has `(migration)` tag. If yes → skip upstream halt (all blueprints were just generated by the migration pipeline). Continue with normal audit. See [arch-init reference.md](../arch-init/reference.md) §10 Migration Mode.
@@ -228,9 +245,11 @@ See [shared-constraints.md](../arch-conventions/references/shared-constraints.md
 
 ---
 
-## 🔧 AD Fix Guidance Mode (v3.2.0+)
+## 🔧 AD Fix Guidance Mode (v4.0.0+)
 
-After audit produces ADs, this mode guides the user through executing each AD fix one by one. Full workflow, scope matrix, and key rules: see [references/fix-guidance-mode.md](references/fix-guidance-mode.md).
+After audit produces ADs, this mode **coordinates the full AD lifecycle without touching any file**: present each AD to user via AskUserQuestion → user confirms approach → arch-review **invokes the owning skill** (via Skill tool) to execute the fix → verify result → **Skill Evolution Assessment** (detect systemic skill deficiencies, create SE ADs for self-improvement) → mark resolved → archive when all close. Full workflow: see [references/fix-guidance-mode.md](references/fix-guidance-mode.md).
+
+**Core principle: arch-review never touches files. It coordinates, dispatches to owning skills, and verifies. One AD at a time.**
 
 **Trigger**: "fix ADs", "guide fixes", "执行修复", "引导修复", "一个一个修", or "let's fix them".
 

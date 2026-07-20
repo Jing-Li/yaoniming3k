@@ -1,8 +1,8 @@
-# AD Fix Guidance Mode (v3.4.0+)
+# AD Fix Guidance Mode (v4.1.0+)
 
-After audit produces ADs, this mode **takes end-to-end coordination of the AD lifecycle**: it guides the user through executing each AD fix one by one, dispatches fixes to the owning skill, verifies each fix, marks resolved, and archives the task when all ADs are closed.
+arch-review is a **pure coordinator** — it NEVER directly modifies any file (code or document). Fix Guidance Mode orchestrates the AD lifecycle: present each AD to user for confirmation via AskUserQuestion, then **invoke the owning skill** (via Skill tool) to execute the fix, verify the result, mark resolved, and archive when all ADs close.
 
-arch-review is the **coordinator** — it does not dump ADs and walk away. It stays engaged until every AD is resolved and the task is archived. However, it does NOT directly modify source code — source code ADs are dispatched to `/devtdd`.
+**Core principle: arch-review never touches files. It coordinates, dispatches, and verifies. One AD at a time.**
 
 ---
 
@@ -10,16 +10,18 @@ arch-review is the **coordinator** — it does not dump ADs and walk away. It st
 
 User says: "fix ADs", "guide fixes", "执行修复", "引导修复", "一个一个修", or after audit completion when user says "let's fix them".
 
+---
+
 ## Workflow
 
 **Step 1 — Load AD Inventory:**
 1. Read `kanban/tasks/T{N}.md` → scan all `Architecture Discrepancies` sections
 2. Collect all unresolved ADs (items with `[ ]`)
-3. Group by target skill (arch-init / arch-align / arch-design / arch-detail / devtdd / arch-review)
-4. Order by Batch dependency (upstream first: init → align → design → detail → devtdd → review)
+3. Group by target skill (arch-align / arch-design / arch-detail / arch-ops / devtdd / arch-review-self / other skills)
+4. Order by Batch dependency (upstream first: align → design → detail → ops → devtdd → review-self)
 5. Report: "Found N unresolved ADs across M skills. Starting fix guidance."
 
-**Step 2 — Per-AD Fix Cycle (Progressive Disclosure):**
+**Step 2 — Per-AD Fix Cycle (Progressive Disclosure, ONE at a time):**
 
 For EACH unresolved AD, in dependency order:
 
@@ -33,68 +35,140 @@ For EACH unresolved AD, in dependency order:
 │  Analysis: What needs to change, which files,       │
 │            what the target state should look like    │
 ├─────────────────────────────────────────────────────┤
-│  Question: "How to proceed with {AD-ID}?"           │
-│  Options:                                           │
-│    1. "Execute fix now (Recommended)" — description │
-│    2. "Show me the diff first" — preview changes    │
-│    3. "Defer to later" — skip, come back            │
+│  AskUserQuestion:                                   │
+│    Question: "How to proceed with AD-{ID}?"         │
+│    Header: "{target-skill}" (≤12 chars)             │
+│    Options:                                         │
+│      1. "Invoke /{skill} (Recommended)"             │
+│         — describe fix scope and expected outcome   │
+│      2. "Preview fix plan" — show diff before exec  │
+│      3. "Defer" — skip, record in deferred          │
 └─────────────────────────────────────────────────────┘
 ```
 
-**Step 3 — Execute Fix:**
+**Step 3 — Dispatch to Owning Skill:**
 
 Based on user's choice:
-- **"Execute fix now"**: Apply the change directly to the target document(s). Permitted modifications: `LANGUAGE.md`, `BRD.md`, `ARCHITECTURE.md`, `DESIGN.md`, `AGENTS.md`, `BOARD.md`, `T{N}.md`, `OPS.md`, `scripts/*.sh`, `Makefile`. Source code (`.go`, `.java`, `.py`, etc.) is **dispatched to the owning skill** — for `/devtdd` ADs, instruct user to run `/devtdd`, then arch-review verifies the fix.
-- **"Show me the diff first"**: Render a before/after diff block, then ask again: "Apply this change?"
-- **"Defer to later"**: Mark as deferred in Change History, move to next AD
+- **"Invoke /{skill}"**: arch-review invokes the Skill tool with the target skill name, passing the AD context (AD ID, description, location, confirmed approach) as the skill argument. The **owning skill executes the fix** — arch-review does NOT touch any file.
+- **"Preview fix plan"**: arch-review renders a before/after analysis (read-only), then asks again via AskUserQuestion: "Confirm execution?" with options "Execute" / "Defer"
+- **"Defer"**: Mark as deferred in Change History, move to next AD
+
+**Dispatch mapping (Skill invocation):**
+
+| AD Route | Skill invoked | Skill modifies |
+|----------|--------------|----------------|
+| `/arch-align` | `/arch-align` | LANGUAGE.md, BRD.md |
+| `/arch-design` | `/arch-design` | ARCHITECTURE.md, ADR files |
+| `/arch-detail` | `/arch-detail` | DESIGN.md, module.md, interfaces/ |
+| `/arch-ops` | `/arch-ops` | OPS.md, scripts/*.sh, Makefile |
+| `/devtdd` | `/devtdd` | Source code (.go, tests, etc.) |
+| `/arch-review-self` | `/arch-review` (self-fix) | arch-review skill files only |
+| `/{any-skill}` (Skill Evolution) | `/{any-skill}` | That skill's own SKILL.md / reference files |
+
+> **`/arch-review-self` exception**: Only for self-referential skill improvements, arch-review MAY modify its own skill files. This is the ONLY case where arch-review writes files directly.
 
 **Step 4 — Post-Fix Verification:**
 
-After applying each fix:
-1. Re-grep the modified file(s) to confirm the problematic pattern is gone
-2. Mark the AD as `[x]` with `(Resolved by arch-review-fix, {date})` in T{N}.md
-3. Append to T{N}.md Change History: `{date} | arch-review-fix | Resolved {AD-ID}: {what changed}`
-4. Report: "✅ {AD-ID} resolved. {Remaining} ADs remaining."
+After the invoked skill completes its fix:
+1. Re-grep the target file(s) to confirm the problematic pattern is gone
+2. If verification passes:
+   - Mark the AD as `[x]` with `(Resolved by /{skill}, {date})` in T{N}.md
+   - Append to T{N}.md Change History: `{date} | {skill} | Resolved {AD-ID}: {what changed}`
+   - Report: "✅ {AD-ID} resolved. {Remaining} ADs remaining."
+3. If verification FAILS:
+   - Report: "⚠️ {AD-ID} fix incomplete — pattern still present at {location}"
+   - AskUserQuestion: "Fix failed verification. How to proceed?"
+     - "Retry /{skill} (Recommended)" — retry with more context
+     - "Manual handling" — user takes over
+     - "Defer" — skip
 
-**Step 5 — Completion & Mandatory Archive:**
+**Step 5 — Skill Evolution Assessment (MANDATORY):**
 
-When all ADs are processed, execute the following steps **in order** — none are optional:
+After ALL fix ADs are resolved (or deferred), arch-review MUST perform a **Skill Evolution Assessment** before archiving:
 
-1. **Output summary**: Resolved N / Deferred M / Skipped K
-2. **If any deferred**: list them for user review, skip to step 6 (no archive)
-3. **Update T{N}.md Status table**: For every skill that had at least one AD resolved in this session → set Status = `done`, Started/Completed = today's date. This reflects that the skill's redo obligation is fulfilled.
-4. **Update BOARD.md**: For every skill updated in step 3 → add T{N} to that skill's `done` column in BOARD.md Board table.
-5. **Archive check** (MANDATORY when all ADs resolved):
-   - Condition: ALL skills in T{N}.md Status table are `done` AND no unresolved `[ ]` Architecture Discrepancy entries exist in T{N}.md
-   - If condition met:
-     a. Remove T{N} from ALL skill rows in BOARD.md Board table
-     b. Add T{N} row to BOARD.md Archive table: `| T{N} | {comma-separated skill list} | {date} |`
-   - If condition NOT met (e.g., some skills still `new` with no ADs targeting them): leave T{N} in Board table, note reason in summary
-6. **Append to T{N}.md Change History**: `{date} | arch-review-fix | All ADs resolved. T{N} archived.` (or: `... T{N} not archived: {reason}.`)
+1. **Pattern detection**: For each skill that received 2+ ADs in this audit cycle, analyze whether the ADs share a common root cause pointing to a **systemic skill deficiency** (e.g., missing validation step, incomplete checklist, absent constraint).
+2. **Skill Evolution AD creation**: If a systemic issue is identified, create a Skill Evolution AD routed to that skill:
+   - Format: `- [ ] SE-{N} (Skill Evolution): {skill} lacks {capability}. Evidence: {AD-IDs} share root cause "{pattern}". Recommended improvement: {specific change to skill file}.`
+   - Route: `/{skill}-self` (e.g., `/arch-design-self`, `/devtdd-self`)
+   - These SE ADs are presented to user via AskUserQuestion (same protocol as regular ADs)
+   - Upon confirmation, arch-review invokes the target skill to apply the improvement to its own SKILL.md / reference files
+3. **arch-review-self SE**: If arch-review itself had process failures during this cycle (e.g., skipped AskUserQuestion, violated single-position), create SE ADs routed to `/arch-review-self`
+4. **No SE needed**: If all ADs were one-off mistakes with no systemic pattern, report: "No Skill Evolution items this cycle."
+
+> **Why?** Fixing individual ADs without improving the originating skill leads to recurring debt. Skill Evolution closes the loop: audit → fix → improve the skill → prevent recurrence.
+
+**Step 6 — Completion & Mandatory Archive:**
+
+When all ADs (including SE ADs) are processed:
+
+1. **Output summary**: Resolved N / Deferred M / Skipped K / Skill Evolution SE count
+2. **If any deferred**: list them for user review, skip archive (no archive with open items)
+3. **Update T{N}.md Status table**: For every skill that had at least one AD resolved → set Status = `done`, Started/Completed = today's date.
+4. **Update BOARD.md**: For every skill updated in step 3 → add T{N} to that skill's `done` column.
+5. **Archive check** (MANDATORY — subject to Hard Gate #10):
+   - Condition: ALL skills `done` AND zero unresolved `[ ]` entries (including SE items)
+   - If met: remove T{N} from Board, add to Archive table
+   - If NOT met: leave in Board, note reason
+6. **Append Change History**: `{date} | arch-review | All ADs resolved. T{N} archived.` (or reason)
 7. Suggest re-running `/arch-review` for verification
 
-> **Why mandatory?** Tasks left in Board table after all ADs resolved create visual noise and confuse future skill runs. Archive is the terminal state — every resolved task MUST reach it.
+> **Why mandatory?** Tasks left in Board table after all ADs resolved create visual noise and confuse future skill runs. Archive is the terminal state.
 
-## Fix Scope Matrix (v3.4.0+)
-
-| AD Route | arch-review can fix? | Action |
-|----------|---------------------|--------|
-| `/arch-init` | ✅ Yes | Modify AGENTS.md template, BOARD.md structure |
-| `/arch-align` | ✅ Yes | Modify LANGUAGE.md, BRD.md |
-| `/arch-design` | ✅ Yes | Modify ARCHITECTURE.md, ADR files |
-| `/arch-detail` | ✅ Yes | Modify DESIGN.md, module.md files |
-| `/arch-ops` | ✅ Yes | Modify OPS.md, scripts, Makefile |
-| `/devtdd` | ❌ No | Dispatch to `/devtdd` — instruct user to run the skill, then verify fix |
-| `/arch-review-self` | ✅ Yes | Modify skill configuration, reference files |
-
-> **v3.4.0 change**: `/devtdd` ADs are dispatched, not executed directly. arch-review coordinates the full lifecycle but respects skill ownership boundaries — source code changes belong to `/devtdd`.
+---
 
 ## Key Rules
 
+- **arch-review NEVER modifies files** — all fixes executed by the owning skill via Skill tool invocation; arch-review only coordinates order, confirms approach, and verifies results
 - **ONE AD at a time** — never batch multiple fixes into one question
-- **Show analysis BEFORE asking** — user must understand what changes
-- **Verify AFTER fixing** — re-grep to confirm the fix worked
-- **Document-only fixes** — arch-review in Fix Guidance Mode directly modifies blueprint docs + ops artifacts only; source code ADs are dispatched to `/devtdd`
+- **Show analysis BEFORE asking** — user must understand what changes before confirming
+- **Skill invocation, not manual edit** — use Skill tool to invoke `/arch-align`, `/arch-design`, `/arch-detail`, `/arch-ops`, `/devtdd`, or any skill for SE fixes
+- **Verify AFTER each fix** — re-grep to confirm the fix worked before marking resolved
+- **Skill Evolution is MANDATORY** — every audit cycle MUST assess whether originating skills need systemic improvement, not just one-off fixes
 - **Idempotent** — if an AD is already resolved (e.g., from a previous session), skip it and report
-- **User always decides** — even if the fix seems obvious, ask first
-- **End-to-end coordination** — arch-review stays engaged from audit through dispatch, verify, and archive. Never leave unresolved ADs orphaned.
+- **User always decides** — even if the fix seems obvious, ask first via AskUserQuestion
+- **End-to-end coordination** — arch-review stays engaged from first AD to archive. Never leave unresolved ADs orphaned.
+- **Ordering is arch-review's job** — upstream ADs (align) before downstream (design → detail → ops → devtdd). arch-review determines and communicates the sequence.
+
+---
+
+## Example Session
+
+```
+arch-review: "Found 3 unresolved ADs. Dependency order: AD-5(align) → AD-3(design) → AD-1(detail)."
+
+── AD-5 / 3 ── Route: /arch-align ──
+Analysis: LANGUAGE.md §MVP-auth defines creator='local' but code sets creator='ayuan'.
+Evidence: lifecycle_handler.go:45 sets Creator: "ayuan"
+
+AskUserQuestion:
+  Q: "How to proceed with AD-5?"
+  Header: "arch-align"
+  Options:
+    1. "Invoke /arch-align (Recommended)" — update LANGUAGE.md to define creator as event-source identifier
+    2. "Preview fix plan"
+    3. "Defer"
+
+User: → "Invoke /arch-align"
+
+arch-review: [invokes Skill tool: /arch-align with AD-5 context]
+  → /arch-align updates LANGUAGE.md §MVP-auth
+
+arch-review: [verifies] grep "creator" LANGUAGE.md → ✅ updated
+  → marks [x] AD-5, reports "✅ AD-5 resolved. 2 remaining."
+
+── AD-3 / 3 ── Route: /arch-design ──
+...
+
+── Skill Evolution Assessment ──
+arch-review: "arch-align received 2 ADs this cycle (AD-5, AD-9) both caused by
+  ambiguous semantic definitions in LANGUAGE.md. Root cause: arch-align grilling
+  does not validate field-level semantics against actual code usage.
+  → SE-1: /arch-align-self — add 'field semantic validation' step to grilling checklist."
+
+AskUserQuestion:
+  Q: "How to proceed with SE-1 (arch-align skill improvement)?"
+  Header: "align-self"
+  Options:
+    1. "Invoke /arch-align (Recommended)" — add validation step to grilling protocol
+    2. "Defer to next cycle"
+```
