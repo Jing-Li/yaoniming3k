@@ -86,14 +86,20 @@ After the invoked skill completes its fix:
 
 After ALL fix ADs are resolved (or deferred), arch-review MUST perform a **Skill Evolution Assessment** before archiving:
 
-1. **Pattern detection**: For each skill that received 2+ ADs in this audit cycle, analyze whether the ADs share a common root cause pointing to a **systemic skill deficiency** (e.g., missing validation step, incomplete checklist, absent constraint).
-2. **Skill Evolution AD creation**: If a systemic issue is identified, create a Skill Evolution AD routed to that skill:
-   - Format: `- [ ] SE-{N} (Skill Evolution): {skill} lacks {capability}. Evidence: {AD-IDs} share root cause "{pattern}". Recommended improvement: {specific change to skill file}.`
+1. **Per-skill SE trigger**: For each skill that received **1+ AD** in this audit cycle, analyze whether the ADs point to a skill deficiency (missing validation step, incomplete checklist, absent constraint, or protocol gap).
+2. **Process failure detection**: Regardless of AD count, check for protocol violations during this audit cycle:
+   - Did any skill skip AskUserQuestion confirmation?
+   - Did any skill bypass kanban task creation?
+   - Did any skill violate document ownership boundaries?
+   - Did arch-review itself have process failures (skipped SE, violated single-position, etc.)?
+3. **Cross-skill pattern detection**: If multiple skills share a common failure pattern (e.g., multiple skills lacking user confirmation steps), create a single SE AD targeting the shared protocol (e.g., kanban-spec) or each affected skill individually.
+4. **Skill Evolution AD creation**: If any deficiency is identified, create a Skill Evolution AD:
+   - Format: `- [ ] SE-{N} (Skill Evolution): {skill} lacks {capability}. Evidence: {AD-IDs or process failures}. Recommended improvement: {specific change to skill file}.`
    - Route: `/{skill}-self` (e.g., `/arch-design-self`, `/devtdd-self`)
    - These SE ADs are presented to user via AskUserQuestion (same protocol as regular ADs)
    - Upon confirmation, arch-review invokes the target skill to apply the improvement to its own SKILL.md / reference files
-3. **arch-review-self SE**: If arch-review itself had process failures during this cycle (e.g., skipped AskUserQuestion, violated single-position), create SE ADs routed to `/arch-review-self`
-4. **No SE needed**: If all ADs were one-off mistakes with no systemic pattern, report: "No Skill Evolution items this cycle."
+5. **arch-review-self SE**: If arch-review itself had process failures during this cycle (e.g., skipped AskUserQuestion, violated single-position, missed SE assessment), create SE ADs routed to `/arch-review-self`
+6. **No SE needed**: If all ADs were one-off mistakes with no systemic pattern and no process failures detected, report: "No Skill Evolution items this cycle."
 
 > **Why?** Fixing individual ADs without improving the originating skill leads to recurring debt. Skill Evolution closes the loop: audit → fix → improve the skill → prevent recurrence.
 

@@ -203,7 +203,10 @@ When user does not specify a BC:
 2. If `doing` has a task → continue it
 3. If `new` has tasks → pick leftmost
 4. If both empty → check archived T{N}.md for unresolved ADs targeting arch-ops
-5. Read `T{N}.md` → AD Check → upstream check (devtdd done)
+   - If found → proceed to step 5
+   - If not found → 🚫 HALT via AskUserQuestion (per kanban-spec §4.1 step 5): route to `/arch-align`
+5. Read `T{N}.md` → AD Check → upstream check (devtdd done for T{N})
+   - If upstream devtdd NOT done → 🚫 HALT via AskUserQuestion (per ask-user-question-spec.md): "Run `/devtdd` first?"
 6. Handover removal (from devtdd `done` column)
 7. Read upstream files via References
 8. Move T{N} to `doing`

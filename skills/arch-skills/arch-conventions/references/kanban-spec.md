@@ -241,7 +241,14 @@ Every skill follows this exact sequence:
 4. If doing is empty → pick leftmost from new column
 5. If new is also empty → check archived T{N}.md files for unresolved ADs targeting this skill:
    - If found → add T{N} back to own `doing` column, enter AD fix mode (skip to step 9)
-   - If not found → halt: "No tasks available. Ask upstream to create tasks."
+   - If not found → 🚫 HALT via AskUserQuestion (per ask-user-question-spec.md):
+     - Analysis: No task found for this BC on the board. The skill cannot proceed without a defined task.
+     - Question: "No task found for this BC. Run /arch-align to define scope and create task?"
+     - Header: "No Task" (≤12 chars)
+     - Options:
+       1. "Run /arch-align (Recommended)" — Define scope, create task, then flow through pipeline
+       2. "Cancel" — Stop here, no action taken
+     - This is a HARD GATE — the skill MUST NOT proceed without a task. No silent bypass.
 6. Read kanban/tasks/T{N}.md
 7. AD Check: scan Architecture Discrepancies → own section
    - If unresolved AD entries exist for this skill → enter AD fix mode (skip to step 9)
@@ -311,17 +318,27 @@ Fix (by targeted skill, e.g., arch-align):
 4. Read Change History → understand what was done before
 5. Read own existing output files → understand current state
 6. Read AD description → understand what needs fixing
-7. Idempotent fix: only modify what the AD requires, skip unchanged parts
-8. Update output files
-9. Mark AD as [x] with (Resolved by <resolver>, <date>)
-10. Append Change History: "AD fix — <what changed>"
-11. Set Status: done + new Completed date
+7. 🚫 AskUserQuestion confirmation (per ask-user-question-spec.md):
+   - Analysis: List all unresolved ADs targeting this skill, with fix scope for each
+   - Question: "Execute these AD fixes?"
+   - Header: "{skill-name}" (≤12 chars)
+   - Options:
+     1. "Execute all (Recommended)" — Fix all ADs incrementally
+     2. "Show details first" — Expand analysis per AD before confirming
+     3. "Skip" — Defer to next run
+   - User MUST confirm before any file modification
+8. Idempotent fix: only modify what the AD requires, skip unchanged parts
+9. Update output files
+10. Mark AD as [x] with (Resolved by <resolver>, <date>)
+11. Append Change History: "AD fix — <what changed>"
+12. Set Status: done + new Completed date
 ```
 
 Key rules:
 - AD fix is **incremental** — never re-execute work that's already correct
 - AD fix is **idempotent** — running the same AD fix twice produces the same result
 - Multiple ADs for the same skill are fixed in a single pass
+- AD fix requires **user confirmation** via AskUserQuestion before any modification (step 7)
 
 ---
 

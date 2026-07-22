@@ -282,16 +282,22 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 ### On Startup
 
 1. Read `docs/bc/<bc-slug>/kanban/BOARD.md`.
-2. Find own row (`devtdd`). If `doing` has a task → continue. If `doing` is empty and `new` has tasks → pick leftmost. If both empty → halt: "No tasks for devtdd. Run `/arch-detail` first."
+2. Find own row (`devtdd`). If `doing` has a task → continue. If `doing` is empty and `new` has tasks → pick leftmost. If both empty → 🚫 HALT via AskUserQuestion (per kanban-spec §4.1 step 5): route to `/arch-align`.
 3. Read `kanban/tasks/T{N}.md` → check References for upstream files.
-4. **AD Check**: Scan `Architecture Discrepancies → devtdd` section. If unresolved AD entries exist → enter AD fix mode: read AD description, fix only what's required, mark Resolved. Skip remaining startup steps.
+4. **AD Check**: Scan `Architecture Discrepancies → devtdd` section. If unresolved AD entries exist → enter AD fix mode per kanban-spec §4.4:
+   a. Read all unresolved ADs targeting devtdd
+   b. Analyze fix scope for each AD (what files, what changes)
+   c. 🚫 AskUserQuestion confirmation (per ask-user-question-spec.md): present AD list + fix plan, get user approval before any modification
+   d. Idempotent fix: only modify what each AD requires
+   e. Mark resolved, append Change History
+   f. Skip remaining startup steps.
 5. **Idempotent check**: Read own existing output (source/test files). Read AD entries. Identify delta — skip completed work, only execute what's missing or needs fixing.
 6. **Migration Mode Detection (v1.9.0+)**: Before upstream halt, check:
    - Source code already exists in Clean Architecture layers (`internal/`, `domain/`, `cmd/`, etc.)
    - `T{N}.md` References has `(migration)` tag
    If ALL conditions met → **enter Migration Mode**: Skip upstream halt. Read source code + DESIGN.md → verify existing code matches design contracts. Mark already-implemented sub-tasks as ✅. Write **missing tests only** (not new implementation). Update DoD checkboxes. Present to user for confirmation. See [arch-init reference.md](../arch-init/reference.md) §10 Migration Mode.
    If NOT in migration mode → continue with normal upstream check below.
-7. **Upstream check**: Verify arch-detail has T{N} in `done`. If not → halt: "Upstream arch-detail has not completed T{N}. Run `/arch-detail` first."
+7. **Upstream check**: Verify arch-detail has T{N} in `done`. If not → 🚫 HALT via AskUserQuestion (per ask-user-question-spec.md): "Upstream arch-detail has not completed T{N}. Run `/arch-detail` first?"
 8. **Handover removal**: If T{N} exists in arch-detail's `done` column on BOARD.md → remove it.
 9. Move T{N} from `new` to `doing` in BOARD.md (if not already).
 10. **BC Selection Protocol** (when user does not specify a BC):

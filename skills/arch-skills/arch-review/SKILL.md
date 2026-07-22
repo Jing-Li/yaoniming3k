@@ -193,7 +193,15 @@ Your response **must** use exactly 9 sections in this order. Full templates with
     c. Render the stdout report (score + AD summary + execution plan).
     d. Do **not** modify blueprint files unless user explicitly authorizes.
 
-11. **Optional Apply**: Only if user explicitly says "fix ADs" / "guide fixes" → enter Fix Guidance Mode (§🔧). Otherwise stay read-only.
+11. **Automatic Fix Guidance Prompt**: After audit completes with ADs:
+    - If ADs exist → AskUserQuestion (per ask-user-question-spec.md):
+      - Analysis: "Audit found N ADs across M skills. Execution plan: <summary>"
+      - Question: "Start fix guidance to resolve these ADs?"
+      - Header: "Fix ADs" (≤12 chars)
+      - Options:
+        1. "Start fix guidance (Recommended)" — Enter Fix Guidance Mode, resolve ADs one by one
+        2. "Review first, fix later" — Stay read-only, user reviews report before deciding
+    - If no ADs found → proceed to archive directly.
 
 ---
 
@@ -251,7 +259,7 @@ After audit produces ADs, this mode **coordinates the full AD lifecycle without 
 
 **Core principle: arch-review never touches files. It coordinates, dispatches to owning skills, and verifies. One AD at a time.**
 
-**Trigger**: "fix ADs", "guide fixes", "执行修复", "引导修复", "一个一个修", or "let's fix them".
+**Trigger**: Automatic after audit with ADs (via Step 11 AskUserQuestion), or user says "fix ADs", "guide fixes", "执行修复", "引导修复", "一个一个修", or "let's fix them".
 
 ---
 
