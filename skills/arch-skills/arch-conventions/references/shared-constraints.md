@@ -10,14 +10,19 @@ Every arch-skill is the **sole owner** of specific documents. It is the only ski
 
 | Skill | Owned Documents |
 |-------|----------------|
+| `/arch-research` | `research/research.md`, `research/sources/` |
 | `/arch-init` | `AGENTS.md`, `kanban/BOARD.md` structure, empty code directories |
 | `/arch-align` | `align/LANGUAGE.md`, `align/BRD.md`, `align/brds/` |
 | `/arch-design` | `design/ARCHITECTURE.md`, `design/adr/*.md` |
-| `/arch-detail` | `detail/DESIGN.md`, `detail/modules/*/module.md`, `detail/modules/*/interfaces/*.md` |
+| `/arch-detail` | `detail/DESIGN.md`, `detail/modules/*/module.md`, `detail/modules/*/interfaces/*.md`, `detail/api-contracts/` |
 | `/devtdd` | Source code (`.go`, `.java`, `.py`, etc.), test files |
 | `/arch-ops` | `ops/OPS.md`, `scripts/` content, `Makefile` |
 | `/arch-review` | Read-only (Audit Mode); Fix Guidance Mode may modify docs + ops artifacts (NOT source code — dispatches to `/devtdd`) |
 | `/arch-kanban` | `kanban/BOARD.md` structure validation, `kanban/tasks/T{N}.md` structure |
+| `/dx-prototype` | Prototype source code, `dx/prototype/` |
+| `/dx-image-to-code` | Frontend source code, `dx/screens/` |
+| `/dx-url-to-code` | Frontend source code, `dx/screens/`, `dx/url-dna.md` |
+| `/dx-review` | `dx/review/` (review reports) |
 
 All skills may read any document. All skills may write to `kanban/BOARD.md` (status updates) and `kanban/tasks/T{N}.md` (own status + AD entries).
 
@@ -38,14 +43,19 @@ Common write permissions (shared across all skills):
 ## §3 No Source Code Modification (Non-Implementation Skills)
 
 The following skills MUST NOT modify source code files (`.go`, `.java`, `.py`, `.ts`, etc.), build configs, or test files:
+- `/arch-research` — research.md + sources/ only
 - `/arch-init` — scaffolding only
 - `/arch-align` — LANGUAGE.md + BRD.md only
 - `/arch-design` — ARCHITECTURE.md + ADRs only
-- `/arch-detail` — DESIGN.md + modules/ only
+- `/arch-detail` — DESIGN.md + modules/ + api-contracts/ only
 - `/arch-ops` — OPS.md + scripts/ + Makefile only (NO application source code)
 - `/arch-review` — read-only (Audit Mode); docs + ops artifacts only (Fix Guidance Mode, v3.4.0+)
+- `/dx-prototype` — prototype source only (NO backend source)
+- `/dx-image-to-code` — frontend source only (NO backend source)
+- `/dx-url-to-code` — frontend source + url-dna.md only (NO backend source)
+- `/dx-review` — review reports only (NO source code)
 
-Only `/devtdd` is permitted to write source code. `/arch-review` Fix Guidance Mode dispatches source code ADs to `/devtdd`.
+Only `/devtdd` is permitted to write backend source code. `/arch-review` Fix Guidance Mode dispatches source code ADs to `/devtdd`.
 
 ## §4 Grill, Don't Guess (Structured Questioning)
 
@@ -81,12 +91,17 @@ Before executing its core logic, each skill MUST verify that its upstream depend
 
 | Skill | Upstream Dependency |
 |-------|-------------------|
+| `/arch-research` | None (optional pre-phase tool) |
 | `/arch-align` | None (first phase) |
 | `/arch-design` | arch-align T{N} = done |
 | `/arch-detail` | arch-design T{N} = done |
 | `/devtdd` | arch-detail T{N} = done |
 | `/arch-ops` | devtdd T{N} = done |
 | `/arch-review` | devtdd T{N} = done |
+| `/dx-prototype` | dx-image-to-code or dx-url-to-code T{N} = done |
+| `/dx-image-to-code` | arch-align T{N} = done (BRD.md §5 UX Context) |
+| `/dx-url-to-code` | arch-align T{N} = done (BRD.md §5 UX Context) |
+| `/dx-review` | Pre-mode: arch-align T{N} = done. Post-mode: dx-prototype T{N} = done |
 
 If the upstream skill has not completed T{N}, the current skill MUST **halt** with a clear instruction:
 > "Upstream {skill} has not completed T{N}. Run `/{skill}` first."

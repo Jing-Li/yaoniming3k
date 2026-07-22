@@ -1,7 +1,7 @@
 ---
 name: arch-design
 description: Phase 2 boundary design and visualization skill. Use after /arch-align to define Clean Architecture layers, draw Mermaid dependency diagrams, produce ARCHITECTURE.md, and manage Architecture Decision Records (ADRs). Inspired by Matt Pocock's /to-prd to document architecture specifications. Trigger when user says "/arch-design", "design architecture", "draw the boundaries", "visualize dependencies", or asks to formalize layered architecture after terminology alignment is complete.
-version: 1.18.1
+version: 2.0.0
 ---
 
 # Arch-Design Skill (Phase 2: Boundary Design & Visualization)
@@ -58,14 +58,21 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
 
 2.5. **Inventory External Technologies**: Consolidate the external technologies discovered in Step 2 plus Infrastructure terms from `LANGUAGE.md`. Produce a formal inventory list. Each technology must end up behind a port.
 
-2.6. **Architecture Pattern Selection** *(v1.8.0+)*: Based on team size, NFR requirements from Step 2, and domain complexity from BRD.md, recommend an architecture pattern using the decision matrix:
+2.6. **Architecture Pattern Selection** *(v1.8.0+)*: Based on team size, NFR requirements from Step 2, and domain complexity from BRD.md, evaluate architecture patterns using the decision matrix:
    - **Monolith** — team ≤5, simple domain
    - **Modular Monolith** — team 5-15, multiple BCs, shared deploy
    - **Microservices** — team 15+, independent deploy
    - **Event-Driven** — async workflows, temporal decoupling
    - **Serverless** — variable load, cost-optimized
    - **CQRS** — read/write asymmetry (100:1+)
-   Record the pattern decision with rationale in ARCHITECTURE.md. See [references/architecture-patterns.md](references/architecture-patterns.md) for the full comparison and decision matrix.
+
+2.6.5. **Architecture Direction Comparison** *(v2.0.0+)*: Present **2-3 viable architecture directions**, each a different organizing principle for the same system. Each direction must include:
+   - **Pattern combination** — e.g. "Modular Monolith + Event-Driven BC boundaries" vs "Full Microservices"
+   - **Optimizes for** — which NFRs / constraints this direction best serves
+   - **Sacrifices** — what this direction gives up (every direction trades something)
+   - **Team fit** — does the team have the skills/size for this?
+   - **Migration cost** — greenfield vs evolving from existing code
+   Map each direction to the NFRs from Step 2 and UX Context from BRD.md §5. **Recommend one direction** with explicit reasoning. Present the comparison to the user and wait for confirmation before proceeding to boundary design (Step 3). Record the comparison and final decision in ARCHITECTURE.md §2 Architecture Decision. See [references/architecture-patterns.md](references/architecture-patterns.md) for the full comparison and decision matrix.
 
 2.7. **ADR Generation** *(v1.9.0+)*: For each significant architecture decision made during this phase, create an ADR file in `docs/bc/<bc-slug>/design/adr/`. An ADR is **REQUIRED** when:
    - Choosing a persistence technology (database, cache, file system)

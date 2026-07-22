@@ -13,27 +13,56 @@
         └──────────────────────────┬────────────────────────────────┘
                                    │ 引用
         ┌───────────────────────────────────────────────────────────┐
-Phase 0 │   Phase 1        Phase 2          Phase 3          Phase 4a         Phase 4b │
-/arch-init → /arch-align → /arch-design → /arch-detail → /devtdd      → /arch-ops
- (脚手架)    (术语对齐)    (边界设计)      (详细设计)    (TDD实现)      (运维文档)
+  Optional  Phase 1        Phase 2          Phase 3          Phase 4a         Phase 4b │
+/arch-research? → /arch-align → /arch-design → /arch-detail → /devtdd      → /arch-ops
+ (外部信号)       (术语+UX对齐)  (边界+方向)    (详细+API契约)  (TDD实现)    (运维文档)
                                                               ↓
                                                          /arch-review
                                                         (架构审计)
 ```
 
+### 分叉架构 (v2.0.0+)
+
+在 `arch-detail` 分叉点，用户决定是否需要前端设计：
+
+```
+                          arch-detail (分叉点)
+                         /                  \
+               后端/系统轨道              前端/设计轨道
+               devtdd → arch-ops      dx-image-to-code 或 dx-url-to-code
+               → arch-review              → dx-prototype
+                                          → dx-review (阻塞门限)
+```
+
+**OpenAPI 接口契约**：在 `arch-detail` 阶段设计，存放于 `detail/api-contracts/`，作为前后端衔接的核心契约。
+
 ## Skills 清单
+
+### arch 体系
 
 | Skill | Phase | 描述 |
 |-------|-------|------|
+| **arch-research** | Optional Pre-Phase | 可选外部信号采集。扫描领域惯例、技术共识、竞品架构、社区痛点，产出 `research.md` 供 arch-align 参考。非强制门限。 |
 | **arch-init** | Phase 0 | 项目脚手架与文档治理。初始化 arch pipeline 文档结构，注册 Bounded Context，或审计/修复混乱的文档回归规范形式。幂等安全可重跑。 |
 | **arch-conventions** | 基础设施 | 共享协议总持有者。统一管理 `kanban-spec.md`（任务生命周期协议）和 `ask-user-question-spec.md`（结构化提问协议），所有 arch-skills 从此处引用协议。 |
 | **arch-kanban** | 基础设施 | 看板协议执行者与生命周期管理。引用 conventions 中的 kanban-spec，初始化 BOARD.md，校验看板一致性（单位置、归档、孤儿检测）。 |
-| **arch-align** | Phase 1 | 概念与术语对齐。在任何设计工作之前，通过质询式对话对齐业务概念、统一语言 (DDD Ubiquitous Language) 和企业架构模式。产出 `LANGUAGE.md` + `BRD.md`。 |
-| **arch-design** | Phase 2 | 边界设计与可视化。基于 Phase 1 产出，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`，并管理 Architecture Decision Records (ADR)。 |
-| **arch-detail** | Phase 3 | 详细设计与多语言实现映射。将 `ARCHITECTURE.md` 的边界翻译为模块化 `DESIGN.md` 索引 + 每模块设计文件 + 每方法接口契约，支撑垂直切片 TDD。 |
-| **devtdd** | Phase 4a | 垂直切片 TDD 实现引擎。消费 Phase 3 产出（任务列表、模块设计、接口契约验收场景），驱动逐任务 red-green-refactor，同时强制架构边界。 |
-| **arch-ops** | Phase 4b | 运维文档与工具。基于 DESIGN.md §8 和实现代码，生成 OPS.md runbook（前置依赖、构建、配置、启停、排障）、shell 脚本和 Makefile。 |
-| **arch-review** | Phase 4c | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 `T{N}.md` 包含架构债务追踪、跨阶段路由和根因内省。检测架构漂移、抽象泄漏、框架污染等。内置 5 种批判推理模式（原 arch-critic）。 |
+| **arch-align** | Phase 1 | 概念与术语对齐。通过质询式对话对齐业务概念、统一语言 + UX 层澄清（可选 Phase D）。产出 `LANGUAGE.md` + `BRD.md`。 |
+| **arch-design** | Phase 2 | 边界设计与可视化。多方向架构对比 + 推荐，定义 Clean Architecture 分层、绘制 Mermaid 依赖图、产出 `ARCHITECTURE.md`，并管理 ADR。 |
+| **arch-detail** | Phase 3 | 详细设计与多语言实现映射。将 `ARCHITECTURE.md` 的边界翻译为模块化 `DESIGN.md` + 每模块设计 + 每方法接口契约 + **OpenAPI 接口契约**（`detail/api-contracts/`）。 |
+| **devtdd** | Phase 4a | 垂直切片 TDD 实现引擎。消费 Phase 3 产出，驱动逐任务 red-green-refactor，同时强制架构边界。 |
+| **arch-ops** | Phase 4b | 运维文档与工具。生成 OPS.md runbook、shell 脚本和 Makefile。同时覆盖前端原型部署分享。 |
+| **arch-review** | Phase 4c | 架构审计与代码守卫。审查代码是否符合架构蓝图，产出 AD + 架构债务追踪。内置批判推理模式。 |
+
+### dx 体系（前端/产品设计）
+
+| Skill | 阶段 | 描述 |
+|-------|------|------|
+| **dx-image-to-code** | 前端实现（图片） | 从 mockup/截图实现前端，截图驱动迭代，产出静态页面。 |
+| **dx-url-to-code** | 前端实现（URL） | 从 live URL 重建前端，提取 Design DNA (`url-dna.md`)，截图驱动迭代。 |
+| **dx-prototype** | 交互连线 | 将静态页面连成可点击的交互流程，stub 数据，验证 happy path。 |
+| **dx-review** | 质量门限（双模式） | 前置模式（可选）：开放式 UX 审计。末端模式（必选）：符合性检查，PASS/FAIL 阻塞门限。FAIL 通过 AD 协议路由回对应 skill 修复。 |
+
+**共享 BOARD.md**：dx 技能与 arch 技能共用同一个看板。
 
 ## 使用方式
 
@@ -46,17 +75,20 @@ npx skills@latest add <your-repo>/skills/arch-skills
 
 ### 典型工作流
 
-1. **`/arch-init`** — 初始化项目文档结构
-2. **`/arch-align`** — 与 AI 对齐业务领域术语和架构模式
-3. **`/arch-design`** — 产出分层架构和依赖图
-4. **`/arch-detail`** — 产出可执行的模块设计和任务分解
-5. **`/devtdd`** — 按垂直切片逐任务 TDD 实现
-6. **`/arch-review`** — 定期审计代码架构合规性
+1. **`/arch-research`** — （可选）采集外部信号
+2. **`/arch-init`** — 初始化项目文档结构
+3. **`/arch-align`** — 与 AI 对齐业务领域术语、UX 层上下文
+4. **`/arch-design`** — 产出分层架构 + 多方向对比推荐
+5. **`/arch-detail`** — 产出可执行的模块设计 + OpenAPI 接口契约
+6. **分叉点**：用户决定后端/前端轨道
+   - 后端：`/devtdd` → `/arch-ops` → `/arch-review`
+   - 前端：`/dx-image-to-code` 或 `/dx-url-to-code` → `/dx-prototype` → `/dx-review`
 
 ### 触发词
 
 每个 skill 可通过斜杠命令或自然语言触发：
 
+- `/arch-research` | "research this domain" | "scan the landscape" | "competitor analysis"
 - `/arch-init` | "init arch" | "scaffold docs" | "set up architecture pipeline"
 - `/arch-conventions` | "show kanban spec" | "show question spec" | "shared conventions"
 - `/arch-kanban` | "check board" | "validate kanban" | "show board status"
@@ -65,7 +97,11 @@ npx skills@latest add <your-repo>/skills/arch-skills
 - `/arch-detail` | "detail design" | "vertical slice tasks" | "translate to code"
 - `/devtdd` | "implement task" | "tdd this task" | "implement next task"
 - `/arch-ops` | "write ops doc" | "generate runbook" | "create scripts" | "write Makefile"
-- `/arch-review` | "audit this code" | "check architecture compliance" | "is this leaky" | "challenge this design" | "pre-mortem" | "red team"
+- `/arch-review` | "audit this code" | "check architecture compliance" | "is this leaky"
+- `/dx-image-to-code` | "build this design" | "code this screenshot" | "make this design real"
+- `/dx-url-to-code` | "clone this site" | "rebuild this page" | "url to code"
+- `/dx-prototype` | "make it clickable" | "wire the flow" | "interactive prototype"
+- `/dx-review` | "review this UI" | "audit the interface" | "check conformance" | "does it match the design"
 
 ## 理论基础
 
@@ -88,6 +124,9 @@ arch-skills/
 │       ├── kanban-spec.md ← 看板协议规范 (source of truth)
 │       ├── ask-user-question-spec.md ← 结构化提问协议
 │       └── shared-constraints.md ← 跨 skill 硬约束
+├── arch-research/
+│   ├── SKILL.md
+│   └── references/        ← 研究方法论、扫描清单
 ├── arch-init/
 │   ├── SKILL.md
 │   └── reference.md
@@ -97,11 +136,11 @@ arch-skills/
 ├── arch-align/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← EARS 格式、Spec Mining 技术
+│   └── references/        ← EARS 格式、Spec Mining、UX Context 清单
 ├── arch-design/
 │   ├── SKILL.md
 │   ├── reference.md
-│   └── references/        ← ADR 指南、PoEAA、NFR、架构模式、数据库选型、examples
+│   └── references/        ← ADR 指南、PoEAA、NFR、架构模式、examples
 ├── arch-detail/
 │   ├── SKILL.md
 │   ├── reference.md
@@ -118,6 +157,16 @@ arch-skills/
     ├── SKILL.md
     ├── reference.md
     └── references/        ← 报告模板、修复引导、OWASP、批判推理、examples
+
+dx-skills/
+├── dx-prototype/
+│   └── SKILL.md
+├── dx-image-to-code/
+│   └── SKILL.md
+├── dx-url-to-code/
+│   └── SKILL.md
+└── dx-review/
+    └── SKILL.md
 ```
 
 ## 兼容性

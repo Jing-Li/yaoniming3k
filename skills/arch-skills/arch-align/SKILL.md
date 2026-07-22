@@ -1,7 +1,7 @@
 ---
 name: arch-align
 description: "Phase 1 concept alignment skill. Locks business consensus and unified terminology before any design work. Produces LANGUAGE.md + BRD.md via structured grilling dialogue. Supports Migration Mode (v2.1.0+) to reverse-engineer docs from existing code. Trigger when user says "/arch-align", "align terms", "grill the requirements", "build the dictionary", "start a new architecture", or asks to formalize bounded contexts before coding."
-version: 2.1.0
+version: 2.2.0
 ---
 
 # Phase 1 — Concept & Terminology Alignment (`/arch-align`)
@@ -62,7 +62,8 @@ Captures, in this order:
 2. **In / Out of scope** — bullet lists.
 3. **Open Questions** — anything still ambiguous, blocking `/arch-design`.
 4. **Business Overview** — holistic summary of the BC's complete business picture (see Step 3). Contains: core business flow, key participants, state machine, key business rules. Overwritten each round.
-5. **Version History** — removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
+5. **UX Context** *(optional, v2.2.0+)* — user experience layer clarification from Phase D grilling. Contains: target devices/platforms, visual constraints (brand/design system/tokens), key user journeys for frontend, interaction preferences, accessibility requirements. Only present when the BC has a frontend surface.
+6. **Version History** — removed. Change history is now tracked in `kanban/tasks/T{N}.md` per the [kanban-spec.md](../arch-conventions/references/kanban-spec.md).
 
 ### 3. `align/brds/` — Per-Round BRD Archives
 
@@ -87,6 +88,12 @@ Before overwriting `BRD.md`, archive the current version to `align/brds/brd-t{N}
    Focus: hidden business rules, edge cases, boundary conditions.
    Ask: failure modes, concurrency conflicts, valid/invalid state transitions, cardinality limits.
    Converges when: no more hidden rules can be surfaced.
+
+   **Phase D — UX Context** *(optional, v2.2.0+)*
+   Focus: user experience layer clarification for frontend design pipeline.
+   Ask: target devices/platforms (desktop / mobile / both), visual constraints (brand guidelines, design system, existing tokens), key user journeys requiring frontend design, interaction preferences, accessibility requirements.
+   Converges when: UX context is sufficient for dx pipeline entry. Skip if the BC has no frontend surface.
+   Record UX context findings in `BRD.md` §5 UX Context (new section). See [references/ux-context-guide.md](references/ux-context-guide.md) for the UX clarification checklist.
 
 **Optional — EARS-Guided Requirements Formalization (v1.3.0+):** When the user's requirements are vague (e.g., "handle errors", "process data"), guide formalization using EARS syntax:
 - Ubiquitous: `The system shall <action>`
