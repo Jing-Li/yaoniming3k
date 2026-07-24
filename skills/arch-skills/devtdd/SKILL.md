@@ -66,6 +66,20 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 10. **DOCUMENT OWNERSHIP BOUNDARIES**: devtdd is the **sole owner** of source code and test files. It may update `DESIGN.md` §5 task status and `module.md` §7 DoD checkboxes (owned by `/arch-detail`), but must NOT modify design content (entity definitions, port signatures, task descriptions). For `ARCHITECTURE.md` and `LANGUAGE.md` — devtdd may only **read** them; if inconsistencies are found during implementation, generate an AD routed to the appropriate owner skill (`/arch-design` for ARCHITECTURE.md, `/arch-align` for LANGUAGE.md).
 
+11. **OPENAPI CONTRACT GENERATION (Code-First, v1.10.0+)**: When a task implements or modifies the delivery layer (HTTP handlers / REST endpoints), devtdd MUST maintain a framework-agnostic OpenAPI declaration package alongside the code:
+    - **Pattern** (Harness-style): Create `internal/infra/http/openapi/` (or language equivalent) containing operation declarations that reference the real request/response structs via reflection. Use `github.com/swaggest/openapi-go/openapi3` (Go) or equivalent reflection-based library — do NOT bind to a specific HTTP framework.
+    - **CLI entry**: Register a hidden CLI subcommand (e.g., `./<binary> openapi`) that calls `Generate()` and marshals the spec to YAML on stdout.
+    - **Output target**: `detail/api-contracts/openapi.yaml` (the canonical location dx pipeline consumes).
+    - **Script dependency**: The `make openapi` target (owned by `/arch-ops`) invokes this CLI command and writes the output file. If `make openapi` or `scripts/gen-openapi.sh` does NOT exist yet, devtdd MUST write an **AD targeting arch-ops** requesting script creation:
+      ```
+      AD-O{N}: Missing `make openapi` / `scripts/gen-openapi.sh` for OpenAPI spec generation
+        Location: Makefile / scripts/
+        Requirement: Invoke `./<binary> openapi > detail/api-contracts/openapi.yaml`
+        (by devtdd, <date>)
+      ```
+    - **Timing**: Generate the OpenAPI declaration code as part of the delivery-layer task (not a separate task). Run `make openapi` (if available) after the delivery task goes GREEN to verify the spec generates cleanly.
+    - **DoD addition**: Every delivery-layer task's Definition of Done includes: "OpenAPI declaration updated; `make openapi` produces valid spec (or AD opened for arch-ops)."
+
 ---
 
 ## 🚶 Steps to Execute
@@ -244,6 +258,11 @@ Full protocol: [references/test-anti-patterns.md](references/test-anti-patterns.
 4. **Stub Adapter Tracking Sync**: If the completed task involved implementing or upgrading an adapter (e.g., RocketMQIntentAdapter, LocalFsManifestAdapter), check `DESIGN.md` §10 Stub Adapter Tracking table. If the adapter is still listed as "Stub", update its Status to "Implemented" and clear its TODO Items. This prevents the stub tracking table from drifting behind actual code progress.
 5. **ARCHITECTURE.md Sequence Diagram AD**: If the completed task changed code behavior (new/removed/renamed methods, new lifecycle steps), scan `ARCHITECTURE.md` §2.x Runtime Interaction diagrams. If stale, generate an AD routed to `/arch-design`. (Per Hard Constraint #7)
 6. **DESIGN.md §6 Composition Root Example Sync**: If the completed task changed constructor signatures, DI wiring order, or composition root steps, update `DESIGN.md` §6 code example. (Per Hard Constraint #8)
+7. **OpenAPI Contract Sync (v1.10.0+)**: If the completed task touched the delivery layer (HTTP handlers):
+   a. Verify `internal/infra/http/openapi/` declarations are updated with new/changed endpoints.
+   b. If `make openapi` exists → run it → verify `detail/api-contracts/openapi.yaml` is valid (non-empty, parseable).
+   c. If `make openapi` does NOT exist → write AD targeting `/arch-ops` (Per Hard Constraint #11).
+   d. If the task renamed/removed endpoints → grep `detail/api-contracts/openapi.yaml` for stale paths and regenerate.
 
 ### Step 7: Hand-off Trigger
 

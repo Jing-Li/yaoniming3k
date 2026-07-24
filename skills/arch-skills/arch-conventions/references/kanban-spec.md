@@ -345,7 +345,7 @@ Key rules:
 ## 5. Pipeline Order and Dependencies (管线顺序)
 
 ```
-arch-align → arch-design → arch-detail → devtdd → arch-review
+arch-align → arch-design → arch-detail → devtdd → arch-ops → arch-review
 ```
 
 ### Dependency Rules
@@ -355,7 +355,8 @@ arch-align → arch-design → arch-detail → devtdd → arch-review
 - arch-design requires arch-align done for T{N}
 - arch-detail requires arch-design done for T{N}
 - devtdd requires arch-detail done for T{N}
-- arch-review requires devtdd done for T{N}
+- arch-ops requires devtdd done for T{N}
+- arch-review requires at least one upstream skill done for T{N} (can audit any completed phase; full audit requires devtdd done)
 
 ### Parallel Work
 

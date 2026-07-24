@@ -60,6 +60,7 @@ next_task_id: 0
 | arch-design | | | |
 | arch-detail | | | |
 | devtdd | | | |
+| arch-ops | | | |
 | arch-review | | | |
 
 ## Archive

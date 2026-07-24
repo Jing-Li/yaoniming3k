@@ -42,7 +42,7 @@ Reproduce a reference image as a real, runnable frontend — verified by screens
 - The **reference image(s)** (path).
 - **Target stack**: confirm via AskUserQuestion; default to matching the repo, else React + Vite + Tailwind + TS.
 - `arch-align` BRD.md §5 UX Context (visual constraints, design system).
-- `detail/api-contracts/` — OpenAPI contracts for data shape awareness.
+- `detail/api-contracts/openapi.yaml` — Code-first OpenAPI 3.x spec (generated from real code by devtdd, see `make openapi`).
 
 ## Workflow
 

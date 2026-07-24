@@ -88,6 +88,7 @@ Write/update shell scripts in `<bc-root>/scripts/`. See [references/script-templ
 | `start.sh` | Compile (if needed) → start process | Check if already running → warn + exit 0 |
 | `stop.sh` | Send SIGINT → wait graceful shutdown | Check if not running → warn + exit 0 |
 | `status.sh` | Process liveness + port reachability | N/A (read-only) |
+| `gen-openapi.sh` | Generate OpenAPI spec from binary | Idempotent (overwrites output file) |
 
 **Common conventions**:
 - Shebang: `#!/usr/bin/env bash`
@@ -101,6 +102,31 @@ Write/update shell scripts in `<bc-root>/scripts/`. See [references/script-templ
 - `init-db.sh` — database migration/initialization
 - `seed.sh` — seed data for development
 - `health.sh` — HTTP health check
+- `gen-openapi.sh` — generate OpenAPI spec from code (v1.1.0+, see below)
+
+**OpenAPI generation script (v1.1.0+)**:
+
+When devtdd implements a delivery layer with an OpenAPI CLI subcommand (e.g., `./<binary> openapi`), arch-ops MUST create `scripts/gen-openapi.sh` and a corresponding `make openapi` target:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+# Generate OpenAPI spec from compiled binary
+BINARY="${BINARY:-./bin/<bc-slug>}"
+OUTPUT="${OUTPUT:-docs/bc/<slug>/detail/api-contracts/openapi.yaml}"
+
+mkdir -p "$(dirname "$OUTPUT")"
+"$BINARY" openapi > "$OUTPUT"
+echo "OpenAPI spec written to $OUTPUT"
+```
+
+Makefile target:
+```makefile
+openapi: build ## Generate OpenAPI spec from code
+	@bash scripts/gen-openapi.sh
+```
+
+This script is triggered by devtdd ADs (AD-O{N}) or during normal arch-ops execution when a delivery layer exists.
 
 ### Step 4: Makefile Generation
 

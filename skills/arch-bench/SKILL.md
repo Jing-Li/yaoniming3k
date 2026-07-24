@@ -36,7 +36,7 @@ The entire benchmark runs with **only 2 human confirmations**.
     │
     ▼
  Phase 2: Pipeline Orchestration (Pure Caller)
-    Invoke: /arch-init → /arch-align → /arch-design → /arch-detail → /devtdd → /arch-review
+    Invoke: /arch-init → /arch-align → /arch-design → /arch-detail → /devtdd → /arch-ops → /arch-review
     Each skill: "工作目录 v{N}/，用户配置见 bench.yaml"
     Skills self-chain via filesystem. Bench does NOT verify or interfere.
     │
@@ -107,7 +107,8 @@ This is the ONLY thing bench communicates to each skill. No data passing, no pre
 | 3 | `/arch-design` | §4 NFR + §5 Tech Stack + §6 Design Decisions |
 | 4 | `/arch-detail` | §3 Domain (glossary, rules) |
 | 5 | `/devtdd` | §3 Domain (rules) + §5 Tech Stack |
-| 6 | `/arch-review` | §3-§7 (all) |
+| 6 | `/arch-ops` | §5 Tech Stack (scripts, Makefile, openapi) |
+| 7 | `/arch-review` | §3-§7 (all) |
 
 **Skill self-chaining via filesystem**:
 Skills are self-contained closed-loop stacks. They naturally chain by reading each other's outputs:
@@ -116,8 +117,9 @@ arch-init → AGENTS.md, BOARD.md
 arch-align → reads BOARD.md → produces LANGUAGE.md, BRD.md → updates BOARD
 arch-design → reads BRD.md, LANGUAGE.md → produces ARCHITECTURE.md, ADRs → updates BOARD
 arch-detail → reads ARCHITECTURE.md, ADRs → produces DESIGN.md, modules/ → updates BOARD
-devtdd → reads DESIGN.md, modules/ → produces src/, tests/ → updates BOARD
-arch-review → reads everything → produces REVIEW.md → updates BOARD
+devtdd → reads DESIGN.md, modules/ → produces src/, tests/, api-contracts/ → updates BOARD
+arch-ops → reads code + DESIGN.md §8 → produces OPS.md, scripts/, Makefile → updates BOARD
+arch-review → reads everything → writes ADs + score to T{N}.md → updates BOARD
 ```
 Bench does NOT orchestrate this data flow. It happens naturally because each skill's SKILL.md already defines "read upstream docs first".
 
@@ -160,8 +162,8 @@ Bench does NOT check outputs after each step. All quality evaluation happens in 
    | `/arch-align` | `align/LANGUAGE.md`, `align/BRD.md` |
    | `/arch-design` | `design/ARCHITECTURE.md`, `design/adr/ADR-*.md` |
    | `/arch-detail` | `detail/DESIGN.md`, `detail/modules/*.md` |
-   | `/devtdd` | `src/**`, `tests/**`, config files |
-   | `/arch-review` | `review/REVIEW.md` |
+   | `/devtdd` | `src/**`, `tests/**`, config files, `detail/api-contracts/openapi.yaml` |
+   | `/arch-review` | `kanban/tasks/T{N}.md` (AD entries + score in Change History) |
 
 3. Evaluate against [references/rubric-arch.md](references/rubric-arch.md) (Architecture Score)
 4. Evaluate against [references/rubric-pipeline.md](references/rubric-pipeline.md) (Pipeline Health Score)
@@ -268,8 +270,8 @@ Read `evolution` section from bench.yaml:
 | arch-align | LANGUAGE.md, BRD.md | ✅/❌ | |
 | arch-design | ARCHITECTURE.md, ADR-*.md | ✅/❌ | |
 | arch-detail | DESIGN.md, modules/*/module.md | ✅/❌ | |
-| devtdd | src/**, tests/**, config files | ✅/❌ | |
-| arch-review | review/REVIEW.md | ✅/❌ | |
+| devtdd | src/**, tests/**, config files, api-contracts/openapi.yaml | ✅/❌ | |
+| arch-review | T{N}.md (ADs + score in Change History) | ✅/❌ | |
 
 ## 5. Skill Improvement Suggestions
 

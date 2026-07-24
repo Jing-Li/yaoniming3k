@@ -40,7 +40,7 @@ Turn static screens into a working clickable flow that demonstrates the experien
 ## Inputs
 - The **screens/components** to connect (from upstream dx skill).
 - The **flow to demonstrate**: happy path + key states (from BRD.md §5 UX Context).
-- `detail/api-contracts/` — OpenAPI contracts for API stub shapes.
+- `detail/api-contracts/openapi.yaml` — Code-first OpenAPI 3.x spec for API stub shapes (generated from real code by devtdd).
 
 ## Workflow
 
