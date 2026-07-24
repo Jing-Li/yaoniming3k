@@ -16,7 +16,7 @@ Reproduce a reference image as a real, runnable frontend — verified by screens
 > |---|---|
 > | **Upstream** | `arch-align` (BRD.md §5 UX Context) + `arch-detail` (OpenAPI contracts) + reference image/mockup |
 > | **Downstream** | `dx-prototype` (wire interactivity) |
-> | **Owns** | Frontend source code, `dx/screens/` |
+> | **Owns** | Frontend source code, `dx/screens/`, `dx/design-system.md` |
 > | **Does** | Extract design system from image, implement frontend, screenshot-compare, iterate to close gaps |
 > | **Does NOT** | Wire interactions/flow (that's dx-prototype), write backend code, deploy |
 
@@ -46,13 +46,21 @@ Reproduce a reference image as a real, runnable frontend — verified by screens
 
 ## Workflow
 
+0. **Generate design system** (v1.1.0+):
+   a. Read `dx-conventions/references/design-tokens-spec.md` for the canonical structure.
+   b. If `dx/design-system.md` already exists → read it, skip to Step 1.
+   c. From the reference image, extract: palette, typography, spacing, layout, components.
+   d. Read `dx-conventions/references/anti-slop-rules.md` → generate the Anti-Patterns section.
+   e. Determine Signature Element (the one memorable thing) + Motion Tier.
+   f. Write `dx/design-system.md` following the design-tokens-spec.md format.
 1. **Inspect** the image with a vision/read tool. Inventory every meaningful element. Extract the design system: layout grid, type scale, spacing rhythm, palette, components, radii, shadows.
-2. **Reuse before inventing**: if adapting an existing project, read its components/tokens/fonts first and use them.
-3. **First pass**: build to match the **primary viewport** as closely as possible. Don't chase responsive yet.
-4. **Capture**: run the app, screenshot at the reference's exact dimensions via a browser-automation tool.
-5. **Compare & list mismatches** in priority order: layout → type → spacing → color → icons.
-6. **Iterate** until differences are minor and explainable. *Then* handle responsive (tablet/mobile).
-7. **Missing assets**: use supplied files; generate raster assets with an image tool; or use clearly-marked placeholders + a note.
+2. **Initialize project**: Read `dx-conventions/references/component-stack.md`. If no existing project → scaffold per the recommended stack (React+TS+Vite+Tailwind+shadcn/ui). If project exists → reuse. Translate `dx/design-system.md` tokens into CSS variables + Tailwind config.
+3. **Reuse before inventing**: if adapting an existing project, read its components/tokens/fonts first and use them.
+4. **First pass**: build to match the **primary viewport** as closely as possible. Don't chase responsive yet.
+5. **Capture**: run the app, screenshot at the reference's exact dimensions via a browser-automation tool.
+6. **Compare & list mismatches** in priority order: layout → type → spacing → color → icons.
+7. **Iterate** until differences are minor and explainable. *Then* handle responsive (tablet/mobile).
+8. **Missing assets**: use supplied files; generate raster assets with an image tool; or use clearly-marked placeholders + a note.
 
 ## Quality bar / Definition of done
 - Implementation screenshot ≈ reference at the target viewport; remaining diffs are minor and *explained*.

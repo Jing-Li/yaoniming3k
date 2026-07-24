@@ -36,10 +36,10 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 3. **ARCHITECTURE BOUNDARY ENFORCEMENT**: After every GREEN cycle, verify:
    - Domain layer has zero external imports (only stdlib)
-   - Application layer (`internal/app/`) does NOT import any infrastructure package
+   - Application layer does NOT import any infrastructure package
    - Port interfaces live in consumer-adjacent packages, NOT in adapter packages
    - No proto/driver types leak past adapter boundaries
-   If any violation is detected, STOP and refactor before proceeding. See [reference.md](reference.md) §4 for the full checklist.
+   Layer directory names follow the canonical layout declared in DESIGN.md §3 (see [directory-layouts.md](../arch-detail/references/directory-layouts.md) for per-language mapping). If any violation is detected, STOP and refactor before proceeding. See [reference.md](reference.md) §4 for the full checklist.
 
 4. **VERTICAL SLICE ONLY**: Each cycle implements ONE tracer bullet end-to-end: Domain → Port → UseCase → Adapter → (optional) Delivery. HORIZONTAL slicing (all tests first, then all code) is **FORBIDDEN**.
 

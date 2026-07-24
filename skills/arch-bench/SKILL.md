@@ -1,7 +1,7 @@
 ---
 name: arch-bench
 description: Skill Pipeline Evaluation Harness. Gathers case configuration from user, then orchestrates arch-skills pipeline execution without interference (skills read bench.yaml directly), injects mutation traps post-pipeline, evaluates outputs against rubrics, and generates version-comparison reports. Only 2 human touchpoints: confirm config, confirm report. Trigger when user says "/arch-bench", "run benchmark", "evaluate skills".
-version: 2.2.0
+version: 2.3.0
 ---
 
 # Arch-Bench Skill (Skill Pipeline Evaluation Harness)
@@ -157,7 +157,7 @@ Bench does NOT check outputs after each step. All quality evaluation happens in 
 2. **Artifact completeness scan** — verify all expected outputs exist and are non-empty:
 
    | Skill | Expected Outputs |
-   |-------|-----------------|
+   |-------|------------------|
    | `/arch-init` | AGENTS.md, `docs/bc/{slug}/kanban/BOARD.md` |
    | `/arch-align` | `align/LANGUAGE.md`, `align/BRD.md` |
    | `/arch-design` | `design/ARCHITECTURE.md`, `design/adr/ADR-*.md` |
@@ -165,17 +165,38 @@ Bench does NOT check outputs after each step. All quality evaluation happens in 
    | `/devtdd` | `src/**`, `tests/**`, config files, `detail/api-contracts/openapi.yaml` |
    | `/arch-review` | `kanban/tasks/T{N}.md` (AD entries + score in Change History) |
 
-3. Evaluate against [references/rubric-arch.md](references/rubric-arch.md) (Architecture Score)
-4. Evaluate against [references/rubric-pipeline.md](references/rubric-pipeline.md) (Pipeline Health Score)
-5. Score mutation detection results from Phase 2.5
-6. Generate `bench-{name}/reports/cycle-{N}.md` using the standard report format
-7. Update `bench-{name}/EVOLUTION.md` with this cycle's scores
-8. Check convergence conditions (§8 of bench.yaml)
-9. **Present report to user and wait for confirmation**
+3. **Per-Assertion Scoring** — evaluate each rubric item independently:
+   - Read [references/rubric-arch.md](references/rubric-arch.md) and [references/rubric-pipeline.md](references/rubric-pipeline.md)
+   - For EACH assertion (checklist item), record: `PASS` / `FAIL` + evidence (file:line or content excerpt)
+   - Aggregate per dimension → dimension score
+   - No partial credit: an assertion either passes with evidence or fails
+
+4. **A/B Baseline Comparison** — measure pipeline value-add:
+   - **With-pipeline**: the full pipeline output in `bench-{name}/v{N}/` (scored above)
+   - **Without-pipeline**: a single-shot baseline — invoke ONE skill call with the entire bench.yaml context, asking it to produce the same deliverables in one pass (no pipeline chaining, no multi-phase decomposition)
+   - Score the baseline output against the SAME rubrics
+   - Report delta: `pipeline_score - baseline_score` per dimension
+   - If delta ≤ 0 for any dimension → flag as "pipeline overhead without benefit" in §5 Suggestions
+
+5. **Variance Analysis** — measure stability:
+   - Run the SAME case 3 times (v{N}, v{N}-r1, v{N}-r2)
+   - For each run, record per-dimension scores
+   - Calculate: mean, standard deviation (σ) per dimension
+   - If σ > 5 for any dimension → flag as "unstable" in report
+   - Use the BEST of 3 runs as the official cycle score (report all 3)
+
+6. Score mutation detection results from Phase 2.5
+7. Generate `bench-{name}/reports/cycle-{N}.md` using the standard report format
+8. Update `bench-{name}/EVOLUTION.md` with this cycle's scores
+9. Check convergence conditions (§8 of bench.yaml)
+10. **Present report to user and wait for confirmation**
 
 **Hard constraints**:
 - Scoring must cite specific evidence (file path + line or content excerpt)
 - Never give a score without justification
+- Per-assertion results must be binary (PASS/FAIL) — no partial credit
+- A/B baseline uses identical rubrics — only the generation method differs
+- Variance runs use identical bench.yaml — no config changes between runs
 - Mutation detection results must be binary (detected/not detected) with evidence
 - Convergence check must follow §8 parameters exactly
 - After user confirms report → suggest next action (upgrade which skills, or declare converged)
@@ -238,9 +259,22 @@ Read `evolution` section from bench.yaml:
 
 ## 1. Architecture Score: {N}/100
 
-| Dimension | Score | Evidence |
-|-----------|-------|----------|
-| ... | /20 | file:line or excerpt |
+### Per-Assertion Detail
+
+| Dimension | Assertion | Result | Evidence |
+|-----------|-----------|--------|----------|
+| A1 正确性 | {assertion text} | PASS/FAIL | file:line or excerpt |
+| ... | ... | ... | ... |
+
+### Dimension Summary
+
+| Dimension | Score | Assertions Passed |
+|-----------|-------|-------------------|
+| A1 正确性 | /25 | {n}/{total} |
+| A2 架构边界 | /25 | {n}/{total} |
+| A3 链路一致性 | /25 | {n}/{total} |
+| A4 可维护性 | /15 | {n}/{total} |
+| A5 深层健康度 | /10 | {n}/{total} |
 
 ### Mutation Detection: {detected}/{total}
 
@@ -249,8 +283,42 @@ Read `evolution` section from bench.yaml:
 
 ## 2. Pipeline Health Score: {N}/100
 
-| Dimension | Score | Evidence |
-|-----------|-------|----------|
+### Per-Assertion Detail
+
+| Dimension | Assertion | Result | Evidence |
+|-----------|-----------|--------|----------|
+| P1 产物定位合规 | {assertion text} | PASS/FAIL | file:line or excerpt |
+| ... | ... | ... | ... |
+
+### Dimension Summary
+
+| Dimension | Score | Assertions Passed |
+|-----------|-------|-------------------|
+| P1 产物定位合规 | /20 | {n}/{total} |
+| P2 增量正确性 | /20 | {n}/{total} |
+| P3 跨阶段信息传导 | /20 | {n}/{total} |
+| P4 Skill 自身规范合规 | /20 | {n}/{total} |
+| P5 AD 闭环完整性 | /20 | {n}/{total} |
+
+## 2b. A/B Baseline Comparison
+
+| Dimension | Pipeline Score | Baseline Score | Delta | Verdict |
+|-----------|---------------|----------------|-------|----------|
+| A1 正确性 | /25 | /25 | +/-N | pipeline wins / tie / baseline wins |
+| ... | ... | ... | ... | ... |
+| **Combined** | /100 | /100 | +/-N | |
+
+> Baseline method: single-shot generation (no pipeline chaining) with identical bench.yaml context.
+
+## 2c. Variance Analysis (3 Runs)
+
+| Dimension | Run 1 | Run 2 | Run 3 | Mean | σ | Stable? |
+|-----------|-------|-------|-------|------|---|----------|
+| A1 正确性 | | | | | | ✅/⚠️ |
+| ... | | | | | | |
+| **Combined** | | | | | | |
+
+> Official cycle score = best of 3 runs. σ > 5 = unstable (flagged).
 
 ## 3. Architecture Debt
 
@@ -280,9 +348,11 @@ Read `evolution` section from bench.yaml:
 
 ## 6. Summary
 
-- **Architecture Score**: {N}/100
-- **Pipeline Health Score**: {N}/100
+- **Architecture Score**: {N}/100 (best of 3 runs)
+- **Pipeline Health Score**: {N}/100 (best of 3 runs)
 - **Combined**: {N}/100
+- **Baseline Delta**: +/-{N} (pipeline vs single-shot)
+- **Stability**: {N} dimensions stable, {M} unstable (σ > 5)
 - **Trend**: ↑ / → / ↓
 - **Convergence**: Yes/No (N cycles remaining)
 - **Next Action**: (specific recommendation)

@@ -213,3 +213,4 @@ For API contract standards and security checkpoint (v3.1.0+), see the `reference
 - [references/api-contract-standards.md](references/api-contract-standards.md) — OpenAPI 3.1 templates + RFC 7807 + pagination + versioning
 - [references/security-checkpoint.md](references/security-checkpoint.md) — pre-implementation security review checklist
 - [references/examples.md](references/examples.md) — Golden examples: DESIGN.md index, module.md, port interface, task DoD
+- [references/directory-layouts.md](references/directory-layouts.md) — **Canonical 5-layer directory templates** per language (Go, Java, Python, TypeScript, Rust, C#). Single source of truth for DESIGN.md §3 Package Layout generation.

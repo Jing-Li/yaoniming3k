@@ -102,60 +102,99 @@ Two-mode UX quality review skill. The core question is always "how good is this 
 - After `dx-prototype` produces a working prototype, before sharing with stakeholders.
 - After any fix cycle (AD resolution) to re-verify.
 
-### Workflow
+### Workflow (3-Pass Audit, v1.1.0+)
+
+Post-mode runs THREE passes in sequence. All three are mandatory. Results are combined into a single report sorted by priority.
+
+#### Pass 1: Visual Conformance
+
 1. **Capture** the implementation via browser-automation screenshots at the same viewport as the reference.
 2. **Compare** against the design spec (reference image, mockup, or url-dna.md).
-3. **Check** five fidelity surfaces (see below).
-4. **Verdict**: PASS or FAIL.
-5. **If FAIL**: write ADs to `kanban/tasks/T{N}.md`, route each issue to the responsible skill.
-6. **If PASS**: mark review complete, downstream can proceed to `arch-ops`.
+3. **Check** five fidelity surfaces:
+   - Layout — grid, spacing, alignment, component positioning
+   - Typography — font family, size, weight, line-height, letter-spacing
+   - Color — backgrounds, text colors, borders, semantic colors
+   - Components — button styles, input states, card structures, nav patterns
+   - Behavior — hover states, transitions, loading states, error states
+4. **Anti-slop detection** (v1.1.0+): Read `dx-conventions/references/anti-slop-rules.md`. Check output against the 3 Default Looks and Generic Anti-Patterns. Hit with brief not requesting it → P0/P1 DRIFT.
+5. **Design token consistency** (v1.1.0+): Compare code color values, font families, and spacing against `dx/design-system.md`. Undeclared values → P1 DRIFT. Anti-pattern violation → P0 DRIFT.
 
-### Five Fidelity Surfaces
-1. **Layout** — grid, spacing, alignment, component positioning
-2. **Typography** — font family, size, weight, line-height, letter-spacing
-3. **Color** — backgrounds, text colors, borders, semantic colors
-4. **Components** — button styles, input states, card structures, nav patterns
-5. **Behavior** — hover states, transitions, loading states, error states
+#### Pass 2: Performance Audit (v1.1.0+)
+
+1. Read `dx-conventions/references/performance-rules.md`.
+2. Scan all `.tsx` / `.jsx` / `.ts` / `.js` files in the generated frontend.
+3. Check rules in priority order (P1 first):
+   - P1 hit → BLOCKING (must fix)
+   - P2 hit → WARNING (should fix)
+   - P3/P4 hit → INFO (record)
+4. Verdict: FAIL if ≥1 BLOCKING or ≥3 WARNINGs. Otherwise PASS.
+
+#### Pass 3: Interaction Verification (v1.1.0+)
+
+1. Read `dx-conventions/references/playwright-patterns.md`.
+2. Based on page characteristics, select test patterns:
+   - All pages: Pattern 1 (Load) + Pattern 4 (Responsive)
+   - Has navigation: + Pattern 2 (Navigation)
+   - Has forms: + Pattern 3 (Form)
+   - Has data fetching: + Pattern 5 (States)
+3. Generate and execute Playwright tests.
+4. Each failed test = one DRIFT item:
+   - Pattern 1/2/3 failure → P0 (broken = not deliverable)
+   - Pattern 4/5 failure → P1
+5. Verdict: FAIL if any P0. Otherwise PASS.
+
+### Overall Verdict
+
+- **PASS**: All 3 passes pass (no P0/P1 blocking items).
+- **FAIL**: Any pass fails. Write ADs for each blocking item.
 
 ### Severity Scale
-- **P0 (Blocking)** — visually broken, wrong layout, missing critical element
-- **P1 (High)** — noticeable drift in type/color/spacing that undermines the design
-- **P2 (Medium)** — minor inconsistency, only visible on close inspection
-- **P3 (Low)** — cosmetic polish, acceptable to ship
+- **P0 (Blocking)** — visually broken, wrong layout, missing critical element, anti-slop default, page doesn't load, interaction broken
+- **P1 (High)** — noticeable drift in type/color/spacing, performance critical hit, missing state
+- **P2 (Medium)** — minor inconsistency, performance warning, only visible on close inspection
+- **P3 (Low)** — cosmetic polish, performance info, acceptable to ship
 
 ### AD Routing on FAIL
 Each issue becomes an Architecture Discrepancy in `kanban/tasks/T{N}.md`:
-- Visual drift (layout/type/color/components) → AD routed to `dx-image-to-code` or `dx-url-to-code`
+- Visual drift (layout/type/color/components/anti-slop) → AD routed to `dx-image-to-code` or `dx-url-to-code`
 - Interaction/behavior drift → AD routed to `dx-prototype`
-- After fixes applied → re-run post-mode review
+- Performance issues → AD routed to `dx-image-to-code` / `dx-prototype` (whoever wrote the code)
+- After fixes applied → re-run post-mode review (all 3 passes)
 
 ### Output: `dx/review/conformance-{date}.md`
 
 ```markdown
-# Conformance Review: {subject}
+# DX Review Report: {subject}
 
 ## Verdict: PASS / FAIL
 
 ## Reference
 - Design spec: {image path or url-dna.md reference}
+- Design system: dx/design-system.md
 - Viewport: {dimensions}
 
-## Surface-by-Surface Results
+## Summary
+| Pass | Status | Details |
+|------|--------|--------|
+| Visual Conformance | PASS/FAIL | {N} drift items |
+| Performance Audit | PASS/FAIL | {N} blocking, {M} warnings |
+| Interaction Verification | PASS/FAIL | {N} flows tested, {M} failed |
 
-| Surface | Status | Drift Details | Severity |
-|---------|--------|---------------|----------|
-| Layout  | PASS/FAIL | {details} | P{N} |
-| Typography | PASS/FAIL | {details} | P{N} |
-| Color | PASS/FAIL | {details} | P{N} |
-| Components | PASS/FAIL | {details} | P{N} |
-| Behavior | PASS/FAIL | {details} | P{N} |
+## Drift List (sorted by priority)
+| # | Pass | Severity | Item | Location | Fix |
+|---|------|----------|------|----------|-----|
+| 1 | Visual | P0 | Anti-slop: matches "Dark Neon" default | global | Revise palette per design-system.md |
+| 2 | Performance | P1 | bundle-barrel-imports | src/components/index.ts | Import directly |
+| 3 | Interaction | P0 | Form submit → no feedback | /contact | Add success state |
 
 ## ADs Generated
 - AD-{N}: {title} → routed to {skill}
-- AD-{N}: {title} → routed to {skill}
 
-## Notes
-- {any context about acceptable deviations}
+## Screenshots
+- {viewport screenshots + failure screenshots}
+
+## Recommendations
+- {top 3 actionable improvements}
 ```
 
 ---

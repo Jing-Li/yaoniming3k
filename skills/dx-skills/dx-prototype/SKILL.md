@@ -41,13 +41,14 @@ Turn static screens into a working clickable flow that demonstrates the experien
 - The **screens/components** to connect (from upstream dx skill).
 - The **flow to demonstrate**: happy path + key states (from BRD.md §5 UX Context).
 - `detail/api-contracts/openapi.yaml` — Code-first OpenAPI 3.x spec for API stub shapes (generated from real code by devtdd).
+- `dx/design-system.md` — Design baseline (palette/typography/spacing/motion). All style decisions derive from this file. Do NOT re-invent colors, fonts, or spacing.
 
 ## Workflow
 
 1. **Map the flow graph**: screens are nodes, actions are edges (click → navigate, submit → state change). Write it down before wiring.
 2. **Wire routing/navigation** between screens.
 3. **Add interaction states**: hover, active, disabled, loading, empty, error, success. Cover at least the **happy path + one error state** (the most-skipped, most-important state).
-4. **Stub data** so it's clickable without a backend; clearly mark where real data plugs in. Align stub shapes with `detail/api-contracts/` OpenAPI specs.
+4. **Stub data** so it's clickable without a backend; clearly mark where real data plugs in. Align stub shapes with `detail/api-contracts/` OpenAPI specs. Style decisions (colors, fonts, spacing, motion) MUST align with `dx/design-system.md` — do not re-invent or drift from the locked design baseline.
 5. **Verify**: drive the whole happy path in a browser-automation tool — click every step, confirm nothing dead-ends. Fix what breaks.
 6. Keep it **runnable with one command**.
 

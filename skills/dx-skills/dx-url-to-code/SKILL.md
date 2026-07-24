@@ -16,7 +16,7 @@ Reproduce a live website as a local, runnable frontend that looks and behaves li
 > |---|---|
 > | **Upstream** | `arch-align` (BRD.md §5 UX Context) + `arch-detail` (OpenAPI contracts) + live URL |
 > | **Downstream** | `dx-prototype` (wire interactivity) |
-> | **Owns** | Frontend source code, `dx/screens/`, `dx/url-dna.md` |
+> | **Owns** | Frontend source code, `dx/screens/`, `dx/url-dna.md`, `dx/design-system.md` |
 > | **Does** | Fetch page, extract design DNA, rebuild components, screenshot-compare, iterate |
 > | **Does NOT** | Copy backend logic, clone auth/API behavior, wire interactivity (that's dx-prototype) |
 
@@ -47,6 +47,10 @@ Reproduce a live website as a local, runnable frontend that looks and behaves li
 
 ## Workflow
 
+0. **Generate design system** (v1.1.0+):
+   a. Read `dx-conventions/references/design-tokens-spec.md` for the canonical structure.
+   b. If `dx/design-system.md` already exists → read it, skip to Step 1.
+   c. (Deferred to Step 3b — design system is generated AFTER extracting url-dna.md from real CSS.)
 1. **Fetch & inspect** the page via a browser-automation tool. Scroll to capture the full page (multiple screenshots if needed). Read the DOM to extract structure.
 2. **Extract the Design DNA** — read real CSS, measure real spacing, identify the design system:
    - Typography: fonts, sizes, weights, line-heights
@@ -55,11 +59,13 @@ Reproduce a live website as a local, runnable frontend that looks and behaves li
    - Components: buttons, inputs, cards, nav patterns
    - Layout: grid system, breakpoints, container widths
    - Assets: icons, images, logos
-3. **Write `url-dna.md`** — the extracted design system, reusable for future reference.
-4. **Download assets** — fonts, icons, images. Save to `dx/assets/`.
-5. **Build components** — translate the extracted design into clean components in the target stack. Match the structure, not the raw HTML.
-6. **Screenshot compare** — capture your build at the same viewport as the source. Diff and iterate until gaps are minor and explained.
-7. **Handle responsive** — after the primary viewport matches, adapt for other breakpoints.
+3. **Write `url-dna.md`** — the extracted design system (raw data), reusable for future reference.
+   3b. **Generate `dx/design-system.md`** (v1.1.0+): Distill url-dna.md into design decisions per `dx-conventions/references/design-tokens-spec.md` format. Read `anti-slop-rules.md` → generate Anti-Patterns section. Determine Signature Element + Motion Tier.
+4. **Initialize project**: Read `dx-conventions/references/component-stack.md`. If no existing project → scaffold per recommended stack. If project exists → reuse. Translate design-system.md tokens into CSS variables + Tailwind config.
+5. **Download assets** — fonts, icons, images. Save to `dx/assets/`.
+6. **Build components** — translate the extracted design into clean components in the target stack. Match the structure, not the raw HTML.
+7. **Screenshot compare** — capture your build at the same viewport as the source. Diff and iterate until gaps are minor and explained.
+8. **Handle responsive** — after the primary viewport matches, adapt for other breakpoints.
 
 ## Standard Output: `dx/url-dna.md`
 
