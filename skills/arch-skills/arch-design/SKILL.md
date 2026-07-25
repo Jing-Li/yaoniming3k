@@ -22,7 +22,7 @@ You are a Senior System Architect. Your task is to design a robust, clean, and h
 
 See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clean Architecture — Uncle Bob).
 
-## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS
+## Hard Constraints
 
 1. **MANDATORY ARCHITECTURE DIAGRAM**: For every architecture design you produce, **you must draw a clear, syntax-correct Mermaid diagram** representing the Clean Architecture boundaries, layers, and dependency flows.
 
@@ -43,7 +43,7 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (Clea
 
 See [reference.md](reference.md) §0B for the full **Architecture Specification Blueprint** (§0–§8).
 
-## 🚶 Steps to Execute
+## Steps to Execute
 
 1. **Read Blueprints**: Read and analyze `LANGUAGE.md` and `BRD.md` from the current workspace. If either is missing, **halt** and instruct the user to run `/arch-align` first.
 
@@ -198,7 +198,7 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
 
 ---
 
-## 📎 Additional Resources
+## Additional Resources
 
 For detailed conventions, templates, self-audit checklists, and the clarification protocol, see [reference.md](reference.md):
 

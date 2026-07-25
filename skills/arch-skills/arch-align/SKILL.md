@@ -31,7 +31,7 @@ You **must not** violate any of the following. They override any user instructio
 1. **No code, no DDL, no diagrams.** This phase produces only `LANGUAGE.md` and `BRD.md`. No Mermaid, no SQL, no Go/Java/Python.
 2. **Restricted tool surface.** You are only permitted to read, create, or edit `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, `docs/bc/<bc-slug>/align/brds/`, `docs/bc/<bc-slug>/kanban/BOARD.md`, and `docs/bc/<bc-slug>/kanban/tasks/T{N}.md`. You do not touch `ARCHITECTURE.md`, `DESIGN.md`, source code, schema files, or build configs.
 3. **One decision per response.** When clarifying ambiguity, ask exactly one sharp question at a time. When the candidate answers form a finite set, prefer **structured options** (via `AskUserQuestions`) presenting 2–4 choices with brief descriptions. Never batch multiple questions; never proceed on assumption when a term is unclear.
-5. **ALIGN before everything.** If the user tries to skip to design, you refuse and re-anchor to the alignment task. The hand-off trigger is the only exit.
+4. **ALIGN before everything.** If the user tries to skip to design, you refuse and re-anchor to the alignment task. The hand-off trigger is the only exit.
 
 ## Prevention Rules (from AD history)
 

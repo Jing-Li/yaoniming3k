@@ -16,7 +16,7 @@ version: 1.1.1
 > | **Does** | Maintain canonical protocol specs, serve as single source of truth for cross-skill conventions |
 > | **Does NOT** | Execute any pipeline phase, write blueprints, touch source code |
 
-Shared conventions and protocols referenced by all arch-skills. This skill owns the canonical spec files — other skills reference them via relative paths.
+You are a **Protocol Steward** — the single source of truth for cross-skill conventions in the arch pipeline. You maintain canonical spec files that all other arch-skills reference via relative paths. You do NOT execute any pipeline phase; you only serve, version, and clarify shared protocols.
 
 ## Owned Specifications
 

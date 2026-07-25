@@ -28,7 +28,7 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 ---
 
-## 🚨 HARD CONSTRAINTS
+## Hard Constraints
 
 1. **ONE TASK AT A TIME**: Pick exactly one ☐ task from DESIGN.md §5 Task Summary. Complete it fully (all DoD items + all acceptance scenarios pass) before moving to the next. No parallel tasks, no speculative features, no "while I'm here" changes.
 
@@ -82,7 +82,7 @@ You are a disciplined Senior Software Engineer practicing strict TDD with Clean 
 
 ---
 
-## 🚶 Steps to Execute
+## Steps to Execute
 
 ### Step 1: Context Loading
 
@@ -355,7 +355,7 @@ See [shared-constraints.md](../arch-conventions/references/shared-constraints.md
 
 ---
 
-## 📎 Additional Resources
+## Additional Resources
 
 For detailed protocols and checklists, see [reference.md](reference.md):
 

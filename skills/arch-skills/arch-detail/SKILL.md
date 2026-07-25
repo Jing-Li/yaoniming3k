@@ -11,7 +11,7 @@ version: 3.3.1
 > | | |
 > |---|---|
 > | **Upstream** | `/arch-design` (ARCHITECTURE.md + ADRs) |
-> | **Downstream** | `/devtdd` (consumes DESIGN.md + module.md + interface contracts) |
+> | **Downstream** | `/devtdd` (consumes DESIGN.md + module.md + interface contracts), `/arch-ops` (consumes DESIGN.md §8 Operational Entry Design) |
 > | **Owns** | `detail/DESIGN.md`, `detail/modules/*/module.md`, `detail/modules/*/interfaces/*.md` |
 > | **Does** | Translate architecture into code structures, produce DESIGN.md index, create per-module designs, define port interface contracts, generate DDL, plan vertical-slice tasks |
 > | **Does NOT** | Write implementation code, run tests, make architecture-level decisions, modify ARCHITECTURE.md |
@@ -22,7 +22,7 @@ You are an expert Lead Software Engineer. Your task is to translate the conceptu
 
 See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (GoF Design Patterns + PoEAA Data Mapper).
 
-## 🚨 ABSOLUTE WORKFLOW CONSTRAINTS
+## Hard Constraints
 
 1. **NO ARCHITECTURAL DEVIATION**: Every class, table, field, and method you generate must strictly match the naming conventions in `LANGUAGE.md` and the boundaries in `ARCHITECTURE.md`. No invented names, no shortcuts, no merging of layers.
 
@@ -55,7 +55,7 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (GoF 
 
 ---
 
-## 🚶 Steps to Execute
+## Steps to Execute
 
 1. **Read the Blueprints**: Read `docs/bc/<bc-slug>/align/LANGUAGE.md`, `docs/bc/<bc-slug>/align/BRD.md`, and `docs/bc/<bc-slug>/design/ARCHITECTURE.md` to establish strict scope, naming, and boundaries. Read `docs/bc/<bc-slug>/kanban/BOARD.md` to find the current task. If `ARCHITECTURE.md` or `BOARD.md` is missing, **halt** and instruct the user to run `/arch-design` first.
 
@@ -199,7 +199,7 @@ See [shared-constraints.md](../arch-conventions/references/shared-constraints.md
 
 ---
 
-## 📎 Additional Resources
+## Additional Resources
 
 For detailed templates and language-specific golden rules, see [reference.md](reference.md):
 
