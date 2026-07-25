@@ -1,7 +1,7 @@
 ---
 name: skill-auditor
 description: "Audits any SKILL.md against an 8-dimension quality model. Produces scored report with P0/P1/P2 findings and actionable fix plan. Use when reviewing a skill before release or checking quality drift. Trigger: /skill-auditor, audit skills, check skill quality."
-version: 1.6.0
+version: 1.6.1
 ---
 
 # Skill Auditor (Universal Skill Quality Auditor)
@@ -71,7 +71,7 @@ Gold standard examples: [references/exemplar-skills.md](references/exemplar-skil
 | D5 | Linguistic Quality | 10% | Grammar, consistent terminology, no mixed languages, numbered sequences complete | SkillzWave Writing Style (10pts) + PEEM Linguistic Quality |
 | D6 | Enforcement Strength | 10% | Constraints use "MUST/FORBIDDEN/halt" not "should/consider", refusal mechanisms | Superpowers Iron Law + Rigid/Flexible classification |
 | D7 | Safety & Boundaries | 5% | Restricted tool surface declared, file ownership explicit, no overreach | Snyk ToxicSkills (36.8% flaw rate) + Agensi tool permission limits |
-| D8 | Self-Evolution Capability | 5% | Domain refresh protocol, search/distill/validate mechanism, AD-routed self-improvement | Domain Refresh Protocol (arch-conventions) + model-knowledge-distillation method |
+| D8 | Self-Evolution Capability | 5% | Domain refresh protocol, search/distill/validate mechanism, AD-routed self-improvement | Domain Refresh Protocol (arch-conventions, if pipeline) OR any declared self-improvement mechanism (standalone) + model-knowledge-distillation method |
 
 ## Role Definition Check (D1.1 — Mandatory Sub-check)
 
@@ -400,6 +400,7 @@ Marked as "Suggested (not executed)" — auditor does NOT modify files.>
 
 **Judgment**: PASS / CONDITIONAL PASS / FAIL
 **Critical Risk**: <one sentence — the single biggest issue>
+**Calibration**: <external source used (self-audit only; omit for normal audits)>
 **Next Audit**: <suggested timeframe>
 **Auditor Sign-off**: skill-auditor v<current version>, <date>
 ```
@@ -430,9 +431,14 @@ When a skill scores below 3.5 weighted, cross-validate against the SkillzWave 10
 
 Report both scores when cross-validation is performed. Discrepancy > 15 points between models requires explanation.
 
-## Refresh Protocol
+## Domain Refresh Protocol
 
-**Trigger**: When a new major framework release is detected (e.g., Superpowers v6, Anthropic new guide, new Agensi test) OR every 6 months, whichever comes first.
+**Domain**: Skill quality auditing, prompt engineering evaluation, AI agent instruction design
+**Search Scope**: Agent skill frameworks (Superpowers, SkillzWave, Anthropic Guide, Agensi), SKILL.md ecosystem changes, cross-agent compatibility research
+**Distill Question**: "When I audit a skill and assign scores, which scoring heuristics
+  consistently align with actual Agent execution reliability — and which dimensions
+  have I been over/under-weighting based on stale assumptions?"
+**Trigger**: new major framework release (Superpowers v6+, Anthropic new guide, new Agensi test) | every 6 months | user reports "audit missed a real problem"
 
 **Action**:
 1. Re-scan all sources listed in [references/best-practices-sources.md](references/best-practices-sources.md)

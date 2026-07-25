@@ -196,7 +196,7 @@ Steps 1-2 are where compliance fails. I may rationalize: "Well, it's CLOSE to my
 
 ---
 
-## Integration: How This Maps to the 7-Dimension Model
+## Integration: How This Maps to the 8-Dimension Model
 
 | Distilled Pattern | Primary Dim | Scoring Impact |
 |-------------------|:-----------:|----------------|

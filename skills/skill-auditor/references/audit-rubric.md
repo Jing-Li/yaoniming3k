@@ -251,4 +251,4 @@ description: "Phase 2 boundary design and visualization skill. Use after /arch-a
 - Domain Refresh Protocol (arch-conventions/references/domain-refresh-spec.md): canonical spec for skill self-evolution
 - model-knowledge-distillation.md: structured self-interrogation method (Pattern → Mechanism → Failure mode → Confidence)
 - Rationale: skills encode domain expertise that evolves; without self-refresh, guidance rots while Agent executes with full confidence
-- Analogy: skill-auditor's own Refresh Protocol (every 6 months or new framework release) is the minimum viable self-evolution
+- Analogy: skill-auditor's own Domain Refresh Protocol (every 6 months or new framework release) is the minimum viable self-evolution
