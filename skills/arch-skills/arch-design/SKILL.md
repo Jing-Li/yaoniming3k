@@ -198,6 +198,15 @@ See [reference.md](reference.md) §0B for the full **Architecture Specification 
 
 ---
 
+## Domain Refresh Protocol
+
+**Domain**: Clean Architecture, DDD tactical patterns, dependency management, ADR methodology
+**Search Scope**: Clean Architecture evolution, new ADR practices, module boundary patterns, polyglot architecture, event-driven patterns, dependency inversion techniques
+**Distill Question**: "When I define layer boundaries, which decisions lead to the least dependency violations in downstream devtdd?"
+**Trigger**: every 3 BC designs completed | user says "architecture patterns outdated" | new pattern language detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Additional Resources
 
 For detailed conventions, templates, self-audit checklists, and the clarification protocol, see [reference.md](reference.md):

@@ -129,6 +129,15 @@ Needs web-search and/or web-fetch tools (or browser automation for live competit
 
 ---
 
+## Domain Refresh Protocol
+
+**Domain**: Domain research methodology, competitive analysis, technology landscape scanning
+**Search Scope**: Research methodology evolution, competitive intelligence tools, technology radar patterns, community signal detection, trend analysis frameworks
+**Distill Question**: "When I scan a domain landscape, which signal sources and heuristics produce the most actionable insights for downstream alignment?"
+**Trigger**: every 5 research briefs produced | user says "research methodology outdated" | new analysis tool detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Additional Resources
 
 For research methodology details, scanning checklists per domain type, and golden examples of research briefs, see the `references/` subdirectory:

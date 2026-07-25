@@ -187,6 +187,15 @@ last skill → all done → follows spec §4.2 step 4 (archive)
 2. If validated: output report with error/warning counts
 3. If queried: output answer, no hand-off
 
+## Domain Refresh Protocol
+
+**Domain**: Kanban methodology, task lifecycle management, board consistency validation, workflow optimization
+**Search Scope**: Kanban practice evolution, WIP limit research, flow metrics, board visualization patterns, task lifecycle automation
+**Distill Question**: "When I validate board consistency, which anomaly patterns most often indicate real workflow problems vs false positives?"
+**Trigger**: every 10 board validations | user says "kanban protocol outdated" | new workflow pattern detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Additional Resources
 
 For BOARD.md templates, T{N}.md structure, and full protocol rules, read [reference.md](reference.md) or the complete [kanban-spec.md](../arch-conventions/references/kanban-spec.md).

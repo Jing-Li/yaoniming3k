@@ -191,6 +191,15 @@ See [reference.md](reference.md) §0A for **Core Theoretical Foundations** (GoF 
    - Target language declaration.
    - Last updated date.
 
+## Domain Refresh Protocol
+
+**Domain**: Detailed design methodology, interface contract patterns, DDL generation, vertical-slice task decomposition
+**Search Scope**: API contract standards (OpenAPI evolution), DDL best practices, module decomposition heuristics, interface design patterns, GoF pattern updates
+**Distill Question**: "When I translate architecture boundaries into module designs, which decomposition patterns produce the fewest cross-module dependencies and clearest acceptance criteria?"
+**Trigger**: every 3 modules detailed | user says "design patterns outdated" | new API standard version detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Kanban Protocol
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.

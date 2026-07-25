@@ -177,6 +177,15 @@ See [references/spec-mining-techniques.md](references/spec-mining-techniques.md)
 7. If this is the first BC, ensure it is registered in `AGENTS.md` BC registry.
 8. Output the hand-off trigger with change summary and impact assessment.
 
+## Domain Refresh Protocol
+
+**Domain**: Domain-Driven Design strategic patterns, ubiquitous language, bounded context heuristics, UX clarification
+**Search Scope**: DDD community updates, event storming evolution, bounded context splitting heuristics, UX writing patterns, requirements elicitation techniques
+**Distill Question**: "When I grill terminology, which question patterns converge fastest to a stable dictionary with fewest revisions?"
+**Trigger**: every 4 BCs aligned | user says "alignment process outdated" | new DDD publication detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Additional Resources
 
 For progressive-disclosure content — `LANGUAGE.md` template skeleton, `BRD.md` template skeleton, grilling question library, ambiguity-detection patterns, and the pre-output self-audit checklist — read [reference.md](reference.md) when needed.

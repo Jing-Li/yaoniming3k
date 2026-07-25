@@ -1,7 +1,7 @@
 # Expert Skill Patterns — Extracted from Industry Frameworks
 
 > This file extracts actionable structural patterns from the top-performing skill frameworks
-> and grading systems. Each pattern is cited to its source and mapped to our 7-dimension model.
+> and grading systems. Each pattern is cited to its source and mapped to our 8-dimension model.
 
 ---
 
@@ -216,7 +216,7 @@ description: Creates sophisticated multi-page documentation systems.
 
 ## 6. Pattern Integration Matrix
 
-How each expert pattern maps to our 7-dimension audit:
+How each expert pattern maps to our 8-dimension audit:
 
 | Our Dim | SkillzWave Pillar | Superpowers Pattern | Anthropic Principle | Agensi Rule | Termdock Guideline |
 |---------|-------------------|--------------------|--------------------|-------------|-------------------|

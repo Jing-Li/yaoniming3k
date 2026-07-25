@@ -245,6 +245,15 @@ Your response **must** use exactly 9 sections in this order. Full templates with
 2. **Render stdout report**: Output the 9-section report.
 3. Do **not** modify any blueprint files unless the user explicitly authorizes.
 
+## Domain Refresh Protocol
+
+**Domain**: Architecture compliance auditing, code review methodology, critical reasoning, technical debt measurement
+**Search Scope**: Static analysis evolution, architecture fitness functions, review automation, OWASP updates, technical debt measurement, compliance checking patterns
+**Distill Question**: "When I audit code against blueprints, which detection heuristics find the most impactful violations with fewest false positives?"
+**Trigger**: every 5 audits completed | user says "audit criteria outdated" | new OWASP/security standard detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Kanban Protocol
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.

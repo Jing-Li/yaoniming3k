@@ -247,6 +247,15 @@ When user does not specify a BC:
 
 ---
 
+## Domain Refresh Protocol
+
+**Domain**: Operational documentation, deployment automation, runbook patterns, observability
+**Search Scope**: Makefile best practices, shell script patterns, Docker/compose evolution, observability standards (OpenTelemetry), runbook automation, health check patterns
+**Distill Question**: "When I generate operational scripts, which patterns produce the fewest runtime failures and fastest onboarding for new developers?"
+**Trigger**: every 3 OPS.md generated | user says "ops patterns outdated" | new deployment tool detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Kanban Protocol
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.

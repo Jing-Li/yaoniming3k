@@ -1,4 +1,4 @@
-# Audit Rubric — 7-Dimension Scoring Guide
+# Audit Rubric — 8-Dimension Scoring Guide
 
 > All scoring criteria are grounded in expert patterns extracted from industry frameworks.
 > See [expert-skill-patterns.md](expert-skill-patterns.md) for the full pattern library and source citations.
@@ -195,7 +195,7 @@ description: "Phase 2 boundary design and visualization skill. Use after /arch-a
 
 ---
 
-## D7: Safety & Boundaries (Weight: 10%)
+## D7: Safety & Boundaries (Weight: 5%)
 
 ### What to check
 - Restricted tool surface declared (which files/tools permitted)
@@ -216,3 +216,39 @@ description: "Phase 2 boundary design and visualization skill. Use after /arch-a
 - Snyk ToxicSkills (2026.02): 36.8% of 3,984 skills had security flaws; 13.4% critical
 - Attack vectors: shell execution, filesystem access, prompt injection
 - Mitigation: explicit tool restrictions, file ownership declaration
+
+---
+
+## D8: Self-Evolution Capability (Weight: 5%)
+
+### What to check
+- Domain Refresh Block present with structured fields (Domain, Search Scope, Distill Question, Trigger)
+- Trigger conditions are concrete and measurable (not vague "when needed")
+- Distill Question is a genuine first-person self-interrogation about execution experience
+- Search Scope is domain-specific (matches the skill's actual expertise area)
+- Evolution proposals route via AD mechanism (no silent self-modification)
+- Any Refresh Protocol or self-improvement mechanism declared
+
+### Scoring examples
+
+**5/5**:
+```
+## Domain Refresh Protocol
+
+**Domain**: TDD methodology, vertical-slice implementation, code craftsmanship
+**Search Scope**: Go testing (testing package, testify, mockgen), TDD patterns, refactoring heuristics
+**Distill Question**: "When I complete a red-green-refactor cycle, which micro-patterns
+  consistently produce deeper modules and fewer regressions?"
+**Trigger**: every 5 tasks completed | user says "TDD flow is outdated"
+**Action**: Search → Distill → Compare → Classify → Route AD to devtdd-self
+```
+
+**3/5**: Has a "Refresh Protocol" section but only says "update when new patterns emerge" — no structured fields, no concrete trigger, no distill question
+
+**1/5**: No self-evolution mechanism whatsoever. Skill is a static document with no awareness of domain drift.
+
+### Data reference
+- Domain Refresh Protocol (arch-conventions/references/domain-refresh-spec.md): canonical spec for skill self-evolution
+- model-knowledge-distillation.md: structured self-interrogation method (Pattern → Mechanism → Failure mode → Confidence)
+- Rationale: skills encode domain expertise that evolves; without self-refresh, guidance rots while Agent executes with full confidence
+- Analogy: skill-auditor's own Refresh Protocol (every 6 months or new framework release) is the minimum viable self-evolution

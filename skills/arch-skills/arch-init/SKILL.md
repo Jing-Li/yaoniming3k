@@ -255,6 +255,15 @@ Do not output the trigger before the user confirms. Do not embellish. Do not tra
 2. Output the standard hand-off trigger for the active mode.
 3. Do **not** modify Phase 1-4 file content (LANGUAGE.md, BRD.md, ARCHITECTURE.md, DESIGN.md body text). You may move or rename them to correct locations, but never edit their content.
 
+## Domain Refresh Protocol
+
+**Domain**: Project scaffolding, document governance, directory structure patterns, migration automation
+**Search Scope**: Documentation-as-code evolution, project template patterns, governance automation, monorepo structure practices, migration tooling
+**Distill Question**: "When I scaffold or govern document structures, which layout decisions minimize downstream friction and rework?"
+**Trigger**: every 5 projects initialized | user says "scaffolding patterns outdated" | new doc-as-code tool detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Additional Resources
 
 For file templates, verification checklists, Mode C detection rules, Mode C scan patterns, and grill question patterns, read [reference.md](reference.md) when needed.

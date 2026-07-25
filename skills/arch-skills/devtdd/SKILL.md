@@ -347,6 +347,15 @@ devtdd performs **lightweight** boundary checks per cycle (Hard Constraint #3). 
 8. **Migration task chaining (v1.9.0+)**: If T{N}.md has `(migration)` tag → also add T{N} to `arch-review` row, `new` column on BOARD.md.
 9. If the task implemented an adapter, update `DESIGN.md` §10 Stub Adapter Tracking.
 
+## Domain Refresh Protocol
+
+**Domain**: TDD methodology, vertical-slice implementation, code craftsmanship
+**Search Scope**: Go testing (testing package, testify, mockgen), TDD patterns, refactoring heuristics, test architecture, coverage strategies, mutation testing
+**Distill Question**: "When I complete a red-green-refactor cycle, which micro-patterns consistently produce deeper modules and fewer regressions?"
+**Trigger**: every 5 tasks completed | user says "TDD flow is outdated" | new language version detected
+
+See [domain-refresh-spec.md](../arch-conventions/references/domain-refresh-spec.md) for the full protocol.
+
 ## Kanban Protocol
 
 See [kanban-spec.md](../arch-conventions/references/kanban-spec.md) for Startup/Completion/Redo sequences and T{N}.md structure.

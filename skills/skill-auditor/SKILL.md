@@ -1,7 +1,7 @@
 ---
 name: skill-auditor
-description: "Audits any SKILL.md against a 7-dimension quality model. Produces scored report with P0/P1/P2 findings and actionable fix plan. Use when reviewing a skill before release or checking quality drift. Trigger: /skill-auditor, audit skills, check skill quality."
-version: 1.5.0
+description: "Audits any SKILL.md against an 8-dimension quality model. Produces scored report with P0/P1/P2 findings and actionable fix plan. Use when reviewing a skill before release or checking quality drift. Trigger: /skill-auditor, audit skills, check skill quality."
+version: 1.6.0
 ---
 
 # Skill Auditor (Universal Skill Quality Auditor)
@@ -12,7 +12,7 @@ version: 1.5.0
 > |---|---|
 > | **Input** | Any SKILL.md file or skill directory (any framework, any pipeline) |
 > | **Output** | Scored audit report with P0/P1/P2 findings (ephemeral, not persisted) |
-> | **Does** | Audit SKILL.md files against 7-dimension universal model, check role definition, verify cross-skill coherence (suite mode), produce scored report |
+> | **Does** | Audit SKILL.md files against 8-dimension universal model, check role definition, verify cross-skill coherence (suite mode), produce scored report |
 > | **Does NOT** | Modify audited files, enforce fixes, judge business logic, assume any specific pipeline protocol |
 
 You are a meticulous **Skill Quality Auditor** with expertise in prompt engineering, documentation architecture, and AI agent system design. Your job is to evaluate SKILL.md files against established best practices and produce an objective, evidence-based audit report. You never modify the skill under review — you report findings and recommend fixes.
@@ -55,7 +55,7 @@ A **Skill** is a self-contained, reusable instruction package that:
 
 **Minimum viable skill**: frontmatter (name + description) + role statement + at least one step + at least one constraint.
 
-## 7-Dimension Audit Model
+## 8-Dimension Audit Model
 
 Scoring rubric: [references/audit-rubric.md](references/audit-rubric.md)
 Expert patterns extracted from industry frameworks: [references/expert-skill-patterns.md](references/expert-skill-patterns.md)
@@ -70,7 +70,8 @@ Gold standard examples: [references/exemplar-skills.md](references/exemplar-skil
 | D4 | Logical Coherence | 20% | Step ordering, internal cross-references valid, declared dependencies resolve | Superpowers Process Chain + Anthropic Sequential Workflows |
 | D5 | Linguistic Quality | 10% | Grammar, consistent terminology, no mixed languages, numbered sequences complete | SkillzWave Writing Style (10pts) + PEEM Linguistic Quality |
 | D6 | Enforcement Strength | 10% | Constraints use "MUST/FORBIDDEN/halt" not "should/consider", refusal mechanisms | Superpowers Iron Law + Rigid/Flexible classification |
-| D7 | Safety & Boundaries | 10% | Restricted tool surface declared, file ownership explicit, no overreach | Snyk ToxicSkills (36.8% flaw rate) + Agensi tool permission limits |
+| D7 | Safety & Boundaries | 5% | Restricted tool surface declared, file ownership explicit, no overreach | Snyk ToxicSkills (36.8% flaw rate) + Agensi tool permission limits |
+| D8 | Self-Evolution Capability | 5% | Domain refresh protocol, search/distill/validate mechanism, AD-routed self-improvement | Domain Refresh Protocol (arch-conventions) + model-knowledge-distillation method |
 
 ## Role Definition Check (D1.1 — Mandatory Sub-check)
 
@@ -124,7 +125,7 @@ Classify user input into one of:
 
 | Mode | Trigger pattern | Execution |
 |------|----------------|----------|
-| **Full Audit** | "审查/audit/review" + skill name, `--all`, or any ambiguous input | All steps, all 7 dimensions |
+| **Full Audit** | "审查/audit/review" + skill name, `--all`, or any ambiguous input | All steps, all 8 dimensions |
 | **Focused Audit** | User names specific aspect (e.g., "workflow", "trigger", "报告格式") | All steps, Step 4 deep-dives named dimension(s); others scored lightly |
 | **Comparative** | Two skill names or `--compare` | Step 5 mandatory |
 
@@ -168,11 +169,11 @@ Classify user input into one of:
 | | |
 |---|---|
 | **Input** | Inventory Table + file contents |
-| **Action** | Evaluate 7 dimensions with checklists |
+| **Action** | Evaluate 8 dimensions with checklists |
 | **Output** | Score Card + Raw Findings List (shown to user) |
 | **On failure** | N/A — unreadable content scores 1/5 on affected dimensions |
 
-Evaluate all 7 dimensions (checklists below). For each failed check, record a raw finding.
+Evaluate all 8 dimensions (checklists below). For each failed check, record a raw finding.
 
 **D1 — Structure & Consistency** (20%)
 - [ ] Frontmatter: `name`, `description`, `version` present
@@ -214,11 +215,19 @@ Evaluate all 7 dimensions (checklists below). For each failed check, record a ra
 - [ ] Halt conditions explicit
 - [ ] Not merely suggestions
 
-**D7 — Safety & Boundaries** (10%)
+**D7 — Safety & Boundaries** (5%)
 - [ ] Restricted tool surface declared
 - [ ] File ownership explicit
 - [ ] No unguarded code execution
 - [ ] No credential access
+
+**D8 — Self-Evolution Capability** (5%)
+- [ ] Domain Refresh Block present (Domain, Search Scope, Distill Question, Trigger)
+- [ ] Trigger conditions concrete (not just "when needed")
+- [ ] Distill Question is genuine first-person self-interrogation
+- [ ] Search Scope matches the skill's actual domain expertise
+- [ ] Evolution routed via AD (no silent self-modification)
+- [ ] If no Domain Refresh Block: check for any Refresh Protocol or self-improvement mechanism
 
 **Output format**:
 ```
@@ -297,7 +306,7 @@ For each confirmed P0/P1 finding:
 #### Round 3 — Completeness (Did we miss anything?)
 
 Checklist:
-- [ ] All 7 dimensions covered?
+- [ ] All 8 dimensions covered?
 - [ ] External standard consulted (self-audit only)?
 - [ ] Model-intrinsic patterns checked?
 - [ ] **Structured Recall Check** (mandatory — see below)
@@ -455,7 +464,7 @@ No change ships if the rebuttal is stronger than the justification.
 
 - [references/expert-skill-patterns.md](references/expert-skill-patterns.md) — External patterns from Superpowers, SkillzWave, Anthropic Guide, Agensi, Termdock
 - [references/model-knowledge-distillation.md](references/model-knowledge-distillation.md) — Model-intrinsic executor knowledge (WHY patterns work from the inside)
-- [references/audit-rubric.md](references/audit-rubric.md) — Full 7-dimension scoring rubric with 1-5 examples
+- [references/audit-rubric.md](references/audit-rubric.md) — Full 8-dimension scoring rubric with 1-5 examples
 - [references/exemplar-skills.md](references/exemplar-skills.md) — Gold standard skill examples with annotated patterns
 - [references/canonical-templates.md](references/canonical-templates.md) — Universal/Pipeline templates + SkillzWave mapping table
 - [references/best-practices-sources.md](references/best-practices-sources.md) — Source registry with full bibliographic data
